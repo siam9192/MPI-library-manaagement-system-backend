@@ -1,0 +1,1 @@
+const getReservationsFromDB = async () => {};
