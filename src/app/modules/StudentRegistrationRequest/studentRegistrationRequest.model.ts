@@ -24,8 +24,7 @@ const StudentRegistrationRequestModelSchema = new Schema<IStudentRegistrationReq
     roll: {
       type: Number,
       required: true,
-      min: 0,
-      unique: true,
+      min: 0
     },
     department: {
       type: String,
@@ -62,7 +61,7 @@ const StudentRegistrationRequestModelSchema = new Schema<IStudentRegistrationReq
       minlength: 1,
       required: true,
     },
-   isEmailVerified: {
+    isEmailVerified: {
       type: Boolean,
       default: false,
     },

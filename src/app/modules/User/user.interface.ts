@@ -1,4 +1,4 @@
-import { IModelNecessaryFields } from "../../types/model.type";
+import { IModelNecessaryFields } from '../../types/model.type';
 
 export interface IUser extends IModelNecessaryFields {
   email: string;
@@ -7,11 +7,10 @@ export interface IUser extends IModelNecessaryFields {
   role: TUserRole;
   status: TUserStatus;
   lastLoginAt?: Date;
-  lastPasswordChangedAt:Date
+  lastPasswordChangedAt: Date;
 }
 
 export type TUserRole = `${EUserRole}`;
-
 
 export enum EUserRole {
   STUDENT = 'student',
@@ -20,11 +19,10 @@ export enum EUserRole {
   SUPER_ADMIN = 'superadmin',
 }
 
-
 export type TUserStatus = `${EUserStatus}`;
 
 export enum EUserStatus {
   ACTIVE = 'active',
   BLOCKED = 'blocked',
-  DELETED = 'deleted'
+  DELETED = 'deleted',
 }

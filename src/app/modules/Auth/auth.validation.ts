@@ -114,7 +114,7 @@ const LibrarianAccountRegistrationValidation = z.object({
   }),
 });
 
-const AuthValidations = {
+const authValidations = {
   CreateStudentAccountRequestValidation,
   StudentLoginValidation,
   ManagementLoginValidation,
@@ -124,4 +124,4 @@ const AuthValidations = {
   LibrarianAccountRegistrationValidation,
 };
 
-export default AuthValidations;
+export default authValidations;

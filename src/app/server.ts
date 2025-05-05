@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
 import envConfig from './config/env.config';
 import app from './app';
-import { generateSecret } from './helpers';
+import systemSettingService from './modules/SystemSetting/system-setting.service';
 
 async function main() {
   try {
     const connection = await mongoose.connect(envConfig.url.database as string);
-
+    await systemSettingService.initSettings();
     app.listen(5000, () => {
       console.log('Server is connected');
     });

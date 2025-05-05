@@ -1,12 +1,17 @@
 import { IRouter, Router } from 'express';
-import AuthRouter from '../modules/Auth/auth.route';
+import authRouter from '../modules/Auth/auth.route';
+import departmentRouter from '../modules/Department/department.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
 const moduleRoutes: TModuleRoutes = [
   {
     path: '/auth',
-    router: AuthRouter,
+    router: authRouter,
+  },
+  {
+    path: '/departments',
+    router: departmentRouter,
   },
 ];
 

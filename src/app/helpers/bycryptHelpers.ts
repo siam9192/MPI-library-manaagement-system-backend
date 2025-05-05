@@ -8,9 +8,7 @@ export const compare = async (data: string, hashedData: string) => {
   return await bcrypt.compare(data, hashedData);
 };
 
-
-
 export default {
- hash,
- compare
-}
+  hash,
+  compare,
+};

@@ -33,15 +33,11 @@ export interface IAuthUser {
   role: TUserRole;
 }
 
-
-
 export type TPermission = {
   read: boolean;
   write: boolean;
   delete: boolean;
 };
-
-
 
 export type TContactInfo = {
   emailAddress: string;

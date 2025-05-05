@@ -19,8 +19,6 @@ export interface IStudent extends IModelNecessaryFields {
 }
 export type TShift = `${EShift}`;
 
-
-
 export enum EShift {
   MORNING = 'morning',
   DAY = 'day',

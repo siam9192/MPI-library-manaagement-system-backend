@@ -16,9 +16,10 @@ export interface ICreateStudentRegistrationRequestPayload {
 export interface IStudentRegistrationRequestTokenPayload {
   email: string;
   verificationId: string;
+  requestId: string;
 }
 
-export interface IStudentLoginData {
+export interface IStudentLoginPayload {
   roll: number;
   password: string;
 }

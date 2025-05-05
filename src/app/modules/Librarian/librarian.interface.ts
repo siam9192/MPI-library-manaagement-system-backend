@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { IModelNecessaryFields, TGender} from '../../types/model.type';
+import { IModelNecessaryFields, TGender } from '../../types/model.type';
 import { IUser } from '../User/user.interface';
 import { TContactInfo, TPermission } from '../../types';
 

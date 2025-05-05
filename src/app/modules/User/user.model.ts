@@ -10,7 +10,7 @@ const UserModelSchema = new Schema<IUser>(
       required: true,
       unique: true,
     },
-  
+
     roll: {
       type: Number,
       min: 1000,
@@ -30,7 +30,7 @@ const UserModelSchema = new Schema<IUser>(
     status: {
       type: String,
       enum: Object.values(EUserStatus),
-      default:EUserStatus.ACTIVE
+      default: EUserStatus.ACTIVE,
     },
     lastLoginAt: {
       type: Date,
@@ -39,7 +39,7 @@ const UserModelSchema = new Schema<IUser>(
     lastPasswordChangedAt: {
       type: Date,
       default: null,
-    }
+    },
   },
   {
     timestamps: true,

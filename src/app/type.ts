@@ -206,7 +206,7 @@ export interface IReservation {
   reservationDate: Date;
   expiryDate: Date;
   status: TReservationStatus;
-  qrCode:string
+  qrCode: string;
 }
 
 type TReservationStatus = `${EReservationStatus}`;

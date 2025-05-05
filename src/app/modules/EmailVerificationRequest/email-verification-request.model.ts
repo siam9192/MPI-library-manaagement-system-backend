@@ -11,7 +11,6 @@ const EmailVerificationModelSchema = new Schema<IEmailVerificationRequest>(
     otp: {
       type: String,
       minlength: 6,
-      maxlength: 6,
       required: true,
     },
     otpResendCount: {
@@ -35,9 +34,9 @@ const EmailVerificationModelSchema = new Schema<IEmailVerificationRequest>(
   }
 );
 
-const EmailVerification = model<IEmailVerificationRequest>(
+const EmailVerificationRequest = model<IEmailVerificationRequest>(
   'EmailVerification',
   EmailVerificationModelSchema
 );
 
-export default EmailVerification;
+export default EmailVerificationRequest;

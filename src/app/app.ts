@@ -11,7 +11,7 @@ app.use(cors({ credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(routes);
+app.use('/api/v1', routes);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.log(err);

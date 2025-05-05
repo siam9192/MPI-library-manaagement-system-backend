@@ -8,7 +8,7 @@ const StudentModelSchema = new Schema<IStudent>(
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required:true
+      required: true,
     },
     fullName: {
       type: String,
@@ -57,11 +57,11 @@ const StudentModelSchema = new Schema<IStudent>(
     },
     address: {
       type: UserAddressSchema,
-       default:{
-        present:null,
-         permanent: null,
-         currentIsPresent:false
-       }
+      default: {
+        present: null,
+        permanent: null,
+        currentIsPresent: false,
+      },
     },
     reputationIndex: {
       type: Number,

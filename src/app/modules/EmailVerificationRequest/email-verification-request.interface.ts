@@ -1,4 +1,3 @@
-
 import { IModelNecessaryFields, TModelTimeStamps } from '../../types/model.type';
 
 export interface IEmailVerificationRequest extends IModelNecessaryFields {

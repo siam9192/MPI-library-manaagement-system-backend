@@ -20,10 +20,10 @@ export const ContactSchema = new Schema({
 
 const LibrarianModelSchema = new Schema<ILibrarian>(
   {
-    user:{
-      type:Schema.ObjectId,
-      ref:"User",
-      required:true
+    user: {
+      type: Schema.ObjectId,
+      ref: 'User',
+      required: true,
     },
     fullName: {
       type: String,
@@ -48,9 +48,9 @@ const LibrarianModelSchema = new Schema<ILibrarian>(
       maxlength: 1000,
       default: null,
     },
-    contactInfo:{
+    contactInfo: {
       type: ContactInfoSchema,
-      required:true
+      required: true,
     },
   },
   {
