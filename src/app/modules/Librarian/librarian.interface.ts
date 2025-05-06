@@ -10,12 +10,12 @@ export interface ILibrarian extends IModelNecessaryFields {
   profilePhotoUrl: string;
   about: string;
   contactInfo: TContactInfo;
-  permissions: TLibrarianPermissions;
+  
 }
 
 export type TLibrarianPermissions = {
   books: TPermission;
-  users: TPermission;
+  students: TPermission;
   librarians: TPermission;
   admins: TPermission;
   systemSettings: TPermission;

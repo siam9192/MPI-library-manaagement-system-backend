@@ -29,7 +29,7 @@ const StudentModelSchema = new Schema<IStudent>(
     },
     profilePhotoUrl: {
       type: String,
-      required: true,
+      default: null,
     },
     department: {
       type: Schema.Types.ObjectId,

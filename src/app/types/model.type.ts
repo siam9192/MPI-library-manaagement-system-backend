@@ -9,7 +9,7 @@ export type TGender = `${EGender}`;
 
 export enum EGender {
   MALE = 'male',
-  FEMALE = 'female'
+  FEMALE = 'female',
 }
 
 export type TSemester = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;

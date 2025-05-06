@@ -1,3 +1,4 @@
+import { TContactInfo } from '../../types';
 import { TGender, TSemester } from '../../types/model.type';
 import { TShift } from '../Student/student.interface';
 
@@ -24,7 +25,7 @@ export interface IStudentLoginPayload {
   password: string;
 }
 
-export interface IManagementLoginData {
+export interface IManagementLoginPayload {
   email: string;
   password: string;
 }
@@ -34,14 +35,11 @@ export interface IChangePasswordPayload {
   newPassword: string;
 }
 
-export interface IRegisterManagementAccount {
+export interface IRegisterManagementAccountPayload {
   fullName: string;
   password: string;
   gender: TGender;
   profilePhotoUrl: string;
-  about?: string;
-  contact: {
-    emailAddress: string;
-    phoneNumber: string;
-  };
+  about: string;
+  contactInfo: TContactInfo;
 }

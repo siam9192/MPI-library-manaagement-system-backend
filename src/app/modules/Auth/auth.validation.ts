@@ -39,12 +39,12 @@ const VerifyStudentRegistrationRequestUsingOTPValidation = z.object({
 });
 
 const StudentLoginValidation = z.object({
-  email: z.string().email({ message: 'Invalid email address' }).max(100, 'Email is too long'),
+  roll:  z.number().min(1, { message: 'Roll must be a positive number and at least 1' }),
   password: z.string().nonempty('Password is required'),
 });
 
 const ManagementLoginValidation = z.object({
-  email: z.number().min(1, { message: 'Roll must be a positive number and at least 1' }),
+  email: z.string().email({ message: 'Invalid email address' }),
   password: z.string().nonempty('Password is required'),
 });
 
@@ -70,7 +70,7 @@ const AdministratorAccountRegistrationValidation = z.object({
     errorMap: () => ({ message: 'Gender must be one of the defined values' }),
   }),
 
-  contact: z.object({
+  contactInfo: z.object({
     emailAddress: z
       .string({ required_error: 'Email address is required' })
       .email({ message: 'Invalid email address format' }),
@@ -102,7 +102,7 @@ const LibrarianAccountRegistrationValidation = z.object({
     })
     .min(20, 'About must be in 20 and maximum 1000 characters')
     .max(1000),
-  contact: z.object({
+  contactInfo: z.object({
     emailAddress: z
       .string({ required_error: 'Email address is required' })
       .email({ message: 'Invalid email address format' }),

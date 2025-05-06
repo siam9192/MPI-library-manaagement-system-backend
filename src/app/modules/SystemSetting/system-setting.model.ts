@@ -8,7 +8,7 @@ const SystemSettingModelSchema: Schema = new Schema<ISystemSetting>(
     lateFeePerDay: { type: Number, required: true },
     reservationExpiryDays: { type: Number, required: true },
     studentRegistrationRequestExpiryDays: { type: Number, required: true },
-    administratorRegistrationRequestExpiryDays: { type: Number, required: true },
+    managementRegistrationRequestExpiryDays: { type: Number, required: true },
     emailVerificationExpiryMinutes: { type: Number, required: true },
     isActive: {
       type: Boolean,

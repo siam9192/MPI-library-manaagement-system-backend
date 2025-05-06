@@ -24,7 +24,7 @@ const StudentRegistrationRequestModelSchema = new Schema<IStudentRegistrationReq
     roll: {
       type: Number,
       required: true,
-      min: 0
+      min: 0,
     },
     department: {
       type: String,
@@ -56,6 +56,13 @@ const StudentRegistrationRequestModelSchema = new Schema<IStudentRegistrationReq
         message: (props) => `${props.value} is not a valid session!`,
       },
     },
+    email: {
+      type: String,
+      minlength: 3,
+      maxlength: 100,
+      required: true,
+    },
+
     password: {
       type: String,
       minlength: 1,

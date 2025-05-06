@@ -1,10 +1,14 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import { EGender } from '../../types/model.type';
 import { IAdministrator } from './administrator.interface';
-import { ContactSchema } from '../Librarian/librarian.model';
+import { ContactInfoSchema, PermissionSchema } from '../../schemas';
 
 const AdministratorModelSchema = new Schema<IAdministrator>(
   {
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
     fullName: {
       type: String,
       minlength: 3,
@@ -21,7 +25,7 @@ const AdministratorModelSchema = new Schema<IAdministrator>(
       enum: Object.values(EGender),
       required: true,
     },
-    contact: ContactSchema,
+    contactInfo: ContactInfoSchema
   },
   {
     timestamps: true,

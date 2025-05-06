@@ -3,7 +3,7 @@ import {
   EManagementAccountRegistrationRequestRole,
   EManagementAccountRegistrationRequestStatus,
   IManagementAccountRequest,
-} from './management-account-registration.interface';
+} from './management-account-registration-request.interface';
 
 const ManagementAccountRegistrationRequestModelSchema = new Schema<IManagementAccountRequest>(
   {
@@ -17,11 +17,6 @@ const ManagementAccountRegistrationRequestModelSchema = new Schema<IManagementAc
       type: String,
       enum: Object.values(EManagementAccountRegistrationRequestRole),
       required: true,
-    },
-    secret: {
-      type: String,
-      unique: true,
-      minlength: 10,
     },
     expireAt: {
       type: Date,

@@ -12,7 +12,7 @@ class SystemSettingService {
         lateFeePerDay: 10,
         reservationExpiryDays: 7,
         studentRegistrationRequestExpiryDays: 15,
-        administratorRegistrationRequestExpiryDays: 15,
+        managementRegistrationRequestExpiryDays: 15,
         emailVerificationExpiryMinutes: 10,
         isActive: true,
       });

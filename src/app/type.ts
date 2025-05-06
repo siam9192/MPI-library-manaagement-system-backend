@@ -285,6 +285,10 @@ export interface ISystemSetting extends IModelNecessaryFields {
   maxBorrowItems: number;
   lateFeePerDay: number;
   reservationExpiryDays: number;
+  studentRegistrationRequestExpiryDays: number;
+  managementRegistrationRequestExpiryDays: number;
+  emailVerificationExpiryMinutes: number;
+  isActive: boolean;
 }
 
 export type TUserAddress = {

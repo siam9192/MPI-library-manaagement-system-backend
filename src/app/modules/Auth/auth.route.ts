@@ -24,17 +24,23 @@ router.post(
   authController.verifyStudentRegistrationRequestUsingOTP
 );
 
+
+router.post(
+  '/register-management-account/:token',
+  authController.registerManagementAccount
+);
+
 router.post(
   '/student-login',
   validateRequest(authValidation.StudentLoginValidation),
   authController.studentLogin
 );
 
-// router.post(
-//   '/management-login',
-//   validateRequest(AuthValidations.ManagementLoginValidation),
-//   AuthControllers.managementLogin
-// );
+router.post(
+  '/management-login',
+  validateRequest(authValidation.ManagementLoginValidation),
+  authController.managementLogin
+);
 
 router.post(
   '/change-password',
@@ -42,6 +48,6 @@ router.post(
   authController.changePassword
 );
 
-router.get('/access-token',authController.getNewAccessToken);
+router.get('/access-token', authController.getNewAccessToken);
 
 export default authRouter;

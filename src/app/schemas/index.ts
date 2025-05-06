@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { TContactInfo } from '../types';
+import { TContactInfo, TPermission } from '../types';
 
 const AddressSchema = new Schema(
   {
@@ -21,13 +21,28 @@ export const ContactInfoSchema = new Schema<TContactInfo>({
   emailAddress: {
     type: String,
     minLength: 3,
-    maxLength: 3,
-    default: null,
+    maxLength: 100,
+    required:true
   },
   phoneNumber: {
     type: String,
     minLength: 3,
     maxLength: 11,
-    default: null,
+    required:true
+  },
+});
+
+export const PermissionSchema = new Schema<TPermission>({
+  read: {
+    type: Boolean,
+    required: true,
+  },
+  write: {
+    type: Boolean,
+    required: true,
+  },
+  delete: {
+    type: Boolean,
+    required: true,
   },
 });

@@ -26,7 +26,7 @@ export interface ICreateBorrowRequestPayload {
   borrowForDays: number;
 }
 
-export interface IManageBorrowRequestsFiltersData {
+export interface IManageBorrowRequestsFilterPayload {
   roll?: string;
 }
 

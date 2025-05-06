@@ -34,8 +34,7 @@ export enum EStudentRegistrationRequestStatus {
 }
 
 export interface IRejectStudentRegistrationRequestPayload {
-  requestId: string;
-  reasonForReject?: string;
+  rejectReason?: string;
 }
 
 export interface IStudentRegistrationRequestFilterPayload {

@@ -1,3 +1,4 @@
+import e from 'express';
 import { TUserRole } from '../modules/User/user.interface';
 
 export interface IFbDataResponse {
@@ -32,10 +33,73 @@ export interface IAuthUser {
   profileId: string;
   role: TUserRole;
 }
+export type TBookPermission  = {
+  canAdd:boolean,
+  canUpdate:boolean,
+  canView:boolean,
+  canDelete:boolean
+}
+
+export type TUserPermission = {
+  student:{
+    canView:boolean,
+    canUpdateStatus:boolean,
+    canDelete:boolean
+  },
+  librarian :{
+    canView:boolean,
+    canUpdateStatus:boolean,
+    canDelete:boolean
+  },
+  administrator :{
+    canView:boolean,
+    canUpdateStatus:boolean,
+    canDelete:boolean
+  }
+ 
+}
+
+
+
+
+
+export type TStudentRegistrationRequestPermission = {
+  canView:boolean,
+  canApprove:boolean,
+  canReject:boolean  
+}
+
+
+export type TBorrowRequestPermission ={
+  canView:boolean,
+  canApprove:boolean,
+  canReject:boolean  
+}
+
+export type TBorrowPermission ={
+  canView:boolean,
+  canApprove:boolean,
+  canReject:boolean  
+}
+
+
+export type TReservationPermission =  {
+  canView:boolean,
+  canProcess:boolean,
+  canUpdateExpireDate:boolean
+}
+
+export type TFinePermission = {
+  canView:boolean,
+  canProcess:boolean,
+  canWave:boolean
+}
+
 
 export type TPermission = {
   read: boolean;
   write: boolean;
+  update:boolean;
   delete: boolean;
 };
 

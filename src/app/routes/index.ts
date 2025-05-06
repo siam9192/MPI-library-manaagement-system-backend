@@ -1,6 +1,8 @@
 import { IRouter, Router } from 'express';
 import authRouter from '../modules/Auth/auth.route';
 import departmentRouter from '../modules/Department/department.route';
+import studentRegistrationRequestRouter from '../modules/StudentRegistrationRequest/student-registration-request.route';
+import managementAccountRegistrationRequestRouter from '../modules/ManagementAccountRegistrationRequest/management-account-registration-request.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -8,6 +10,14 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/auth',
     router: authRouter,
+  },
+  {
+    path: '/student-registration-requests',
+    router: studentRegistrationRequestRouter,
+  },
+  {
+    path: '/management-registration-requests',
+    router: managementAccountRegistrationRequestRouter,
   },
   {
     path: '/departments',

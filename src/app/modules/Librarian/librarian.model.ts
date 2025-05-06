@@ -1,22 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { EGender } from '../../types/model.type';
 import { ILibrarian } from './librarian.interface';
-import { ContactInfoSchema } from '../../schemas';
-
-export const ContactSchema = new Schema({
-  emailAddress: {
-    type: String,
-    minLength: 3,
-    maxLength: 3,
-    default: null,
-  },
-  phoneNumber: {
-    type: String,
-    minLength: 3,
-    maxLength: 11,
-    default: null,
-  },
-});
+import { ContactInfoSchema, PermissionSchema } from '../../schemas';
 
 const LibrarianModelSchema = new Schema<ILibrarian>(
   {
@@ -41,17 +26,17 @@ const LibrarianModelSchema = new Schema<ILibrarian>(
       enum: Object.values(EGender),
       required: true,
     },
-
     about: {
       type: String,
       minlength: 20,
       maxlength: 1000,
-      default: null,
+      required: true,
     },
     contactInfo: {
       type: ContactInfoSchema,
       required: true,
     },
+ 
   },
   {
     timestamps: true,

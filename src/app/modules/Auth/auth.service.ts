@@ -6,6 +6,8 @@ import User from '../User/user.model';
 import {
   IChangePasswordPayload,
   ICreateStudentRegistrationRequestPayload,
+  IManagementLoginPayload,
+  IRegisterManagementAccountPayload,
   IStudentLoginPayload,
   IStudentRegistrationRequestTokenPayload,
 } from './auth.interface';
@@ -20,6 +22,15 @@ import { Student } from '../Student/student.model';
 import { EUserRole, EUserStatus } from '../User/user.interface';
 import { IAuthUser } from '../../types';
 import { JwtPayload } from 'jsonwebtoken';
+import ManagementAccountRegistrationRequest from '../ManagementAccountRegistrationRequest/management-account-registration-request.model';
+import {
+  EManagementAccountRegistrationRequestRole,
+  EManagementAccountRegistrationRequestStatus,
+} from '../ManagementAccountRegistrationRequest/management-account-registration-request.interface';
+import authValidations from './auth.validation';
+import Administrator from '../Administrator/administrator.model';
+import Librarian from '../Librarian/librarian.model';
+import { EAdministratorLevel } from '../Administrator/administrator.interface';
 
 class AuthService {
   async createStudentRegistrationRequestIntoDB(payload: ICreateStudentRegistrationRequestPayload) {
@@ -111,7 +122,7 @@ class AuthService {
       const token = await jwtHelpers.generateToken(
         tokenPayload,
         envConfig.jwt.registrationVerificationTokenSecret as string,
-         `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
+        `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
       );
 
       // Step 10: Commit the transaction
@@ -120,14 +131,13 @@ class AuthService {
       return { token };
     } catch (error) {
       // Rollback transaction and throw error
-     
+
       await session.abortTransaction();
       await session.endSession();
       throw new AppError(httpStatus.BAD_REQUEST, 'Something went wrong');
     }
   }
   async resendEmailVerificationOTP(token: string) {
-   
     // Decode the JWT token
     let decodedPayload: IStudentRegistrationRequestTokenPayload;
     try {
@@ -138,16 +148,13 @@ class AuthService {
 
       if (!decodedPayload) throw new Error();
     } catch (error) {
-      
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid token');
     }
 
     const systemSettings = await systemSettingService.getCurrentSettings();
 
     //  Retrieve the verification document and populate the request
-    const verification = await EmailVerificationRequest.findById(
-      decodedPayload.verificationId
-    )
+    const verification = await EmailVerificationRequest.findById(decodedPayload.verificationId);
     if (!verification) {
       throw new AppError(httpStatus.NOT_FOUND, 'Verification request not found');
     }
@@ -192,7 +199,7 @@ class AuthService {
     const newToken = await jwtHelpers.generateToken(
       tokenPayload,
       envConfig.jwt.registrationVerificationTokenSecret as string,
-     `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
+      `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
     );
 
     return {
@@ -214,9 +221,7 @@ class AuthService {
     }
 
     // Retrieve the verification document and populate the request
-    const verification = await EmailVerificationRequest.findById(
-      decodedPayload.verificationId
-    );
+    const verification = await EmailVerificationRequest.findById(decodedPayload.verificationId);
 
     if (!verification) {
       throw new AppError(httpStatus.NOT_FOUND, 'Verification Request not found');
@@ -271,7 +276,8 @@ class AuthService {
       // Update registration request status
       const updateRequestStatus = await StudentRegistrationRequest.updateOne(
         { _id: registrationRequest._id },
-        { isEmailVerified: true },{session}
+        { isEmailVerified: true },
+        { session }
       );
 
       if (!updateRequestStatus.modifiedCount) {
@@ -283,111 +289,284 @@ class AuthService {
       return null;
     } catch (error) {
       // Rollback transaction on error
-    console.log(error)
+      console.log(error);
       await session.abortTransaction();
       await session.endSession();
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Verification process failed');
     }
   }
 
- async studentLogin  (loginPayload: IStudentLoginPayload)  {
+  async registerManagementAccount(token: string, payload: IRegisterManagementAccountPayload) {
+    //  Decode the JWT token
+    let decodedPayload: IStudentRegistrationRequestTokenPayload;
+    try {
+      decodedPayload = jwtHelpers.verifyToken(
+        token,
+        envConfig.jwt.registrationVerificationTokenSecret as string
+      ) as IStudentRegistrationRequestTokenPayload;
+
+      if (!decodedPayload) throw new Error();
+    } catch (error) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid request');
+    }
+    
+    //Fetch request by secret
+    const request = await ManagementAccountRegistrationRequest.findOne({
+      status: EManagementAccountRegistrationRequestStatus.PENDING,
+    });
+ 
+    // Checking request existence also Validate payload here using zod
+    if (!request) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Maybe this link is expired,used or not exist');
+    }
+     
+    const existingUserByEmail =  await User.findOne({email:request.email});
+    if(existingUserByEmail) {
+      throw new AppError(httpStatus.NOT_ACCEPTABLE, "The provided email is already in use.");
+    }
+
+    if (Object.values(EManagementAccountRegistrationRequestRole).includes(request.role as any)) {
+      authValidations.AdministratorAccountRegistrationValidation.parse(payload);
+    } else {
+      authValidations.LibrarianAccountRegistrationValidation.parse(payload);
+    }
+
+    // Step 3: Start database transaction
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      // Step 5: Update request status
+      const updateRequestStatus = await ManagementAccountRegistrationRequest.updateOne(
+        { _id: request._id },
+        { status: EManagementAccountRegistrationRequestStatus.SUCCESSFUL,index:0 },{session}
+      );
+
+      // Check request update status
+      if (!updateRequestStatus.modifiedCount) {
+        throw new Error('Failed to update verification status');
+      }
+
+      // Create user
+
+      const hashedPassword = await bycryptHelpers.hash(payload.password);
+
+      const [createdUser] = await User.create(
+        [
+          {
+            email: request.email,
+            password: hashedPassword,
+            role:request.role
+          },
+        ],
+        { session }
+      );
+
+      if (!createdUser) throw new Error('');
+      // Create profile base on role
+      let createdProfile;
+      if (Object.values(EAdministratorLevel).includes(request.role as any)) {
+        [createdProfile] = await Administrator.create(
+          [
+            {
+              user: createdUser._id,
+              fullName: payload.fullName,
+              profilePhotoUrl: payload.profilePhotoUrl,
+              gender: payload.gender,
+              contactInfo: payload.contactInfo,
+              level: request.role,
+            },
+          ],
+          { session }
+        );
+      } else {
+       [createdProfile] = (
+          await Librarian.create(
+            [
+              {
+                user: createdUser._id,
+                fullName: payload.fullName,
+                profilePhotoUrl: payload.profilePhotoUrl,
+                gender: payload.gender,
+                about: payload.about,
+                contactInfo: payload.contactInfo,
+              },
+            ],
+            { session }
+          )
+        );
+      }
+
+      if (!createdProfile) throw new Error();
+      // Commit transaction
+      await session.commitTransaction();
+      await session.endSession();
+      return null;
+    } catch (error) {
+      console.log(error)
+      // Rollback transaction on error
+      await session.abortTransaction();
+      await session.endSession();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Sorry registration failed.Something went wrong'
+      );
+    }
+  }
+
+  async studentLogin(loginPayload: IStudentLoginPayload) {
     // Find the user by roll number and ensure the role is STUDENT
     const user = await User.findOne({
       roll: loginPayload.roll,
       role: EUserRole.STUDENT,
-    });
-  
+    }).select("_id password role");
+
     // Throw an error if the user is not found
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'Account not found');
     }
-  
+
     // Check if the account is blocked
     if (user.status === EUserStatus.BLOCKED) {
       throw new AppError(httpStatus.FORBIDDEN, 'Access denied: account is blocked');
     }
-  
+
     // Compare the provided password with the stored hashed password
     const isMatchPassword = await bycryptHelpers.compare(loginPayload.password, user.password);
     if (!isMatchPassword) {
       throw new AppError(httpStatus.NOT_FOUND, 'Wrong password!');
-    } 
-    const student =  await Student.findOne({user:user._id}).select("_id");
-    if(!student) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,"")
+    }
+    const student = await Student.findOne({ user: user._id }).select('_id');
+    if (!student) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
 
     // Prepare the token payload
     const tokenPayload = {
       userId: user._id,
-      profileId:student._id ,
+      profileId: student._id,
       role: user.role,
     };
-  
+
     // Generate access token
     const accessToken = await jwtHelpers.generateToken(
       tokenPayload,
       envConfig.jwt.accessTokenSecret as string,
       envConfig.jwt.accessTokenExpireTime as string
     );
-  
+
     // Generate refresh token
     const refreshToken = await jwtHelpers.generateToken(
       tokenPayload,
       envConfig.jwt.refreshTokenSecret as string,
       envConfig.jwt.refreshTokenExpireTime as string
     );
-  
+
     // Return the tokens
     return {
       accessToken,
       refreshToken,
     };
+  }
+  
+async  managementLogin (loginData: IManagementLoginPayload) {
+  // Find the user by email and ensure the role is not STUDENT
+  const user = await User.findOne({
+    email: loginData.email,
+    role: {
+      $in: Object.values(EAdministratorLevel),
+    },
+  }).select("_id email password role");
+
+  // Throw an error if the user is not found
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Account not found');
+  }
+
+  // Check if the account is blocked
+  if (user.status === EUserStatus.BLOCKED) {
+    throw new AppError(httpStatus.FORBIDDEN, 'Access denied: account is blocked');
+  }
+
+  // Compare the provided password with the stored hashed password
+  const isMatchPassword = await bycryptHelpers.compare(loginData.password, user.password);
+
+  if (!isMatchPassword) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Wrong password!');
+  }
+
+  // Prepare the token payload
+  const tokenPayload = {
+    userId: user._id,
+    profileId: (user as any)[user.role.toLocaleLowerCase()],
+    role: user.role,
   };
 
-  async changePassword   (authUser: IAuthUser, payload: IChangePasswordPayload)  {
+  // Generate access token
+  const accessToken = await jwtHelpers.generateToken(
+    tokenPayload,
+    envConfig.jwt.accessTokenSecret as string,
+    envConfig.jwt.accessTokenExpireTime as string
+  );
+
+  // Generate refresh token
+  const refreshToken = await jwtHelpers.generateToken(
+    tokenPayload,
+    envConfig.jwt.refreshTokenSecret as string,
+    envConfig.jwt.refreshTokenExpireTime as string
+  );
+
+  // Return the tokens
+  return {
+    accessToken,
+    refreshToken,
+  };
+};
+
+
+  async changePassword(authUser: IAuthUser, payload: IChangePasswordPayload) {
     // Step 1: Find the user by ID and include the password field
     const user = await User.findById(authUser.userId, { password: true });
-  
+
     // Step 2: Check if user exists
     if (!user) {
       throw new AppError(httpStatus.BAD_REQUEST, 'User not found.');
     }
-  
+
     // Step 3: Compare old password
     const isPasswordMatch = await bycryptHelpers.compare(payload.oldPassword, user.password);
     if (!isPasswordMatch) {
       throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Incorrect current password.');
     }
-  
+
     // Step 4: Hash the new password
     const newHashedPassword = await bycryptHelpers.hash(payload.newPassword);
-  
+
     // Step 5: Update the password
     const updateResult = await User.updateOne(
       { _id: objectId(authUser.userId) },
       { password: newHashedPassword }
     );
-  
+
     if (!updateResult.modifiedCount) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update password.');
     }
-  
+
     // Step 6: Return success (can be null or a success message)
     return null;
-  };
-  
-  async getNewAccessToken (refreshToken: string)  {
+  }
+
+  async getNewAccessToken(refreshToken: string) {
     try {
       // Step 1: Ensure refresh token exists
       if (!refreshToken) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'Refresh token is required.');
       }
-  
+
       // Step 2: Verify and decode the token
       const decoded = jwtHelpers.verifyToken(
         refreshToken,
         envConfig.jwt.refreshTokenSecret as string
       ) as JwtPayload & IAuthUser;
-  
+
       if (!decoded || !decoded.userId) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid refresh token.');
       }
@@ -401,7 +580,7 @@ class AuthService {
         envConfig.jwt.accessTokenSecret as string,
         envConfig.jwt.accessTokenExpireTime as string
       );
-  
+
       // Step 4: Return both tokens
       return {
         accessToken: newAccessToken,
@@ -409,7 +588,7 @@ class AuthService {
     } catch (error) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid or expired refresh token.');
     }
-  };
+  }
 }
 
 export default new AuthService();

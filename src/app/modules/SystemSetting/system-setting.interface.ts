@@ -7,7 +7,7 @@ export interface ISystemSetting extends IModelNecessaryFields {
   lateFeePerDay: number;
   reservationExpiryDays: number;
   studentRegistrationRequestExpiryDays: number;
-  administratorRegistrationRequestExpiryDays: number;
+  managementRegistrationRequestExpiryDays: number;
   emailVerificationExpiryMinutes: number;
   isActive: boolean;
 }

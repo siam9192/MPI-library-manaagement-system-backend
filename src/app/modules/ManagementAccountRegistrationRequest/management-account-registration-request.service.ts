@@ -1,174 +1,249 @@
+import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { generateSecret } from '../../helpers';
-import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
+import systemSettingService from '../SystemSetting/system-setting.service';
 import User from '../User/user.model';
 import {
   EManagementAccountRegistrationRequestStatus,
   ICreateManagementAccountRequestPayload,
   IManagementRegistrationRequestFilterPayload,
-} from './management-account-registration.interface';
-import ManagementAccountRegistrationRequest from './management-account-registration.model';
+} from './management-account-registration-request.interface';
+import ManagementAccountRegistrationRequest from './management-account-registration-request.model';
+import jwtHelpers from '../../helpers/jwtHelpers';
+import envConfig from '../../config/env.config';
+import { calculatePagination } from '../../helpers/paginationHelper';
 
-const createRegistrationRequest = async (payload: ICreateManagementAccountRequestPayload) => {
-  // Step 1: Check if the email is already used
-  const existingUserByEmail = await User.findOne({ email: payload.email });
-  if (existingUserByEmail) {
-    throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This email is already used, try another one');
-  }
-
-  //Step 2:  Generate a secret
-  let secret = generateSecret();
-  while (ManagementAccountRegistrationRequest.findOne({ secret })) {
-    secret = generateSecret();
-  }
-
-  // Step 3:Insert data into db
-  const expireAt = new Date();
-  expireAt.setDate(expireAt.getDate() + 7); //Set expire date 7 days
-
-  const createdRequest = await ManagementAccountRegistrationRequest.create({
-    email: payload.email,
-    role: payload.role,
-    expireAt,
-  });
-  if (!createdRequest) {
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Something went wrong');
-  }
-};
-
-const cancelRegistrationRequest = async (authUser: IAuthUser, id: string) => {
-  // Step 1: Find the registration request by ID
-  const request = await ManagementAccountRegistrationRequest.findById(id);
-
-  if (!request) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
-  }
-
-  // Step 2: Check if request is already finalized (REJECTED, APPROVED, or EXPIRED)
-  const { REJECTED, CANCELED, SUCCESSFUL, EXPIRED } = EManagementAccountRegistrationRequestStatus;
-
-  switch (request.status) {
-    case CANCELED:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration request is already canceled'
-      );
-
-    case REJECTED:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration request is already rejected'
-      );
-    case SUCCESSFUL:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration successful is already approved'
-      );
-    case EXPIRED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
-  }
-
-  // Step 3: Update the request status to REJECTED with reason
-  const updateResult = await ManagementAccountRegistrationRequest.updateOne(
-    { _id: request._id },
-    {
-      status: CANCELED,
-      index: 0,
+class ManagementAccountRegistrationService {
+  async createRegistrationRequest(payload: ICreateManagementAccountRequestPayload) {
+    //  Check if the email is already used
+    const existingUserByEmail = await User.findOne({ email: payload.email });
+    if (existingUserByEmail) {
+      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This email is already used, try another one');
     }
-  );
 
-  if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
-};
+    // Fetch current system settings
+    const settings = await systemSettingService.getCurrentSettings();
 
-const rejectRegistrationRequest = async (authUser: IAuthUser, id: string) => {
-  // Step 1: Find the registration request by ID
-  const request = await ManagementAccountRegistrationRequest.findById(id);
+    // Insert data into db
+    const expireAt = new Date();
+    expireAt.setDate(expireAt.getDate() + settings.managementRegistrationRequestExpiryDays); //Set expire date 7 days
 
-  if (!request) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
-  }
-  // Step 2: Check if request is already finalized (REJECTED, APPROVED, or EXPIRED)
-  const { REJECTED, CANCELED, SUCCESSFUL, EXPIRED } = EManagementAccountRegistrationRequestStatus;
+    const session = await startSession();
 
-  switch (request.status) {
-    case CANCELED:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration request is already canceled'
+    session.startTransaction();
+
+    try {
+      const [createdRequest] = await ManagementAccountRegistrationRequest.create(
+        [
+          {
+            email: payload.email,
+            role: payload.role,
+            expireAt,
+          },
+        ],
+        { session }
       );
-    case REJECTED:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration request is already rejected'
+      if (!createdRequest) {
+        throw new Error();
+      }
+      const tokenPayload = {
+        requestId: createdRequest._id,
+      };
+      const token = jwtHelpers.generateToken(
+        tokenPayload,
+        envConfig.jwt.registrationVerificationTokenSecret as string,
+        `${settings.managementRegistrationRequestExpiryDays}d`
       );
-    case SUCCESSFUL:
-      throw new AppError(
-        httpStatus.NOT_ACCEPTABLE,
-        'This registration successful is already approved'
-      );
-    case EXPIRED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
-  }
-  // Step 3: Update the request status to REJECTED with reason
-  const updateResult = await ManagementAccountRegistrationRequest.updateOne(
-    { _id: request._id },
-    {
-      status: REJECTED,
-      index: 0,
+      await session.commitTransaction()
+      await session.endSession()
+      return {
+        token,
+      };
+    } catch (error) {
+      await session.abortTransaction()
+      await session.endSession()
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Something went wrong');
     }
-  );
-
-  if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
-};
-
-const getAllStudentRegistrationRequestsFromDB = async (
-  filterPayload: IManagementRegistrationRequestFilterPayload,
-  paginationOptions: IPaginationOptions
-) => {
-  const { searchTerm } = filterPayload;
-
-  // Calculate pagination parameters: page, skip, limit, sortBy, sortOrder
-  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-
-  // Initialize filter with default condition
-  const andConditions: Record<string, any> = {};
-
-  // Apply searchTerm filtering on email
-  if (searchTerm) {
-    andConditions.email = { $regex: searchTerm, options: 'i' };
   }
 
-  // Fetch filtered and paginated registration requests
-  const requests = await ManagementAccountRegistrationRequest.find(andConditions)
-    .sort({ [sortBy]: sortOrder, index: 1 }) // Sort by requested field and preserve original order
-    .skip(skip)
-    .limit(limit);
+  async getRegistrationRequests(
+    filterPayload: IManagementRegistrationRequestFilterPayload,
+    paginationOptions: IPaginationOptions
+  ) {
+ 
+    const { email } = filterPayload;
+  
+    // Initialize query conditions for filtering
+    const whereConditions: Record<string, string> = {};
+  
+  
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+  
+    // Apply email filter if provided
+    if (email) {
+      whereConditions.email = email;
+    }
+  
+    // Fetch the filtered and paginated data with sorting
+    const data = await ManagementAccountRegistrationRequest.find(whereConditions).sort({
+      [sortBy]: sortOrder,
+      index: 1, // Static sort priority (optional; consider if this is intended)
+    }).skip(skip).limit(limit);
+  
+  
+    const totalResult = await ManagementAccountRegistrationRequest.countDocuments(whereConditions);
+  
+  
+    const total = await ManagementAccountRegistrationRequest.countDocuments();
+  
 
-  // Count of filtered results (after applying filters)
-  const totalResult = await ManagementAccountRegistrationRequest.countDocuments(andConditions);
+    const meta = {
+      page,
+      limit,
+      totalResult,
+      total,
+    };
+  
+    // Return both the data and the metadata
+    return {
+      data,
+      meta,
+    };
+  }
+  
+  async getRegistrationRequestById (id:string){
+   const request =  await ManagementAccountRegistrationRequest.findById(id)
+   if(!request) {
+    throw new AppError(httpStatus.NOT_FOUND,"No request found!")
+   }
+   return  request;
+  }
 
-  // Count of all registration requests (without any filters)
-  const total = await ManagementAccountRegistrationRequest.countDocuments();
+  async resendLink(id: string) {
+    const request = await ManagementAccountRegistrationRequest.findById(id);
+    // Check if request not found
+    if (!request) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
+    }
 
-  // Metadata for pagination response
-  const meta = {
-    page,
-    limit,
-    totalResult,
-    total,
-  };
+    // Check is request not pending
+    if (request.status !== EManagementAccountRegistrationRequestStatus.PENDING) {
+      throw new AppError(
+        httpStatus.NOT_ACCEPTABLE,
+        `The request is already ${request.status.charAt(0).toUpperCase()}${request.status.slice(1)}`
+      );
+    }
 
-  return {
-    data: requests,
-    meta,
-  };
-};
+    const tokenPayload = {
+      requestId: request._id,
+    };
 
-const ManagementAccountRegistrationRequestServices = {
-  createRegistrationRequest,
-  rejectRegistrationRequest,
-  cancelRegistrationRequest,
-  getAllStudentRegistrationRequestsFromDB,
-};
+    const availableTime = new Date(request.expireAt).getTime() - new Date().getTime();
+    const convertTime = (ms: number) => {
+      const minutes = Math.floor(ms / (1000 * 60)) % 60;
+      const hours = Math.floor(ms / (1000 * 60 * 60)) % 24;
+      const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+      if (days) return `${days + 1}d`;
+      else if (hours) return `${hours}h`;
+      else return `${minutes}m`;
+    };
+
+    const token = jwtHelpers.generateToken(
+      tokenPayload,
+      envConfig.jwt.registrationVerificationTokenSecret as string,
+      convertTime(availableTime)
+    );
+
+    return {
+      token,
+    };
+  }
+
+  async cancelRegistrationRequest(authUser: IAuthUser, id: string) {
+    // Step 1: Find the registration request by ID
+    const request = await ManagementAccountRegistrationRequest.findById(id);
+
+    if (!request) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
+    }
+
+    // Step 2: Check if request is already finalized (REJECTED, APPROVED, or EXPIRED)
+    const { REJECTED, CANCELED, SUCCESSFUL, EXPIRED } = EManagementAccountRegistrationRequestStatus;
+
+    switch (request.status) {
+      case CANCELED:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration request is already canceled'
+        );
+
+      case REJECTED:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration request is already rejected'
+        );
+      case SUCCESSFUL:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration successful is already approved'
+        );
+      case EXPIRED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
+    }
+
+    // Step 3: Update the request status to REJECTED with reason
+    const updateResult = await ManagementAccountRegistrationRequest.updateOne(
+      { _id: request._id },
+      {
+        status: CANCELED,
+        index: 0,
+      }
+    );
+
+    if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
+  }
+
+  async rejectRegistrationRequest(authUser: IAuthUser, id: string) {
+    // Step 1: Find the registration request by ID
+    const request = await ManagementAccountRegistrationRequest.findById(id);
+
+    if (!request) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
+    }
+    // Step 2: Check if request is already finalized (REJECTED, APPROVED, or EXPIRED)
+    const { REJECTED, CANCELED, SUCCESSFUL, EXPIRED } = EManagementAccountRegistrationRequestStatus;
+
+    switch (request.status) {
+      case CANCELED:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration request is already canceled'
+        );
+      case REJECTED:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration request is already rejected'
+        );
+      case SUCCESSFUL:
+        throw new AppError(
+          httpStatus.NOT_ACCEPTABLE,
+          'This registration successful is already approved'
+        );
+      case EXPIRED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
+    }
+    // Step 3: Update the request status to REJECTED with reason
+    const updateResult = await ManagementAccountRegistrationRequest.updateOne(
+      { _id: request._id },
+      {
+        status: REJECTED,
+        index: 0,
+      }
+    );
+
+    if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
+  }
+}
+
+export default new ManagementAccountRegistrationService();

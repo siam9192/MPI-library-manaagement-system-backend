@@ -29,34 +29,51 @@ class AuthController {
       data: result,
     });
   });
-   
-  
-studentLogin = catchAsync(async (req, res) => {
-  const result = await authService.studentLogin(req.body);
-  sendSuccessResponse(res, {
-    message: 'Login successful',
-    statusCode: httpStatus.OK,
-    data: result,
+
+
+  registerManagementAccount = catchAsync(async (req, res) => {
+    const result = await AuthService.registerManagementAccount(req.params.token,req.body);
+    sendSuccessResponse(res, {
+      message: 'Registration successful',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
   });
-});
+
+  studentLogin = catchAsync(async (req, res) => {
+    const result = await authService.studentLogin(req.body);
+    sendSuccessResponse(res, {
+      message: 'Login successful',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
+  });
+  managementLogin = catchAsync(async (req, res) => {
+    const result = await authService.managementLogin(req.body);
+    sendSuccessResponse(res, {
+      message: 'Login successful',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
+  });
 
   changePassword = catchAsync(async (req, res) => {
-  const result = await authService.changePassword;
-  sendSuccessResponse(res, {
-    message: 'Password has been changed successfully',
-    statusCode: httpStatus.OK,
-    data: result,
+    const result = await authService.changePassword;
+    sendSuccessResponse(res, {
+      message: 'Password has been changed successfully',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
   });
- });
 
   getNewAccessToken = catchAsync(async (req, res) => {
-  const result = await authService.getNewAccessToken(req.body);
-  sendSuccessResponse(res, {
-    message: 'New access token retrieved successfully',
-    statusCode: httpStatus.OK,
-    data: result,
+    const result = await authService.getNewAccessToken(req.body);
+    sendSuccessResponse(res, {
+      message: 'New access token retrieved successfully',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
   });
-});
 }
 
 export default new AuthController();

@@ -1,26 +1,32 @@
 import { Types } from 'mongoose';
 import { TGender, TModelTimeStamps } from '../../types/model.type';
 import { EUserRole } from '../User/user.interface';
+import { TContactInfo, TPermission } from '../../types';
 
 export interface IAdministrator extends TModelTimeStamps {
   _id: Types.ObjectId;
-  userId: string;
+  user: Types.ObjectId;
   fullName: string;
   gender: TGender;
   profilePhotoUrl: string;
-  role: TAdministratorRole;
-  contact: Contact;
+  level: TAdministratorLevel;
+  contactInfo: TContactInfo;
+  
 }
 
-export type TAdministratorRole = `${EAdministratorRole}`;
+export type TAdministratorLevel = `${EAdministratorLevel}`;
 
-export enum EAdministratorRole {
+export enum EAdministratorLevel {
   SUPER_ADMIN = EUserRole.SUPER_ADMIN,
   ADMIN = EUserRole.ADMIN,
-  MODERATOR = EUserRole.MODERATOR,
 }
 
-type Contact = {
-  emailAddress: string;
-  phoneNumber: string;
+export type TAdministratorPermissions = {
+  books: TPermission;
+  users: TPermission;
+  librarians: TPermission;
+  admins: TPermission;
+  auditLogs: TPermission;
+  settings: TPermission;
+  reports: TPermission;
 };
