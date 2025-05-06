@@ -309,20 +309,20 @@ class AuthService {
     } catch (error) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid request');
     }
-    
+
     //Fetch request by secret
     const request = await ManagementAccountRegistrationRequest.findOne({
       status: EManagementAccountRegistrationRequestStatus.PENDING,
     });
- 
+
     // Checking request existence also Validate payload here using zod
     if (!request) {
       throw new AppError(httpStatus.NOT_FOUND, 'Maybe this link is expired,used or not exist');
     }
-     
-    const existingUserByEmail =  await User.findOne({email:request.email});
-    if(existingUserByEmail) {
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, "The provided email is already in use.");
+
+    const existingUserByEmail = await User.findOne({ email: request.email });
+    if (existingUserByEmail) {
+      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'The provided email is already in use.');
     }
 
     if (Object.values(EManagementAccountRegistrationRequestRole).includes(request.role as any)) {
@@ -339,7 +339,8 @@ class AuthService {
       // Step 5: Update request status
       const updateRequestStatus = await ManagementAccountRegistrationRequest.updateOne(
         { _id: request._id },
-        { status: EManagementAccountRegistrationRequestStatus.SUCCESSFUL,index:0 },{session}
+        { status: EManagementAccountRegistrationRequestStatus.SUCCESSFUL, index: 0 },
+        { session }
       );
 
       // Check request update status
@@ -356,7 +357,7 @@ class AuthService {
           {
             email: request.email,
             password: hashedPassword,
-            role:request.role
+            role: request.role,
           },
         ],
         { session }
@@ -380,20 +381,18 @@ class AuthService {
           { session }
         );
       } else {
-       [createdProfile] = (
-          await Librarian.create(
-            [
-              {
-                user: createdUser._id,
-                fullName: payload.fullName,
-                profilePhotoUrl: payload.profilePhotoUrl,
-                gender: payload.gender,
-                about: payload.about,
-                contactInfo: payload.contactInfo,
-              },
-            ],
-            { session }
-          )
+        [createdProfile] = await Librarian.create(
+          [
+            {
+              user: createdUser._id,
+              fullName: payload.fullName,
+              profilePhotoUrl: payload.profilePhotoUrl,
+              gender: payload.gender,
+              about: payload.about,
+              contactInfo: payload.contactInfo,
+            },
+          ],
+          { session }
         );
       }
 
@@ -403,7 +402,7 @@ class AuthService {
       await session.endSession();
       return null;
     } catch (error) {
-      console.log(error)
+      console.log(error);
       // Rollback transaction on error
       await session.abortTransaction();
       await session.endSession();
@@ -419,7 +418,7 @@ class AuthService {
     const user = await User.findOne({
       roll: loginPayload.roll,
       role: EUserRole.STUDENT,
-    }).select("_id password role");
+    }).select('_id password role');
 
     // Throw an error if the user is not found
     if (!user) {
@@ -466,61 +465,60 @@ class AuthService {
       refreshToken,
     };
   }
-  
-async  managementLogin (loginData: IManagementLoginPayload) {
-  // Find the user by email and ensure the role is not STUDENT
-  const user = await User.findOne({
-    email: loginData.email,
-    role: {
-      $in: Object.values(EAdministratorLevel),
-    },
-  }).select("_id email password role");
 
-  // Throw an error if the user is not found
-  if (!user) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Account not found');
+  async managementLogin(loginData: IManagementLoginPayload) {
+    // Find the user by email and ensure the role is not STUDENT
+    const user = await User.findOne({
+      email: loginData.email,
+      role: {
+        $in: Object.values(EAdministratorLevel),
+      },
+    }).select('_id email password role');
+
+    // Throw an error if the user is not found
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Account not found');
+    }
+
+    // Check if the account is blocked
+    if (user.status === EUserStatus.BLOCKED) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Access denied: account is blocked');
+    }
+
+    // Compare the provided password with the stored hashed password
+    const isMatchPassword = await bycryptHelpers.compare(loginData.password, user.password);
+
+    if (!isMatchPassword) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Wrong password!');
+    }
+
+    // Prepare the token payload
+    const tokenPayload = {
+      userId: user._id,
+      profileId: (user as any)[user.role.toLocaleLowerCase()],
+      role: user.role,
+    };
+
+    // Generate access token
+    const accessToken = await jwtHelpers.generateToken(
+      tokenPayload,
+      envConfig.jwt.accessTokenSecret as string,
+      envConfig.jwt.accessTokenExpireTime as string
+    );
+
+    // Generate refresh token
+    const refreshToken = await jwtHelpers.generateToken(
+      tokenPayload,
+      envConfig.jwt.refreshTokenSecret as string,
+      envConfig.jwt.refreshTokenExpireTime as string
+    );
+
+    // Return the tokens
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
-
-  // Check if the account is blocked
-  if (user.status === EUserStatus.BLOCKED) {
-    throw new AppError(httpStatus.FORBIDDEN, 'Access denied: account is blocked');
-  }
-
-  // Compare the provided password with the stored hashed password
-  const isMatchPassword = await bycryptHelpers.compare(loginData.password, user.password);
-
-  if (!isMatchPassword) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Wrong password!');
-  }
-
-  // Prepare the token payload
-  const tokenPayload = {
-    userId: user._id,
-    profileId: (user as any)[user.role.toLocaleLowerCase()],
-    role: user.role,
-  };
-
-  // Generate access token
-  const accessToken = await jwtHelpers.generateToken(
-    tokenPayload,
-    envConfig.jwt.accessTokenSecret as string,
-    envConfig.jwt.accessTokenExpireTime as string
-  );
-
-  // Generate refresh token
-  const refreshToken = await jwtHelpers.generateToken(
-    tokenPayload,
-    envConfig.jwt.refreshTokenSecret as string,
-    envConfig.jwt.refreshTokenExpireTime as string
-  );
-
-  // Return the tokens
-  return {
-    accessToken,
-    refreshToken,
-  };
-};
-
 
   async changePassword(authUser: IAuthUser, payload: IChangePasswordPayload) {
     // Step 1: Find the user by ID and include the password field

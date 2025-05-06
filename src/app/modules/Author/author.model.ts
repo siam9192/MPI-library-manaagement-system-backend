@@ -12,20 +12,34 @@ const AuthorModelSchema = new Schema<IAuthor>(
       type: String,
       default: null,
     },
-    about: {
+    biography: {
       type: String,
       minlength: 10,
       maxlength: 5000,
       required: true,
     },
-    followersCount: {
-      type: Number,
-      min: 0,
-      default: 0,
+    slug: {
+      type: String,
+      minlength: 1,
+      unique: true,
+      required: true,
+    },
+    count: {
+      followers: {
+        type: Number,
+        min: 0,
+        default: 0,
+      },
+      books: {
+        type: Number,
+        min: 0,
+        default: 0,
+      },
     },
     status: {
       type: String,
       enum: Object.values(EAuthorStatus),
+      default:EAuthorStatus.ACTIVE
     },
   },
   {

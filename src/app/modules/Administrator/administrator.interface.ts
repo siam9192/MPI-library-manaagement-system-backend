@@ -11,7 +11,6 @@ export interface IAdministrator extends TModelTimeStamps {
   profilePhotoUrl: string;
   level: TAdministratorLevel;
   contactInfo: TContactInfo;
-  
 }
 
 export type TAdministratorLevel = `${EAdministratorLevel}`;

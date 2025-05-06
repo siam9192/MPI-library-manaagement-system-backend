@@ -55,14 +55,14 @@ class ManagementAccountRegistrationService {
         envConfig.jwt.registrationVerificationTokenSecret as string,
         `${settings.managementRegistrationRequestExpiryDays}d`
       );
-      await session.commitTransaction()
-      await session.endSession()
+      await session.commitTransaction();
+      await session.endSession();
       return {
         token,
       };
     } catch (error) {
-      await session.abortTransaction()
-      await session.endSession()
+      await session.abortTransaction();
+      await session.endSession();
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Something went wrong');
     }
   }
@@ -71,32 +71,30 @@ class ManagementAccountRegistrationService {
     filterPayload: IManagementRegistrationRequestFilterPayload,
     paginationOptions: IPaginationOptions
   ) {
- 
     const { email } = filterPayload;
-  
+
     // Initialize query conditions for filtering
     const whereConditions: Record<string, string> = {};
-  
-  
+
     const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-  
+
     // Apply email filter if provided
     if (email) {
       whereConditions.email = email;
     }
-  
+
     // Fetch the filtered and paginated data with sorting
-    const data = await ManagementAccountRegistrationRequest.find(whereConditions).sort({
-      [sortBy]: sortOrder,
-      index: 1, // Static sort priority (optional; consider if this is intended)
-    }).skip(skip).limit(limit);
-  
-  
+    const data = await ManagementAccountRegistrationRequest.find(whereConditions)
+      .sort({
+        [sortBy]: sortOrder,
+        index: 1, // Static sort priority (optional; consider if this is intended)
+      })
+      .skip(skip)
+      .limit(limit);
+
     const totalResult = await ManagementAccountRegistrationRequest.countDocuments(whereConditions);
-  
-  
+
     const total = await ManagementAccountRegistrationRequest.countDocuments();
-  
 
     const meta = {
       page,
@@ -104,20 +102,20 @@ class ManagementAccountRegistrationService {
       totalResult,
       total,
     };
-  
+
     // Return both the data and the metadata
     return {
       data,
       meta,
     };
   }
-  
-  async getRegistrationRequestById (id:string){
-   const request =  await ManagementAccountRegistrationRequest.findById(id)
-   if(!request) {
-    throw new AppError(httpStatus.NOT_FOUND,"No request found!")
-   }
-   return  request;
+
+  async getRegistrationRequestById(id: string) {
+    const request = await ManagementAccountRegistrationRequest.findById(id);
+    if (!request) {
+      throw new AppError(httpStatus.NOT_FOUND, 'No request found!');
+    }
+    return request;
   }
 
   async resendLink(id: string) {

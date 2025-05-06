@@ -10,7 +10,6 @@ export interface ILibrarian extends IModelNecessaryFields {
   profilePhotoUrl: string;
   about: string;
   contactInfo: TContactInfo;
-  
 }
 
 export type TLibrarianPermissions = {

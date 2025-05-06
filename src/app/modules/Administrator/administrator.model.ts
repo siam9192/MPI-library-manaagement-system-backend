@@ -25,7 +25,7 @@ const AdministratorModelSchema = new Schema<IAdministrator>(
       enum: Object.values(EGender),
       required: true,
     },
-    contactInfo: ContactInfoSchema
+    contactInfo: ContactInfoSchema,
   },
   {
     timestamps: true,

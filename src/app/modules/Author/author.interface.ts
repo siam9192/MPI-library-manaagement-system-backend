@@ -1,24 +1,42 @@
-import { Types } from 'mongoose';
-import { TModelTimeStamps } from '../../types/model.type';
+import { IModelNecessaryFields, TModelTimeStamps } from '../../types/model.type';
 
-export interface IAuthor extends TModelTimeStamps {
-  _id: Types.ObjectId;
+export interface IAuthor extends IModelNecessaryFields {
   name: string;
-  photoUrl: string;
-  about: string;
-  followersCount: number;
+  photoUrl?: string;
+  biography: string;
+  slug: string;
+  count: {
+    followers: number;
+    books: number;
+  };
   status: TAuthorStatus;
 }
 
 export type TAuthorStatus = `${EAuthorStatus}`;
 
 export enum EAuthorStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'Inactive',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DELETED = 'deleted',
 }
 
 export interface ICreateAuthorPayload {
   name: string;
-  photoUrl: string;
-  about: string;
+  photoUrl?: string;
+  biography: string;
+}
+
+export interface IUpdateAuthorPayload {
+  name?: string;
+  photoUrl?: string;
+  biography?: string;
+}
+
+export interface IGetPublicAuthorsFilterPayload {
+  searchTerm?: string;
+}
+
+export interface IGetPublicAuthorsFilterPayload {
+  searchTerm?: string;
+  status?: TAuthorStatus;
 }

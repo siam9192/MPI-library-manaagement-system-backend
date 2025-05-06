@@ -24,11 +24,7 @@ router.post(
   authController.verifyStudentRegistrationRequestUsingOTP
 );
 
-
-router.post(
-  '/register-management-account/:token',
-  authController.registerManagementAccount
-);
+router.post('/register-management-account/:token', authController.registerManagementAccount);
 
 router.post(
   '/student-login',

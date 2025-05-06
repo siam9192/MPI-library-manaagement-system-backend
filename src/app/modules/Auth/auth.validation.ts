@@ -39,7 +39,7 @@ const VerifyStudentRegistrationRequestUsingOTPValidation = z.object({
 });
 
 const StudentLoginValidation = z.object({
-  roll:  z.number().min(1, { message: 'Roll must be a positive number and at least 1' }),
+  roll: z.number().min(1, { message: 'Roll must be a positive number and at least 1' }),
   password: z.string().nonempty('Password is required'),
 });
 

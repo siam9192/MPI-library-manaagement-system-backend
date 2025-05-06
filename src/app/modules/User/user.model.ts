@@ -14,7 +14,7 @@ const UserModelSchema = new Schema<IUser>(
     roll: {
       type: Number,
       min: 1000,
-      default:null
+      default: null,
     },
     password: {
       type: String,

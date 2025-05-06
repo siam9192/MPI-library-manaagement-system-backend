@@ -36,7 +36,6 @@ const LibrarianModelSchema = new Schema<ILibrarian>(
       type: ContactInfoSchema,
       required: true,
     },
- 
   },
   {
     timestamps: true,

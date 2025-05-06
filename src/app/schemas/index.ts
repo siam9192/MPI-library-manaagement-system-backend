@@ -22,13 +22,13 @@ export const ContactInfoSchema = new Schema<TContactInfo>({
     type: String,
     minLength: 3,
     maxLength: 100,
-    required:true
+    required: true,
   },
   phoneNumber: {
     type: String,
     minLength: 3,
     maxLength: 11,
-    required:true
+    required: true,
   },
 });
 

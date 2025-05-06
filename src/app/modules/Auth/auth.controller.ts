@@ -30,9 +30,8 @@ class AuthController {
     });
   });
 
-
   registerManagementAccount = catchAsync(async (req, res) => {
-    const result = await AuthService.registerManagementAccount(req.params.token,req.body);
+    const result = await AuthService.registerManagementAccount(req.params.token, req.body);
     sendSuccessResponse(res, {
       message: 'Registration successful',
       statusCode: httpStatus.OK,

@@ -24,34 +24,30 @@ class AdministratorService {
     const session = await startSession();
     session.startTransaction();
     try {
-   
-  
-    
-     
       const [createdUser] = await User.create([userData], { session });
       const profileData = {
-        user:createdUser._id,
+        user: createdUser._id,
         fullName: 'Arafat Hasan siam',
-        gender:EGender.MALE,
-        profilePhotoUrl:"https://images.unsplash.com/photo-1529665253569-6d01c0eaf7b6?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D",
-        level:EAdministratorLevel.SUPER_ADMIN,
-        contactInfo:{
-          emailAddress:"ahsiam999@gmail.com",
-          phoneNumber:"01623885483"
-        }
+        gender: EGender.MALE,
+        profilePhotoUrl:
+          'https://images.unsplash.com/photo-1529665253569-6d01c0eaf7b6?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D',
+        level: EAdministratorLevel.SUPER_ADMIN,
+        contactInfo: {
+          emailAddress: 'ahsiam999@gmail.com',
+          phoneNumber: '01623885483',
+        },
       };
 
-      await Administrator.create([profileData],{session});
-      await session.commitTransaction()
-      await session.endSession()
+      await Administrator.create([profileData], { session });
+      await session.commitTransaction();
+      await session.endSession();
     } catch (error) {
-      await session.abortTransaction()
-      await session.endSession()
-      console.log(error)
+      await session.abortTransaction();
+      await session.endSession();
+      console.log(error);
       // throw new Error()
     }
   }
 }
 
-
-export default new AdministratorService()
+export default new AdministratorService();
