@@ -15,13 +15,20 @@ router.patch(
   genreController.changeGenreStatus
 );
 
-router.delete('/:id', genreController.softDeleteGenre);
 
+
+
+router.delete('/:id', genreController.softDeleteGenre);
+router.get('/public', genreController.getPublicGenres);
+router.get('/public/:id', genreController.getPublicGenreById);
+
+
+
+// This secure routes must be always below of public routes
 router.get('/', genreController.getGenres);
 router.get('/:id', genreController.getGenreById);
 
-router.get('/public', genreController.getPublicGenres);
-router.get('/public/:id', genreController.getPublicGenreById);
+
 
 const genreRouter = router;
 
