@@ -8,8 +8,7 @@ import { EUserStatus, TUserRole } from '../modules/User/user.interface';
 import httpStatus from '../shared/http-status';
 import envConfig from '../config/env.config';
 import User from '../modules/User/user.model';
-import { IAuthUser } from '../modules/Auth/auth.interface';
-import jwtHelpers from '../helpers/jwtHelpers';
+import { IAuthUser } from '../types';
 
 function auth(...requiredRoles: TUserRole[]) {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -29,22 +28,21 @@ function auth(...requiredRoles: TUserRole[]) {
       throw new AppError(httpStatus.UNAUTHORIZED, 'Unauthorized');
     }
 
-    const { role, id, iat } = decoded;
-
+    const { role, userId, iat } = decoded;
     // checking if the user is exist
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
 
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'This user is not found !');
     }
     // checking if the user is already deleted
-    if (user.status === EUserStatus.Deleted) {
+    if (user.status === EUserStatus.DELETED) {
       throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted ! !');
     }
 
     // checking if the user is blocked
 
-    if (user.status === EUserStatus.Blocked) {
+    if (user.status === EUserStatus.BLOCKED) {
       throw new AppError(httpStatus.FORBIDDEN, 'This user is blocked ! !');
     }
 

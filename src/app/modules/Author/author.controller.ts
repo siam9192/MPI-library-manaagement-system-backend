@@ -61,7 +61,7 @@ class AuthorController {
   });
 
   getAuthors = catchAsync(async (req, res) => {
-    const filterPayload = Pick(req.query, ['searchTerm','status']);
+    const filterPayload = Pick(req.query, ['searchTerm', 'status']);
     const paginationOptions = paginationOptionPicker(req.query);
     const result = await authorService.getAuthorsFromDB(filterPayload, paginationOptions);
     sendSuccessResponse(res, {

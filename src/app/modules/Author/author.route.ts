@@ -16,11 +16,11 @@ router.patch(
 
 router.delete('/:id', authorController.softDeleteAuthor);
 
-router.get('management/',authorController.getAuthors);
-router.get("management/:id",authorController.getAuthorById)
+router.get('management/', authorController.getAuthors);
+router.get('management/:id', authorController.getAuthorById);
 
-router.get('/',authorController.getPublicAuthors);
-router.get("/:id",authorController.getPublicAuthorById)
+router.get('/', authorController.getPublicAuthors);
+router.get('/:id', authorController.getPublicAuthorById);
 
 const authorRouter = router;
 

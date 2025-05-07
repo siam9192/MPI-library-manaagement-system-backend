@@ -4,6 +4,7 @@ import departmentRouter from '../modules/Department/department.route';
 import studentRegistrationRequestRouter from '../modules/StudentRegistrationRequest/student-registration-request.route';
 import managementAccountRegistrationRequestRouter from '../modules/ManagementAccountRegistrationRequest/management-account-registration-request.route';
 import authorRouter from '../modules/Author/author.route';
+import followRouter from '../modules/Follow/follow.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -27,6 +28,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/authors',
     router: authorRouter,
+  },
+  {
+    path: '/follows',
+    router: followRouter,
   },
 ];
 

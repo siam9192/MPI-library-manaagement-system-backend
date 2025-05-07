@@ -39,7 +39,7 @@ const AuthorModelSchema = new Schema<IAuthor>(
     status: {
       type: String,
       enum: Object.values(EAuthorStatus),
-      default:EAuthorStatus.ACTIVE
+      default: EAuthorStatus.ACTIVE,
     },
   },
   {

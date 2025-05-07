@@ -19,3 +19,12 @@ export interface ICreateDepartmentPayload {
   name: string;
   shortName: string;
 }
+
+export interface IPublicDepartmentsFilterPayload {
+  searchTerm?: string;
+}
+
+export interface IDepartmentsFilterPayload {
+  searchTerm?: string;
+  status?: TDepartmentStatus;
+}

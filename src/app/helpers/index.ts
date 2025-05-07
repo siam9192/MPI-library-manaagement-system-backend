@@ -79,3 +79,7 @@ export function generateSecret(length = 20): string {
 
   return secret;
 }
+
+export function isNumber(value: string) {
+  return !isNaN(parseInt(value));
+}
