@@ -18,7 +18,7 @@ router.patch(
 router.delete('/:id', genreController.softDeleteGenre);
 
 router.get('/', genreController.getGenres);
-router.get('management/:id', genreController.getGenreById);
+router.get('/:id', genreController.getGenreById);
 
 router.get('/public', genreController.getPublicGenres);
 router.get('/public/:id', genreController.getPublicGenreById);
