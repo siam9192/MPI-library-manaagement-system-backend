@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { EDepartmentStatus } from './department.interface';
 
-const CreateDepartment = z.object({
+const createDepartment = z.object({
   name: z
     .string({
       required_error: 'Name is required',
@@ -19,7 +19,7 @@ const CreateDepartment = z.object({
     .transform((val) => val.toUpperCase()),
 });
 
-const UpdateDepartment = z
+const updateDepartment = z
   .object({
     name: z
       .string({
@@ -43,6 +43,6 @@ const UpdateDepartment = z
   .partial();
 
 export default {
-  CreateDepartment,
-  UpdateDepartment,
+  createDepartment,
+ updateDepartment
 };

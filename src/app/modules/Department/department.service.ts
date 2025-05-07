@@ -44,6 +44,8 @@ class DepartmentService {
     return await Department.create(payload);
   }
 
+  
+
   async softDeleteDepartmentIntoDB(id: string) {
     // Find the author
     const department = await Department.findById(id);

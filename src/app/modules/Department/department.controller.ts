@@ -14,6 +14,15 @@ class DepartmentController {
       data: result,
     });
   });
+
+  // updateDepartment =  catchAsync(async (req, res) => {
+  //   const result = await departmentService.(req.body);
+  //   sendSuccessResponse(res, {
+  //     message: 'Department updated successfully',
+  //     statusCode: httpStatus.OK,
+  //     data: result,
+  //   });
+  // });
   getDepartments = catchAsync(async (req, res) => {
     const filterPayload = Pick(req.query, ['searchTerm', 'status']);
     const paginationOptions = paginationOptionPicker(req.query);
@@ -55,6 +64,10 @@ class DepartmentController {
       data: result,
     });
   });
+ 
+  
+
+
 }
 
 export default new DepartmentController();
