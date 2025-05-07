@@ -11,3 +11,13 @@ export interface ISystemSetting extends IModelNecessaryFields {
   emailVerificationExpiryMinutes: number;
   isActive: boolean;
 }
+
+export interface IUpdateSystemSettingPayload {
+  maxBorrowDays?: number;
+  maxBorrowItems?: number;
+  lateFeePerDay?: number;
+  reservationExpiryDays?: number;
+  studentRegistrationRequestExpiryDays?: number;
+  managementRegistrationRequestExpiryDays?: number;
+  emailVerificationExpiryMinutes?: number;
+}

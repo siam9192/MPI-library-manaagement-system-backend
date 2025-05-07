@@ -5,6 +5,7 @@ import studentRegistrationRequestRouter from '../modules/StudentRegistrationRequ
 import managementAccountRegistrationRequestRouter from '../modules/ManagementAccountRegistrationRequest/management-account-registration-request.route';
 import authorRouter from '../modules/Author/author.route';
 import followRouter from '../modules/Follow/follow.route';
+import systemSettingRouter from '../modules/SystemSetting/system-setting.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -32,6 +33,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/follows',
     router: followRouter,
+  },
+  {
+    path: '/system-settings',
+    router: systemSettingRouter,
   },
 ];
 

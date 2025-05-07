@@ -1,4 +1,4 @@
-import { ISystemSetting } from './system-setting.interface';
+import { ISystemSetting, IUpdateSystemSettingPayload } from './system-setting.interface';
 import { SystemSetting } from './system-setting.model';
 
 class SystemSettingService {
@@ -22,6 +22,10 @@ class SystemSettingService {
     // Fetch current settings  setting if active setting not exist then create new and return it
     const settings = (await SystemSetting.findOne({ isActive: true })) || this.initSettings();
     return settings as ISystemSetting;
+  }
+
+  async updateSystemSetting (payload:IUpdateSystemSettingPayload){
+    return  await SystemSetting.findOneAndUpdate({isActive:true},payload,{new:true})
   }
 }
 
