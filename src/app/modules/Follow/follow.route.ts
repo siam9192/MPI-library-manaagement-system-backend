@@ -19,7 +19,7 @@ router.get('/status/:authorId', auth(EUserRole.STUDENT), FollowController.getFol
 
 router.get('/mine', auth(EUserRole.STUDENT), FollowController.getMineFollows);
 
-router.get('/author/:authorId',  FollowController.getAuthorFollowers);
+router.get('/author/:authorId', FollowController.getAuthorFollowers);
 
 const followRouter = router;
 

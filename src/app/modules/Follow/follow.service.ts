@@ -40,7 +40,7 @@ class FollowService {
     session.startTransaction();
 
     try {
-     const createdFollow =  await Follow.create(
+      const createdFollow = await Follow.create(
         [
           {
             student: objectId(authUser.profileId),
@@ -60,15 +60,14 @@ class FollowService {
           },
         }
       );
-      
-     
-      await session.commitTransaction()
-      await session.endSession()
-      return createdFollow
-  } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Follow process failed!');
+
+      await session.commitTransaction();
+      await session.endSession();
+      return createdFollow;
+    } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Follow process failed!');
     }
   }
 
@@ -80,33 +79,37 @@ class FollowService {
     if (!follow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Follow not found');
     }
-  
-    const session =  await startSession()
-    session.startTransaction()
 
+    const session = await startSession();
+    session.startTransaction();
 
-  try {
-    await Follow.deleteOne({
-        _id: follow._id,
-      },{session});
-   
-      await Author.updateOne({
-        _id:objectId(authorId)
-      },{
-        $inc:{
-            "count.followers":-1
+    try {
+      await Follow.deleteOne(
+        {
+          _id: follow._id,
+        },
+        { session }
+      );
+
+      await Author.updateOne(
+        {
+          _id: objectId(authorId),
+        },
+        {
+          $inc: {
+            'count.followers': -1,
+          },
         }
-      })
+      );
 
-
-      await session.commitTransaction()
-      await session.endSession()
-    return null
-  } catch (error) {
-    await session.abortTransaction()
-    await session.endSession()
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,"Follow delete operation failed")
-  }
+      await session.commitTransaction();
+      await session.endSession();
+      return null;
+    } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Follow delete operation failed');
+    }
   }
 
   async getMineFollowsFromDB(
@@ -125,7 +128,7 @@ class FollowService {
 
     // Apply searchTerm on author in name field if provided
     if (searchTerm) {
-      populateAuthorWhereConditions.name = { $regex: searchTerm, options: 'i' };
+      populateAuthorWhereConditions.name = { $regex: searchTerm, $options: 'i' };
     }
 
     const follows = await Follow.find(whereConditions)
@@ -139,15 +142,17 @@ class FollowService {
         match: populateAuthorWhereConditions,
       });
 
-    const totalResult = await Follow.find(whereConditions)
-      .sort({
-        [sortBy]: sortOrder,
-      })
-      .populate({
-        path: 'author',
-        match: populateAuthorWhereConditions,
-      })
-      .countDocuments();
+    const data = follows.filter((_) => _.author !== null);
+    const totalResult = (
+      await Follow.find(whereConditions)
+        .sort({
+          [sortBy]: sortOrder,
+        })
+        .populate({
+          path: 'author',
+          match: populateAuthorWhereConditions,
+        })
+    ).filter((_) => _.author !== null).length;
 
     const meta = {
       page,
@@ -156,7 +161,7 @@ class FollowService {
     };
 
     return {
-      data: follows,
+      data,
       meta,
     };
   }
@@ -182,7 +187,7 @@ class FollowService {
       if (isNumber(searchTerm)) {
         populateStudentWhereConditions.roll = parseInt(searchTerm);
       } else {
-        populateStudentWhereConditions.fullName = { $regex: searchTerm, options: 'i' };
+        populateStudentWhereConditions.fullName = { $regex: searchTerm, $options: 'i' };
       }
     }
 
@@ -197,15 +202,18 @@ class FollowService {
         match: populateStudentWhereConditions,
       });
 
-    const totalResult = await Follow.find(whereConditions)
-      .sort({
-        [sortBy]: sortOrder,
-      })
-      .populate({
-        path: 'student',
-        match: populateStudentWhereConditions,
-      })
-      .countDocuments();
+    const data = follows.filter((_) => _.student !== null);
+
+    const totalResult = (
+      await Follow.find(whereConditions)
+        .sort({
+          [sortBy]: sortOrder,
+        })
+        .populate({
+          path: 'student',
+          match: populateStudentWhereConditions,
+        })
+    ).filter((_) => _.student !== null).length;
 
     const meta = {
       page,
@@ -214,7 +222,7 @@ class FollowService {
     };
 
     return {
-      data: follows,
+      data,
       meta,
     };
   }

@@ -24,8 +24,8 @@ class SystemSettingService {
     return settings as ISystemSetting;
   }
 
-  async updateSystemSetting (payload:IUpdateSystemSettingPayload){
-    return  await SystemSetting.findOneAndUpdate({isActive:true},payload,{new:true})
+  async updateSystemSetting(payload: IUpdateSystemSettingPayload) {
+    return await SystemSetting.findOneAndUpdate({ isActive: true }, payload, { new: true });
   }
 }
 

@@ -324,3 +324,9 @@ export interface IFollow extends IModelNecessaryFields {
   student: Types.ObjectId;
   author: Types.ObjectId;
 }
+
+export interface IAuditLogs extends IModelNecessaryFields {
+  action: string;
+  performedBy: Types.ObjectId;
+  targetUser: Types.ObjectId;
+}
