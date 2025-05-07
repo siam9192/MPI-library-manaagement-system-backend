@@ -13,8 +13,23 @@ export interface IGenre extends TModelTimeStamps {
 export type TGenreStatus = `${EGenreStatus}`;
 
 export enum EGenreStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'Inactive',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DELETED = 'deleted',
 }
 
 export interface ICreateGenrePayload extends Pick<IGenre, 'name' | 'imageUrl'> {}
+
+export interface IPublicGenresFilterPayload {
+  searchTerm?: string;
+}
+
+export interface IGenresFilterPayload {
+  searchTerm?: string;
+  status?: TGenreStatus;
+}
+
+export interface IGenreUpdatePayload {
+  name?: string;
+  imageUrl?: string;
+}

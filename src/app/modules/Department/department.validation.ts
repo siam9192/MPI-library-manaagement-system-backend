@@ -44,5 +44,5 @@ const updateDepartment = z
 
 export default {
   createDepartment,
- updateDepartment
+  updateDepartment,
 };

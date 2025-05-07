@@ -64,10 +64,6 @@ class DepartmentController {
       data: result,
     });
   });
- 
-  
-
-
 }
 
 export default new DepartmentController();

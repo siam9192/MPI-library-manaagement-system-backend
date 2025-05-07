@@ -3,7 +3,6 @@ import httpStatus from '../../shared/http-status';
 import catchAsync from '../../utils/catchAsync';
 import Pick from '../../utils/pick';
 import { sendSuccessResponse } from '../../utils/response';
-import { EAuthorStatus } from './author.interface';
 import authorService from './author.service';
 
 class AuthorController {

@@ -9,12 +9,12 @@ router.post(
   validateRequest(departmentValidation.createDepartment),
   departmentController.createDepartment
 );
-router.put('/',validateRequest(departmentValidation.updateDepartment))
+router.put('/', validateRequest(departmentValidation.updateDepartment));
 router.get('/', departmentController.getDepartments);
-router.get('/:id',departmentController.getDepartmentById)
+router.get('/:id', departmentController.getDepartmentById);
 
-router.get('/public',departmentController.getPublicDepartments)
-router.get('/public/:id',departmentController.getPublicDepartments)
+router.get('/public', departmentController.getPublicDepartments);
+router.get('/public/:id', departmentController.getPublicDepartments);
 
 const departmentRouter = router;
 
