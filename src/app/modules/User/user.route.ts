@@ -1,38 +1,23 @@
-import { Router } from "express";
+import { Router } from 'express';
 
-import userController from "./user.controller";
-import auth from "../../middlewares/auth";
-import { EUserRole } from "./user.interface";
+import userController from './user.controller';
+import auth from '../../middlewares/auth';
+import { EUserRole } from './user.interface';
 
-const router = Router()
+const router = Router();
 
+router.get('/students', userController.getStudents);
 
+router.get('/librarians', userController.getLibrarians);
 
-router.get("/students",userController.getStudents)
+router.get('/administrators', userController.getAdministrators);
 
+router.patch('/:id/status', userController.changeUserStatus);
 
+router.delete('/:id', userController.softDeleteUser);
 
-router.get("/librarians",userController.getLibrarians)
+router.put('/my', auth(...Object.values(EUserRole)), userController.updateMyProfile);
 
+const userRouter = router;
 
-
-router.get("/administrators",userController.getAdministrators)
-
-
-
-router.patch("/:id/status",userController.changeUserStatus)
-
-
-router.delete("/:id",userController.softDeleteUser)
-
-
-
-router.put("/my",auth(...Object.values(EUserRole)),userController.updateMyProfile)
-
-
-
-
-const userRouter =  router
-
-
-export default userRouter
+export default userRouter;

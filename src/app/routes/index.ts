@@ -8,6 +8,7 @@ import followRouter from '../modules/Follow/follow.route';
 import systemSettingRouter from '../modules/SystemSetting/system-setting.route';
 import genreRouter from '../modules/Genre/genre.route';
 import userRouter from '../modules/User/user.route';
+import notificationRouter from '../modules/Notification/notification.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -25,8 +26,8 @@ const moduleRoutes: TModuleRoutes = [
     router: managementAccountRegistrationRequestRouter,
   },
   {
-    path:'/users',
-    router:userRouter
+    path: '/users',
+    router: userRouter,
   },
   {
     path: '/departments',
@@ -44,7 +45,10 @@ const moduleRoutes: TModuleRoutes = [
     path: '/genres',
     router: genreRouter,
   },
-
+  {
+    path: '/notifications',
+    router: notificationRouter,
+  },
   {
     path: '/system-settings',
     router: systemSettingRouter,

@@ -276,21 +276,17 @@ class UserService {
   }
 
   async updateMyProfileIntoDB(authUser: IAuthUser, payload: TUpdateMyProfilePayload) {
-    const role =  authUser.role
-    if(role === EUserRole.STUDENT){
-      userValidation.updateStudentProfile.parse(payload)
+    const role = authUser.role;
+    if (role === EUserRole.STUDENT) {
+      userValidation.updateStudentProfile.parse(payload);
 
-     return await Student.findByIdAndUpdate(authUser.profileId,payload,{new:true})
-
-    }
-    else if(role === EUserRole.LIBRARIAN) {
-     userValidation.updateLibrarianProfile.parse(payload)
-     return await Librarian.findByIdAndUpdate(authUser.profileId,payload,{new:true})
-
-    }
-    else {
-      userValidation.updateAdministratorProfile.parse(payload)
-      return await Administrator.findByIdAndUpdate(authUser.profileId,payload,{new:true})
+      return await Student.findByIdAndUpdate(authUser.profileId, payload, { new: true });
+    } else if (role === EUserRole.LIBRARIAN) {
+      userValidation.updateLibrarianProfile.parse(payload);
+      return await Librarian.findByIdAndUpdate(authUser.profileId, payload, { new: true });
+    } else {
+      userValidation.updateAdministratorProfile.parse(payload);
+      return await Administrator.findByIdAndUpdate(authUser.profileId, payload, { new: true });
     }
   }
 }

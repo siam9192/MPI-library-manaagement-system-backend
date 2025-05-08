@@ -91,7 +91,7 @@ const updateAdministratorProfile = z
   .partial();
 
 export default {
- updateStudentProfile,
- updateLibrarianProfile,
- updateAdministratorProfile
+  updateStudentProfile,
+  updateLibrarianProfile,
+  updateAdministratorProfile,
 };
