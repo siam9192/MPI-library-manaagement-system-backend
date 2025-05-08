@@ -20,7 +20,7 @@ const GenreModelSchema = new Schema<IGenre>(
     status: {
       type: String,
       enum: Object.values(EGenreStatus),
-      default:EGenreStatus.ACTIVE
+      default: EGenreStatus.ACTIVE,
     },
   },
   {

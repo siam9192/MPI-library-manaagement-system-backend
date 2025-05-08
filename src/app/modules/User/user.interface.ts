@@ -1,4 +1,5 @@
 import { IModelNecessaryFields } from '../../types/model.type';
+import { EAdministratorLevel } from '../Administrator/administrator.interface';
 
 export interface IUser extends IModelNecessaryFields {
   email: string;
@@ -25,4 +26,10 @@ export enum EUserStatus {
   ACTIVE = 'active',
   BLOCKED = 'blocked',
   DELETED = 'deleted',
+}
+
+export interface IRoleBaseUsersFilterPayload {
+  searchTerm?: string;
+  status?: EUserStatus;
+  level?:EAdministratorLevel
 }

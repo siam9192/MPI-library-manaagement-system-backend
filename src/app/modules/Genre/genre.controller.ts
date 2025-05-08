@@ -80,5 +80,4 @@ class GenreController {
   });
 }
 
-
-export default new GenreController()
+export default new GenreController();
