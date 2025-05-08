@@ -1,7 +1,7 @@
 import { model, Schema } from 'mongoose';
 import { EGender } from '../../types/model.type';
 import { ILibrarian } from './librarian.interface';
-import { ContactInfoSchema, PermissionSchema } from '../../schemas';
+import { ContactInfoSchema } from '../../schemas';
 
 const LibrarianModelSchema = new Schema<ILibrarian>(
   {

@@ -1,8 +1,13 @@
 import { z } from 'zod';
 import { calculatePagination } from '../../helpers/paginationHelper';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
 import { Student } from '../Student/student.model';
-import { EUserRole, EUserStatus, IRoleBaseUsersFilterPayload } from './user.interface';
+import {
+  EUserRole,
+  EUserStatus,
+  IRoleBaseUsersFilterPayload,
+  TUpdateMyProfilePayload,
+} from './user.interface';
 import { Types } from 'mongoose';
 import { objectId } from '../../helpers';
 import Librarian from '../Librarian/librarian.model';
@@ -10,10 +15,9 @@ import Administrator from '../Administrator/administrator.model';
 import User from './user.model';
 import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
+import userValidation from './user.validation';
 
 class UserService {
-
-  
   async getStudentsFromDB(
     filterPayload: IRoleBaseUsersFilterPayload,
     paginationOptions: IPaginationOptions
@@ -140,7 +144,7 @@ class UserService {
     filterPayload: IRoleBaseUsersFilterPayload,
     paginationOptions: IPaginationOptions
   ) {
-    const { searchTerm,status,...otherFilters } = filterPayload;
+    const { searchTerm, status, ...otherFilters } = filterPayload;
     const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
     //  Initialize filter with active status
@@ -221,13 +225,13 @@ class UserService {
       });
     }
 
-    const data =  {
-        profile,
-        userMetaData:user
-    }
+    const data = {
+      profile,
+      userMetaData: user,
+    };
   }
- 
-  async changeUserStatusIntoDB (id:string,payload:{status:EUserStatus}){
+
+  async changeUserStatusIntoDB(id: string, payload: { status: EUserStatus }) {
     const { status } = payload;
     // Prevent setting status to DELETED via this method
     if (status === EUserStatus.DELETED) {
@@ -238,7 +242,7 @@ class UserService {
     }
 
     // Find the author
-    const user = await User.findOne({_id:objectId(id),status:EUserStatus.DELETED});
+    const user = await User.findOne({ _id: objectId(id), status: EUserStatus.DELETED });
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
@@ -251,7 +255,44 @@ class UserService {
     );
   }
 
+  async softDeleteUserIntoDB(id: string) {
+    // Find the author
+    const user = await User.findById(id);
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
 
+    // Prevent deleting an already deleted author
+    if (user.status === EUserStatus.DELETED) {
+      throw new AppError(httpStatus.FORBIDDEN, 'This author is already deleted');
+    }
+
+    // Soft delete: Set the status to DELETED
+    return await User.findByIdAndUpdate(
+      id,
+      { status: EUserStatus.DELETED },
+      { new: true } // return the updated document
+    );
+  }
+
+  async updateMyProfileIntoDB(authUser: IAuthUser, payload: TUpdateMyProfilePayload) {
+    const role =  authUser.role
+    if(role === EUserRole.STUDENT){
+      userValidation.updateStudentProfile.parse(payload)
+
+     return await Student.findByIdAndUpdate(authUser.profileId,payload,{new:true})
+
+    }
+    else if(role === EUserRole.LIBRARIAN) {
+     userValidation.updateLibrarianProfile.parse(payload)
+     return await Librarian.findByIdAndUpdate(authUser.profileId,payload,{new:true})
+
+    }
+    else {
+      userValidation.updateAdministratorProfile.parse(payload)
+      return await Administrator.findByIdAndUpdate(authUser.profileId,payload,{new:true})
+    }
+  }
 }
 
-export default UserService
+export default new UserService();

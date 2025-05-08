@@ -1,7 +1,6 @@
 import { Types } from 'mongoose';
-import { IModelNecessaryFields, TGender } from '../../types/model.type';
+import { IModelNecessaryFields, TContactInfo, TGender } from '../../types/model.type';
 import { IUser } from '../User/user.interface';
-import { TContactInfo, TPermission } from '../../types';
 
 export interface ILibrarian extends IModelNecessaryFields {
   user: Types.ObjectId | IUser;
@@ -11,12 +10,3 @@ export interface ILibrarian extends IModelNecessaryFields {
   about: string;
   contactInfo: TContactInfo;
 }
-
-export type TLibrarianPermissions = {
-  books: TPermission;
-  students: TPermission;
-  librarians: TPermission;
-  admins: TPermission;
-  systemSettings: TPermission;
-  reports: TPermission;
-};

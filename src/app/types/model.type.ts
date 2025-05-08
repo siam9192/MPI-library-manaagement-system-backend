@@ -21,7 +21,7 @@ export interface IModelNecessaryFields extends TModelTimeStamps {
 export type TUserAddress = {
   present?: TAddress;
   permanent?: TAddress;
-  currentIsPresent?: boolean;
+  presentIsPermanent?: boolean;
 };
 
 export type TAddress = {
@@ -29,4 +29,9 @@ export type TAddress = {
   city: string;
   district: string;
   country: string;
+};
+
+export type TContactInfo = {
+  emailAddress: string;
+  phoneNumber: string;
 };

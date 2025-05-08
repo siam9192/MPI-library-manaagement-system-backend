@@ -1,7 +1,11 @@
 import { Types } from 'mongoose';
-import { IModelNecessaryFields, TGender, TModelTimeStamps } from '../../types/model.type';
+import {
+  IModelNecessaryFields,
+  TGender,
+  TModelTimeStamps,
+  TUserAddress,
+} from '../../types/model.type';
 import { IUser } from '../User/user.interface';
-import { TUserAddress } from '../../type';
 
 export interface IStudent extends IModelNecessaryFields {
   user: Types.ObjectId | IUser;

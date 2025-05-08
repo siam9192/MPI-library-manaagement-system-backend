@@ -1,3 +1,4 @@
+import { ILibrarian, IStudent } from '../../type';
 import { IModelNecessaryFields } from '../../types/model.type';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
 
@@ -31,5 +32,22 @@ export enum EUserStatus {
 export interface IRoleBaseUsersFilterPayload {
   searchTerm?: string;
   status?: EUserStatus;
-  level?:EAdministratorLevel
+  level?: EAdministratorLevel;
 }
+
+export type TUpdateMyProfilePayload =
+  | TUpdateStudentProfile
+  | TUpdateLibrarianProfile
+  | TUpdateLibrarianProfile;
+
+export type TUpdateStudentProfile = Partial<
+  Pick<IStudent, 'fullName' | 'gender' | 'profilePhotoUrl' | 'phoneNumber' | 'address'>
+>;
+
+export type TUpdateLibrarianProfile = Partial<
+  Pick<ILibrarian, 'fullName' | 'gender' | 'about' | 'contactInfo'>
+>;
+
+export type TUpdateAdministratorProfile = Partial<
+  Pick<ILibrarian, 'fullName' | 'gender' | 'contactInfo'>
+>;

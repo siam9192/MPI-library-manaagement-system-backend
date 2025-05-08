@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { TContactInfo, TPermission } from '../types';
+import { TContactInfo } from '../types/model.type';
 
 const AddressSchema = new Schema(
   {
@@ -12,9 +12,9 @@ const AddressSchema = new Schema(
 ); // No separate _id for subdocument
 
 export const UserAddressSchema = new Schema({
-  present: { type: AddressSchema, required: false },
-  permanent: { type: AddressSchema, required: false },
-  currentIsPresent: { type: Boolean, default: false },
+  present: { type: AddressSchema, required: true },
+  permanent: { type: AddressSchema, default: null },
+  presentIsPermanent: { type: Boolean, default: false },
 });
 
 export const ContactInfoSchema = new Schema<TContactInfo>({
@@ -28,21 +28,6 @@ export const ContactInfoSchema = new Schema<TContactInfo>({
     type: String,
     minLength: 3,
     maxLength: 11,
-    required: true,
-  },
-});
-
-export const PermissionSchema = new Schema<TPermission>({
-  read: {
-    type: Boolean,
-    required: true,
-  },
-  write: {
-    type: Boolean,
-    required: true,
-  },
-  delete: {
-    type: Boolean,
     required: true,
   },
 });

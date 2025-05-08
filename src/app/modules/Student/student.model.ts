@@ -57,11 +57,7 @@ const StudentModelSchema = new Schema<IStudent>(
     },
     address: {
       type: UserAddressSchema,
-      default: {
-        present: null,
-        permanent: null,
-        currentIsPresent: false,
-      },
+      default: null,
     },
     reputationIndex: {
       type: Number,
