@@ -9,6 +9,7 @@ import systemSettingRouter from '../modules/SystemSetting/system-setting.route';
 import genreRouter from '../modules/Genre/genre.route';
 import userRouter from '../modules/User/user.route';
 import notificationRouter from '../modules/Notification/notification.route';
+import bookRouter from '../modules/Book/book.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -44,6 +45,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/genres',
     router: genreRouter,
+  },
+  {
+    path: '/books',
+    router: bookRouter,
   },
   {
     path: '/notifications',

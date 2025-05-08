@@ -7,6 +7,7 @@ export interface IGenre extends TModelTimeStamps {
   name: string;
   slug: string;
   imageUrl?: string;
+  booksCount?: number;
   status: TGenreStatus;
 }
 

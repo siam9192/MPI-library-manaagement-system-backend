@@ -1,30 +1,63 @@
 import { z } from 'zod';
-import { EBookStatus } from './book.interface';
 
-const CreateBookValidation = z.object({
+import { EBookCopyCondition } from '../BookCopy/book-copy.interface';
+import { Types } from 'mongoose';
+
+const createBook = z.object({
   name: z.string().trim().nonempty({ message: 'Book name is required.' }),
 
-  coverPhotoUrl: z.string().url({ message: 'Cover photo URL must be a valid URL.' }),
+  coverPhotoUrl: z.string().url({ message: 'Cover photo URL must be valid.' }),
 
-  genre: z.string().nonempty({ message: 'Genre ID is required.' }),
-
-  author: z.string().nonempty({ message: 'Author ID is required.' }),
-
-  shelfLocation: z
+  genreId: z
     .string()
-    .min(3, { message: 'Shelf location must be at least 3 characters long.' })
-    .max(20, { message: 'Shelf location must not exceed 20 characters.' }),
-  availableCopies: z
-    .number({ invalid_type_error: 'Available copies must be a number.' })
-    .nonnegative({ message: 'Available copies cannot be negative.' }),
-  status: z.nativeEnum(EBookStatus).optional(),
+    .nonempty({ message: 'Genre is required.' })
+    .refine((val) => Types.ObjectId.isValid(val), {
+      message: 'Invalid genreId.',
+    }),
+
+  authorId: z
+    .string()
+    .nonempty({ message: 'Author is required.' })
+    .refine((val) => Types.ObjectId.isValid(val), {
+      message: 'Invalid authorId.',
+    }),
+
+  copies: z
+    .array(
+      z.object({
+        shelfLocation: z
+          .string({ required_error: 'Shelf location is required.' })
+          .nonempty('Shelf location is required.')
+          .min(1, 'Shelf location must be at least 1 character.')
+          .max(30, 'Shelf location must be at most 30 characters.'),
+        condition: z.nativeEnum(EBookCopyCondition, {
+          message: `Invalid condition. Must be one of: ${Object.values(EBookCopyCondition).join(', ')}.`,
+        }),
+      })
+    )
+    .min(1, 'At least 1 book copy is required'),
 });
 
-const UpdateBookValidation = CreateBookValidation.partial();
+const updateBook = z
+  .object({
+    name: z.string().trim().nonempty({ message: 'Book name is required.' }),
+    coverPhotoUrl: z.string().url({ message: 'Cover photo URL must be valid.' }),
+    genre: z
+      .string()
+      .nonempty({ message: 'Genre is required.' })
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: 'Invalid genreId.',
+      }),
+    author: z
+      .string()
+      .nonempty({ message: 'Author is required.' })
+      .refine((val) => Types.ObjectId.isValid(val), {
+        message: 'Invalid authorId.',
+      }),
+  })
+  .partial();
 
-const BookValidations = {
-  CreateBookValidation,
-  UpdateBookValidation,
+export default {
+  createBook,
+  updateBook,
 };
-
-export default BookValidations;

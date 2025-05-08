@@ -17,6 +17,10 @@ const GenreModelSchema = new Schema<IGenre>(
       type: String,
       default: null,
     },
+    booksCount: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: Object.values(EGenreStatus),

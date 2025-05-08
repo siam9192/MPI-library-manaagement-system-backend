@@ -1,26 +1,17 @@
 import { Router } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
-import BookValidations from './book.validation';
-import BookControllers from './book.controller';
+import bookValidation from './book.validation';
+import bookController from './book.controller';
 
 const router = Router();
 
-router.post('/', validateRequest(BookValidations.CreateBookValidation), BookControllers.createBook);
+router.post('/', validateRequest(bookValidation.createBook), bookController.createBook);
+router.put('/',validateRequest(bookValidation.updateBook),bookController.updateBook)
+router.patch('/:id/status',bookController.changeBookStatus)
+router.get('/',bookController.getBooks)
+router.get('/:id',bookController.getBooks)
+router.get('/public',bookController.getPublicBooks)
+router.get('/public/:id',bookController.getPublicBookById)
+const bookRouter = router;
 
-router.put(
-  '/:id',
-  validateRequest(BookValidations.UpdateBookValidation),
-  BookControllers.updateBook
-);
-
-router.delete('/:id', BookControllers.deleteBook);
-
-router.get('/', BookControllers.getBooks);
-
-router.get('/manage', BookControllers.getBooksForManage);
-
-router.get('/:id', BookControllers.getBook);
-
-const BookRouter = router;
-
-export default BookRouter;
+export default bookRouter;

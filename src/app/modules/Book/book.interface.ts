@@ -1,51 +1,49 @@
 import { Types } from 'mongoose';
-import { TModelTimeStamps } from '../../types/model.type';
+import { IBookCopy } from '../BookCopy/book-copy.interface';
 
-export interface IBook extends TModelTimeStamps {
+export interface IBook {
   _id: Types.ObjectId;
   name: string;
   coverPhotoUrl: string;
   genre: Types.ObjectId;
   author: Types.ObjectId;
-  shelfLocation: string;
-  availableCopies: number;
   avgRating: number;
-  reviewCount: number;
-  wishListedCount: number;
-  exceptedAvailableDate?: Date;
-  status: TBookStatus;
+  count: {
+    totalCopies: number;
+    availableCopies: number;
+    wishlistedCount: number;
+    reviews: number;
+  };
+  expectedAvailableDate?: Date;
+  status: EBookStatus;
   index: number;
 }
-
-type TBookStatus = `${EBookStatus}`;
+export type TBookStatus = `${EBookStatus}`;
 
 export enum EBookStatus {
-  ACTIVE = 'Active',
-  INACTIVE = 'Inactive',
-  DELETED = 'Deleted',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DELETED = 'deleted',
 }
 
 export interface ICreateBookPayload {
   name: string;
   coverPhotoUrl: string;
+  genreId: string;
+  authorId: string;
+  copies: Pick<IBookCopy, 'condition' | 'shelfLocation'>[];
+}
+
+export interface IUpdateBookPayload {
+  name: string;
+  coverPhotoUrl: string;
   genre: string;
   author: string;
-  shelfLocation: string;
-  availableCopies: number;
-  status?: TBookStatus;
 }
 
-export interface IUpdateBookPayload extends Partial<ICreateBookPayload> {}
-
-export interface IBooksFilterData {
+export interface IBooksFilterPayload {
   searchTerm?: string;
   genreIds?: string;
   authorIds?: string;
-}
-
-export interface IManageBooksFilterData {
-  searchTerm?: string;
-  genreIds?: string;
-  authorIds?: string;
-  status: string;
+  status?: string;
 }

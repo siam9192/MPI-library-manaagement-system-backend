@@ -53,5 +53,4 @@ class NotificationController {
   });
 }
 
-
-export default new  NotificationController()
+export default new NotificationController();
