@@ -19,7 +19,20 @@ export enum EBookCopyStatus {
   AVAILABLE = 'available',
   CHECKED_OUT = 'checked_out',
   RESERVED = 'reserved',
-  Lost = 'lost',
+  LOST = 'lost',
   DAMAGED = 'damaged',
-  DISCARDED = 'discarded',
+  DELETED = 'deleted',
+}
+
+
+export  interface ICreateBookCopyPayload {
+  bookId:string,
+  shelfLocation:string,
+  condition:EBookCopyCondition
+}
+
+
+export interface IUpdateBookCopyPayload {
+  shelfLocation:string,
+  condition:EBookCopyCondition
 }
