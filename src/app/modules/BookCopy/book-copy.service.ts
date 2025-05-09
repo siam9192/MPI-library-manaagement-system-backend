@@ -26,18 +26,19 @@ class BookCopyService  {
          }],{session})
 
         await Book.updateOne({_id:objectId(payload.bookId)},{
-            $inc:{
-               count:{
-                totalCopies:1,
-                availableCopies:1
-               }
+          
+             $inc:{
+              "count.totalCopies":1,
+              "count.availableCopies":1
             }
+           
         },{session})
 
         await session.commitTransaction()
         return createdCopy
 
        } catch (error) {
+        console.log(error)
         await session.abortTransaction()
         throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,"Internal server error!.Book copy could not be created")
        }
@@ -47,7 +48,8 @@ class BookCopyService  {
        }
     }
 
-    async updateCopyIntoDB (id:string,payload:IUpdateBookCopyPayload) {
+    async updateBookCopyIntoDB (id:string,payload:IUpdateBookCopyPayload) {
+      
      const copy = await BookCopy.findOne({
         _id:objectId(id),
         status:{

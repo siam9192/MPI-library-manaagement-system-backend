@@ -16,7 +16,7 @@ class BookController {
     });
   });
   updateBook = catchAsync(async (req, res) => {
-    const result = await bookService.createBookIntoDB(req.body);
+    const result = await bookService.updateBookIntoDB(req.params.id,req.body);
     sendSuccessResponse(res, {
       message: 'Book  updated successfully',
       statusCode: httpStatus.OK,

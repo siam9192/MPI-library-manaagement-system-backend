@@ -15,9 +15,9 @@ class BookController {
       });
 
      updateBookCopy = catchAsync(async (req, res) => {
-        const result = await bookCopyService.updateCopyIntoDB (req.params.id,req.body);
+        const result = await bookCopyService.updateBookCopyIntoDB (req.params.id,req.body);
         sendSuccessResponse(res, {
-          message: 'Book copy created successfully',
+          message: 'Book copy updated successfully',
           statusCode: httpStatus.OK,
           data: result,
         });

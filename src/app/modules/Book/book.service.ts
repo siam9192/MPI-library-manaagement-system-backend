@@ -301,11 +301,9 @@ class BookService {
       );
     }
 
-    // Find the author
-    const book = await Book.findById({ _id: objectId(id), status: { $ne: EBookStatus.DELETED } });
-    if (!book) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
-    }
+   const book =  await Book.findOne({_id:objectId(id),status:{$ne:EBookStatus.DELETED}})
+    if(!book) throw new AppError(httpStatus.NOT_FOUND,"Book  not found")
+
     // Perform the status update
     return await Author.findByIdAndUpdate(
       id,
@@ -313,8 +311,9 @@ class BookService {
       { new: true } // return the updated document
     );
   }
+
   async  softDeleteBookFromDB (id:string){
-    const book =  await Book.findOne({_id:objectId(id),status:EBookStatus.DELETED})
+    const book =  await Book.findOne({_id:objectId(id),status:{$ne:EBookStatus.DELETED}})
     if(!book) throw new AppError(httpStatus.NOT_FOUND,"Book  not found")
     const copyExist = await BookCopy.findOne({
      book:objectId(id),

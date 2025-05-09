@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { EBookCopyCondition } from '../BookCopy/book-copy.interface';
 import { Types } from 'mongoose';
+import { EBookStatus } from './book.interface';
 
 const createBook = z.object({
   name: z.string().trim().nonempty({ message: 'Book name is required.' }),
@@ -57,7 +58,12 @@ const updateBook = z
   })
   .partial();
 
+  const changeBookStatus = z.object({
+    status:z.enum([EBookStatus.ACTIVE,EBookStatus.INACTIVE],{message:`Invalid status!.Status must be in ${[EBookStatus.ACTIVE,EBookStatus.INACTIVE].join(',')} `})
+  })
+
 export default {
   createBook,
   updateBook,
+  changeBookStatus
 };

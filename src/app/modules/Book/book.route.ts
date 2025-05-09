@@ -6,8 +6,8 @@ import bookController from './book.controller';
 const router = Router();
 
 router.post('/', validateRequest(bookValidation.createBook), bookController.createBook);
-router.put('/',validateRequest(bookValidation.updateBook),bookController.updateBook)
-router.patch('/:id/status',bookController.changeBookStatus)
+router.put('/:id',validateRequest(bookValidation.updateBook),bookController.updateBook)
+router.patch('/:id/status',validateRequest(bookValidation.changeBookStatus),bookController.changeBookStatus)
 router.delete('/:id',bookController.softDeleteBook)
 router.get('/',bookController.getBooks)
 router.get('/:id',bookController.getBooks)

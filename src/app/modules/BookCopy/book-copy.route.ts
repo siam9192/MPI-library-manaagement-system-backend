@@ -10,7 +10,7 @@ router.post("/",validateRequest(bookCopyValidation.createBookCopy),bookCopyContr
 
 
 
-router.put("/",validateRequest(bookCopyValidation.updateBookCopy),bookCopyController.updateBookCopy)
+router.put("/:id",validateRequest(bookCopyValidation.updateBookCopy),bookCopyController.updateBookCopy)
 
 
 
