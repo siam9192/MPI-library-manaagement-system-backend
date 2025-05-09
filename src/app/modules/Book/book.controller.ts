@@ -76,6 +76,14 @@ class BookController {
     });
   });
 
+ softDeleteBook = catchAsync(async (req, res) => {
+    const result = await bookService.softDeleteBookFromDB(req.params.id);
+    sendSuccessResponse(res, {
+      message: 'Book deleted successfully',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
+  });
 
 }
 

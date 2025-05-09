@@ -15,6 +15,7 @@ import { startSession } from 'mongoose';
 import { IPaginationOptions } from '../../types';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import { isValidObjectId, objectId } from '../../helpers';
+import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 
 class BookService {
   async createBookIntoDB(payload: ICreateBookPayload) {
@@ -311,6 +312,45 @@ class BookService {
       { status },
       { new: true } // return the updated document
     );
+  }
+  async  softDeleteBookFromDB (id:string){
+    const book =  await Book.findOne({_id:objectId(id),status:EBookStatus.DELETED})
+    if(!book) throw new AppError(httpStatus.NOT_FOUND,"Book  not found")
+    const copyExist = await BookCopy.findOne({
+     book:objectId(id),
+     status:{
+      $in:[EBookCopyStatus.CHECKED_OUT,EBookCopyStatus.RESERVED]
+     }
+    })
+
+    // Check If any copy of this book is RESERVED or In checkout 
+    if(copyExist){
+    throw new AppError(httpStatus.FORBIDDEN, "Book could not be delete because  Book already has a copy that is in checkout or reserved");
+    }
+
+    const session = await startSession()
+    session.startTransaction()
+
+   try {
+    // Set book status as  DELETED 
+    await Book.updateOne({_id:book._id},{status:EBookStatus.DELETED}
+    )
+    // decrease  author books count -1
+    await Author.updateOne({_id:book.author},{$inc:{'count.books':-1}})
+      // decrease genre books count -1
+    await Genre.updateOne({_id:book.genre},{$inc:{booksCount:-1}})
+    // After all success of all operation save them 
+    await session.commitTransaction()
+   } catch (error) {
+     await session.abortTransaction()
+     throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,"Internal server error!.Book deletion failed")
+   }
+
+   finally{
+    await session.endSession()
+   }
+
+    return null
   }
 }
 
