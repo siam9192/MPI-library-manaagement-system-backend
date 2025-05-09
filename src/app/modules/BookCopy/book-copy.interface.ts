@@ -24,15 +24,13 @@ export enum EBookCopyStatus {
   DELETED = 'deleted',
 }
 
-
-export  interface ICreateBookCopyPayload {
-  bookId:string,
-  shelfLocation:string,
-  condition:EBookCopyCondition
+export interface ICreateBookCopyPayload {
+  bookId: string;
+  shelfLocation: string;
+  condition: EBookCopyCondition;
 }
 
-
 export interface IUpdateBookCopyPayload {
-  shelfLocation:string,
-  condition:EBookCopyCondition
+  shelfLocation: string;
+  condition: EBookCopyCondition;
 }

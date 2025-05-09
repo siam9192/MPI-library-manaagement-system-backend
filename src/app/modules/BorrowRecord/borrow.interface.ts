@@ -1,24 +1,19 @@
 import { Types } from 'mongoose';
 import { IModelNecessaryFields } from '../../types/model.type';
 
-export interface IBorrow extends IModelNecessaryFields {
-  request: Types.ObjectId;
-  handedOveredBy: Types.ObjectId;
-  collectedBy?: Types.ObjectId;
+export interface IBorrowRecord extends IModelNecessaryFields {
   book: Types.ObjectId;
   student: Types.ObjectId;
-  expectedReturnDate: Date;
-  actualReturnDate?: Date;
-  returnStatus?: TReturnStatus;
-  status: TBorrowStatus;
+  dueDate: Date;
+  returnDate: Date;
+  status: EBorrowRecordStatus;
 }
 
-export type TBorrowStatus = `${EBorrowStatus}`;
-
-export enum EBorrowStatus {
-  ONGOING = 'Ongoing',
-  OVERDUE = 'Overdue',
-  RETURNED = 'Returned',
+export enum EBorrowRecordStatus {
+  ONGOING = 'ongoing',
+  RETURNED = 'returned',
+  OVERDUE = 'overdue',
+  LOST = 'lost',
 }
 
 export type TReturnStatus = `${EReturnStatus}`;

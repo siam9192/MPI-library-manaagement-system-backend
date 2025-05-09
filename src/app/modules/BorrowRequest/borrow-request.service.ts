@@ -1,244 +1,517 @@
 import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { generateSecret, objectId } from '../../helpers';
+import { formatSecret, generateChar, objectId } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
-import { EBookStatus, IBooksFilterData } from '../Book/book.interface';
+import { EBookStatus } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import Reservation from '../Reservation/reservation.model';
 
 import {
   EBorrowRequestStatus,
   IApproveBorrowRequestPayload,
+  IBorrowRequestsFilterPayload,
   ICreateBorrowRequestPayload,
-  IManageBorrowRequestsFiltersData,
 } from './borrow-request.interface';
+import crypto from 'crypto';
+import systemSettingService from '../SystemSetting/system-setting.service';
 import BorrowRequest from './borrow-request.model';
-import { bcryptHash } from '../../helpers/bycryptHelpers';
-import jwtHelpers from '../../helpers/jwtHelpers';
-import envConfig from '../../config/env.config';
+import BorrowRecord from '../BorrowRecord/borrow.model';
+import { EBorrowRecordStatus } from '../BorrowRecord/borrow.interface';
+import { Student } from '../Student/student.model';
+import { z } from 'zod';
+import BookCopy from '../BookCopy/book-copy.model';
+import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
+import { EReservationStatus } from '../../type';
 
-const createBorrowRequestIntoDB = async (
-  authUser: IAuthUser,
-  payload: ICreateBorrowRequestPayload
-) => {
-  // Find the book and make sure it's active
-  const book = await Book.findOne({
-    _id: objectId(payload.bookId),
-    status: EBookStatus.ACTIVE,
-  });
+class BorrowRequestService {
+  async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
+    // Find the book and make sure it's active
+    const book = await Book.findOne({
+      _id: objectId(payload.bookId),
+      status: EBookStatus.ACTIVE,
+    });
 
-  if (!book) {
-    throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
-  }
-
-  // Set the expire date to 7 days from now
-  const expireAt = new Date();
-  expireAt.setDate(expireAt.getDate() + 7);
-
-  // Create the borrow request
-  const createdRequest = await BorrowRequest.create({
-    student: authUser.profileId,
-    book: payload.bookId,
-    borrowForDays: payload.borrowForDays,
-    expireAt,
-  });
-
-  // Check if creation failed
-  if (!createdRequest) {
-    throw new AppError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Something went wrong while creating the borrow request'
-    );
-  }
-
-  return createdRequest; // (optional) return created data if you need it
-};
-
-const getPendingBorrowRequestsForManageFromDB = async (
-  filterData: IManageBorrowRequestsFiltersData,
-  paginationOptions: IPaginationOptions
-) => {
-  const { roll } = filterData;
-
-  const whereConditions: any = {
-    status: EBorrowRequestStatus.PENDING,
-  };
-  if (roll && !isNaN(parseInt(roll))) {
-    whereConditions.roll = parseInt(roll);
-  }
-
-  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-
-  const requests = await BorrowRequest.find(whereConditions)
-    .skip(skip)
-    .limit(limit)
-    .sort({
-      [sortBy]: sortOrder,
-    })
-    .populate(['student', 'book']);
-
-  const totalResult = await BorrowRequest.countDocuments(whereConditions);
-
-  const meta = {
-    page,
-    limit,
-    totalResult,
-  };
-
-  return {
-    data: requests,
-    meta,
-  };
-};
-
-const getMyBorrowRequestsFromDB = async (
-  authUser: IAuthUser,
-  paginationOptions: IPaginationOptions
-) => {
-  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-
-  const whereConditions: any = {
-    student: objectId(authUser.profileId),
-  };
-  const requests = await BorrowRequest.find(whereConditions)
-    .skip(skip)
-    .limit(limit)
-    .sort({
-      [sortBy]: sortOrder,
-    })
-    .populate(['student', 'book']);
-
-  const totalResult = await BorrowRequest.countDocuments(whereConditions);
-
-  const meta = {
-    page,
-    limit,
-    totalResult,
-  };
-
-  return {
-    data: requests,
-    meta,
-  };
-};
-
-const approveBorrowRequest = async (id: string, payload: IApproveBorrowRequestPayload) => {
-  const request = await BorrowRequest.findById(id);
-  if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
-
-  switch (request.status) {
-    case EBorrowRequestStatus.APPROVED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
-
-    case EBorrowRequestStatus.REJECTED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Rejected');
-    case EBorrowRequestStatus.CANCELED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already canceled');
-
-    case EBorrowRequestStatus.EXPIRED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
-  }
-
-  const session = await startSession();
-  session.startTransaction();
-
-  try {
-    const borrowRequestUpdate = await BorrowRequest.updateOne(
-      {
-        _id: objectId(id),
-        status: EBorrowRequestStatus.APPROVED,
-      },
-      { session: session }
-    );
-
-    if (!borrowRequestUpdate.modifiedCount) {
-      throw new Error();
+    // Check is book exist
+    if (!book) {
+      throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
     }
 
-    const secret = generateSecret(100);
-    const hashedSecret = await bcryptHash(secret);
+    const systemSettings = await systemSettingService.getCurrentSettings();
 
-    const reservation = await Reservation.create([
-      {
-        book: request.book,
-        qty: 1,
-        request: id,
-        secret: hashedSecret,
-        expiredAt: new Date(payload.expireDate),
+    const ongoingBorrowExist = await BorrowRecord.find({
+      student: objectId(authUser.profileId),
+      status: {
+        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
       },
-    ]);
+    });
 
-    // Throw error if reservation not created
-    if (!reservation[0]) {
-      throw new Error();
+    // Check is student already have maximum active borrows
+    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `Borrow request failed!.Requester Already have  ${ongoingBorrowExist} active borrows `
+      );
     }
 
-    const tokenPayload = {
-      reservationId: reservation[0]._id.toString(),
-      secret: secret,
+    const student = await Student.findById(authUser.profileId);
+
+    if (!student)
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!something went wrong'
+      );
+
+    if (student.reputationIndex < 3) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Request Failed!.Reputation index  too low');
+    }
+
+    // Set the expire date to 7 days from now
+    const expireAt = new Date(new Date().toDateString());
+    expireAt.setDate(expireAt.getDate() + (systemSettings.borrowRequestExpiryDays || 7));
+
+    // Create the borrow request
+    const createdRequest = await BorrowRequest.create({
+      student: authUser.profileId,
+      book: payload.bookId,
+      borrowForDays: payload.borrowForDays,
+      expireAt,
+    });
+
+    // Check if creation failed
+    if (!createdRequest) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Something went wrong while creating the borrow request'
+      );
+    }
+
+    return createdRequest; // (optional) return created data if you need it
+  }
+
+  async approveBorrowRequest(
+    authUser: IAuthUser,
+    id: string,
+    payload: IApproveBorrowRequestPayload
+  ) {
+    const request = await BorrowRequest.findById(id);
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
+
+    switch (request.status) {
+      case EBorrowRequestStatus.APPROVED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
+
+      case EBorrowRequestStatus.REJECTED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Rejected');
+      case EBorrowRequestStatus.CANCELED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already canceled');
+
+      case EBorrowRequestStatus.EXPIRED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
+    }
+    const copy = await BookCopy.findOne({
+      _id: objectId(payload.copyId),
+      book: request.book,
+    });
+
+    if (!copy) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Book copy  not found');
+    }
+
+    if (copy.status !== EBookCopyStatus.AVAILABLE) {
+      throw new AppError(httpStatus.FORBIDDEN, 'The book copy is not available');
+    }
+
+    const systemSettings = await systemSettingService.getCurrentSettings();
+
+    const ongoingBorrowExist = await BorrowRecord.find({
+      student: objectId(authUser.profileId),
+      status: {
+        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
+      },
+    });
+
+    // Check is student already have maximum active borrows
+    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `Approval failed!.Student Already have maximum   ${ongoingBorrowExist} active borrows `
+      );
+    }
+
+    const student = await Student.findById(request.student);
+
+    if (!student)
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!something went wrong'
+      );
+
+    if (student.reputationIndex < 3) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        'Approval failed!.Student reputation index  too low'
+      );
+    }
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const borrowRequestUpdate = await BorrowRequest.updateOne(
+        {
+          _id: objectId(id),
+          status: EBorrowRequestStatus.APPROVED,
+        },
+        { session: session }
+      );
+
+      if (!borrowRequestUpdate.modifiedCount) {
+        throw new Error();
+      }
+
+      //Generate unique secret
+      let secret = formatSecret(crypto.randomBytes(20).toString());
+      while (await Reservation.findOne({ secret })) {
+        secret = formatSecret(crypto.randomBytes(20).toString());
+      }
+
+      // Set the expire date to 7 days from now
+      const expiryDate = new Date(new Date().toDateString());
+      expiryDate.setDate(expiryDate.getDate() + (systemSettings.reservationExpiryDays || 7));
+
+      const [createdReservation] = await Reservation.create(
+        [
+          {
+            student: request.student,
+            book: request.book,
+            copy: payload.copyId,
+            request: id,
+            expiryDate,
+            secret,
+          },
+        ],
+        { session }
+      );
+
+      // Throw error if reservation not created
+      if (!createdReservation) {
+        throw new Error();
+      }
+
+      // Set librarian id
+      await BorrowRequest.updateOne(
+        { _id: request.id },
+        { processedBy: authUser.profileId },
+        { session }
+      );
+
+      await BookCopy.updateOne(
+        { _id: objectId(payload.copyId) },
+        { status: EBookCopyStatus.RESERVED }
+      );
+
+      await session.commitTransaction();
+      await session.endSession();
+    } catch (error) {
+      await session.abortTransaction();
+      await session.endSession();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Request approval  failed'
+      );
+    }
+
+    return null;
+  }
+  async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
+    const request = await BorrowRequest.findById(id);
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
+
+    switch (request.status) {
+      case EBorrowRequestStatus.APPROVED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
+
+      case EBorrowRequestStatus.REJECTED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Rejected');
+      case EBorrowRequestStatus.CANCELED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already canceled');
+
+      case EBorrowRequestStatus.EXPIRED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
+    }
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const updateStatus = await BorrowRequest.updateOne(
+        {
+          _id: objectId(id),
+        },
+        {
+          status: EBorrowRequestStatus.REJECTED,
+          rejectReason: payload.rejectReason,
+        },
+        { session }
+      );
+
+      if (!updateStatus.modifiedCount) {
+        throw new AppError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Request  could not be  rejected.Something went wrong'
+        );
+      }
+
+      // Set librarian id
+      await BorrowRequest.updateOne(
+        { _id: request.id },
+        { processedBy: authUser.profileId },
+        { session }
+      );
+      await session.commitTransaction();
+      return null;
+    } catch (error) {
+      await session.abortTransaction();
+    } finally {
+      await session.endSession();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Request rejection  failed'
+      );
+    }
+  }
+
+  async cancelBorrowRequest(authUser: IAuthUser, id: string) {
+    const request = await BorrowRequest.findOne({
+      _id: objectId(id),
+      student: objectId(authUser.profileId),
+    });
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
+
+    switch (request.status) {
+      case EBorrowRequestStatus.APPROVED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
+
+      case EBorrowRequestStatus.REJECTED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Rejected');
+      case EBorrowRequestStatus.CANCELED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already canceled');
+
+      case EBorrowRequestStatus.EXPIRED:
+        throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
+    }
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const updateStatus = await BorrowRequest.updateOne(
+        {
+          _id: objectId(id),
+        },
+        {
+          status: EBorrowRequestStatus.CANCELED,
+        },
+        { session }
+      );
+
+      if (!updateStatus.modifiedCount) {
+        throw new AppError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          'Request  could not be  rejected.Something went wrong'
+        );
+      }
+      await session.commitTransaction();
+      return null;
+    } catch (error) {
+      await session.abortTransaction();
+    } finally {
+      await session.endSession();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Request rejection  failed'
+      );
+    }
+  }
+
+  async getBorrowRequestsFromDB(
+    filterPayload: IBorrowRequestsFilterPayload,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { roll, status } = filterPayload;
+
+    const whereConditions: any = {};
+
+    // If roll is provided and is a valid number, apply it
+
+    if (roll) {
+      if (!z.number().int().safeParse(parseInt(roll)).success) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid roll number');
+      }
+      whereConditions['student.roll'] = parseInt(roll);
+    }
+
+    // If status is provided and it'a valid status then applied it
+
+    if (status && Object.values(EBorrowRequestStatus).includes(status)) {
+      whereConditions.status = status;
+    }
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    // Init variables
+    let requests;
+    let totalResult;
+
+    if (roll) {
+      requests = await BorrowRequest.aggregate([
+        {
+          $lookup: {
+            from: 'students',
+            localField: 'student',
+            foreignField: '_id',
+            as: 'student',
+          },
+        },
+        {
+          $unwind: '$student',
+        },
+        {
+          $match: whereConditions,
+        },
+        {
+          $sort: {
+            [sortBy]: sortOrder,
+          },
+        },
+        {
+          $skip: skip,
+        },
+        {
+          $limit: limit,
+        },
+      ]);
+
+      totalResult =
+        (
+          await BorrowRequest.aggregate([
+            {
+              $lookup: {
+                from: 'students',
+                localField: 'student',
+                foreignField: '_id',
+                as: 'student',
+              },
+            },
+            {
+              $unwind: '$student',
+            },
+            {
+              $lookup: {
+                from: 'books',
+                localField: 'book',
+                foreignField: '_id',
+                as: 'book',
+              },
+            },
+            {
+              $unwind: '$book',
+            },
+            {
+              $match: whereConditions,
+            },
+            {
+              $count: 'total',
+            },
+          ])
+        )[0]?.total || 0;
+    } else {
+      requests = await BorrowRequest.find(whereConditions)
+        .skip(skip)
+        .limit(limit)
+        .sort({
+          [sortBy]: sortOrder,
+        })
+        .populate(['student', 'book']);
+      totalResult = await BorrowRequest.countDocuments(whereConditions);
+    }
+
+    const total = await BorrowRequest.countDocuments();
+
+    const meta = {
+      page,
+      limit,
+      totalResult,
+      total,
     };
 
-    const token = jwtHelpers.generateToken(
-      payload,
-      envConfig.jwt.borrowTicketTokenSecret as string,
-      envConfig.jwt.borrowTicketTokenExpireTime as string
-    );
-
-    await session.commitTransaction();
-    await session.endSession();
-  } catch (error) {
-    await session.abortTransaction();
-    await session.endSession();
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Request approve failed');
+    return {
+      data: requests,
+      meta,
+    };
   }
 
-  return null;
-};
+  async getMyBorrowRequestsFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
-const rejectBorrowRequest = async (id: string, payload: { rejectFor: string }) => {
-  const request = await BorrowRequest.findById(id);
-  if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
+    const whereConditions: any = {
+      student: objectId(authUser.profileId),
+    };
+    const requests = await BorrowRequest.find(whereConditions)
+      .skip(skip)
+      .limit(limit)
+      .sort({
+        [sortBy]: sortOrder,
+      })
+      .populate(['student', 'book']);
 
-  switch (request.status) {
-    case EBorrowRequestStatus.APPROVED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
+    const totalResult = await BorrowRequest.countDocuments(whereConditions);
 
-    case EBorrowRequestStatus.REJECTED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Rejected');
-    case EBorrowRequestStatus.CANCELED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already canceled');
+    const meta = {
+      page,
+      limit,
+      totalResult,
+    };
 
-    case EBorrowRequestStatus.EXPIRED:
-      throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
+    return {
+      data: requests,
+      meta,
+    };
   }
 
-  const updateStatus = await BorrowRequest.updateOne(
-    {
+  async getBorrowRequestById(id: string) {
+    const request = await BorrowRequest.findById(id).populate(['book', 'student']);
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Borrow request not found');
+    const totalActiveBorrows = await BorrowRecord.countDocuments({
+      student: request.student._id,
+      status: {
+        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
+      },
+    });
+    const totalReserved = await Reservation.countDocuments({
+      student: request.student._id,
+      status: EReservationStatus.PENDING,
+    });
+
+    const studentMetaData = {
+      totalActiveBorrows,
+      totalReserved,
+    };
+
+    return {
+      ...(request as any)._doc,
+      studentMetaData,
+    };
+  }
+  async getMyBorrowRequestById(authUser: IAuthUser, id: string) {
+    const request = await BorrowRequest.findOne({
       _id: objectId(id),
-    },
-    {
-      status: EBorrowRequestStatus.REJECTED,
-      rejectedFor: payload.rejectFor,
-    }
-  );
-
-  if (!updateStatus.modifiedCount) {
-    throw new AppError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      'Request  could not be  rejected.Something went wrong'
-    );
+      student: objectId(authUser.profileId),
+    }).populate(['book']);
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Borrow request not found');
+    return request;
   }
-  return null;
-};
+}
 
-const BorrowRequestServices = {
-  createBorrowRequestIntoDB,
-  getPendingBorrowRequestsForManageFromDB,
-  getMyBorrowRequestsFromDB,
-  approveBorrowRequest,
-  rejectBorrowRequest,
-};
-
-export default BorrowRequestServices;
+export default new BorrowRequestService();

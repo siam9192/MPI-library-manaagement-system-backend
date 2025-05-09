@@ -32,7 +32,7 @@ export function generateNumericOTP(length = 6) {
   return otp;
 }
 
-export function generateSecret(length = 20): string {
+export function generateChar(length = 20): string {
   let secret = '';
   const source = [
     '1',
@@ -82,4 +82,12 @@ export function generateSecret(length = 20): string {
 
 export function isNumber(value: string) {
   return !isNaN(parseInt(value));
+}
+
+export function formatSecret(secret: string, perChunk = 4) {
+  const step = Math.floor(secret.length / perChunk);
+  const arr = Array.from({ length: step + 1 }, (_, i) =>
+    secret.slice(i * perChunk, i * perChunk + perChunk)
+  ).filter((_) => _);
+  return arr.join('-');
 }

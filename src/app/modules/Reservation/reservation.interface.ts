@@ -1,23 +1,24 @@
 import { Types } from 'mongoose';
-import { TModelTimeStamps } from '../../types/model.type';
+import { IModelNecessaryFields } from '../../types/model.type';
 
-export interface IReservation extends TModelTimeStamps {
-  _id: Types.ObjectId;
+export interface IReservation extends IModelNecessaryFields {
+  student: Types.ObjectId;
   book: Types.ObjectId;
+  copy: Types.ObjectId;
   request: Types.ObjectId;
-  qty: number;
+  expiryDate: Date;
   secret: string;
-  expiredAt: Date;
-  status: TReservationStatus;
+  status: EReservationStatus;
+  processedBy?: Types.ObjectId;
 }
 
 export type TReservationStatus = `${EReservationStatus}`;
 
 export enum EReservationStatus {
-  AWAITING_PICKUP = 'Awaiting_Pickup',
-  HANDED_OVER = 'Handed_Over',
-  HANDOVER_FAILED = 'Handover_Failed',
-  EXPIRED = 'Expired',
+  AWAITING = 'awaiting',
+  FULFILLED = 'fulfilled',
+  CANCELED = 'canceled',
+  EXPIRED = 'EXPIRED',
 }
 
 export interface IGetReservationsFilterData {

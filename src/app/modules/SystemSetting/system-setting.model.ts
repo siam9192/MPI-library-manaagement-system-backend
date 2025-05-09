@@ -6,6 +6,7 @@ const SystemSettingModelSchema: Schema = new Schema<ISystemSetting>(
     maxBorrowDays: { type: Number, required: true },
     maxBorrowItems: { type: Number, required: true },
     lateFeePerDay: { type: Number, required: true },
+    borrowRequestExpiryDays: { type: Number, required: true },
     reservationExpiryDays: { type: Number, required: true },
     studentRegistrationRequestExpiryDays: { type: Number, required: true },
     managementRegistrationRequestExpiryDays: { type: Number, required: true },

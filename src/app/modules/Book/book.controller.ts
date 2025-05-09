@@ -16,7 +16,7 @@ class BookController {
     });
   });
   updateBook = catchAsync(async (req, res) => {
-    const result = await bookService.updateBookIntoDB(req.params.id,req.body);
+    const result = await bookService.updateBookIntoDB(req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Book  updated successfully',
       statusCode: httpStatus.OK,
@@ -25,7 +25,7 @@ class BookController {
   });
 
   changeBookStatus = catchAsync(async (req, res) => {
-    const result = await bookService.changeBookStatusIntoDB(req.params.id,req.body);
+    const result = await bookService.changeBookStatusIntoDB(req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Book status changed successfully',
       statusCode: httpStatus.OK,
@@ -44,10 +44,9 @@ class BookController {
     });
   });
 
-
   getBooks = catchAsync(async (req, res) => {
     const paginationOptions = paginationOptionPicker(req.query);
-    const filterPayload= Pick(req.query, ['searchTerm', 'genreIds', 'authorIds', 'status']);
+    const filterPayload = Pick(req.query, ['searchTerm', 'genreIds', 'authorIds', 'status']);
     const result = await bookService.getPublicBooksFromDB(filterPayload, paginationOptions);
     sendSuccessResponse(res, {
       message: 'Books retrieved successfully',
@@ -55,7 +54,6 @@ class BookController {
       data: result,
     });
   });
-
 
   getPublicBookById = catchAsync(async (req, res) => {
     const result = await bookService.getPublicBookByIdFromDB(req.params.id);
@@ -66,7 +64,6 @@ class BookController {
     });
   });
 
-
   getBookById = catchAsync(async (req, res) => {
     const result = await bookService.getBookByIdFromDB(req.params.id);
     sendSuccessResponse(res, {
@@ -76,7 +73,7 @@ class BookController {
     });
   });
 
- softDeleteBook = catchAsync(async (req, res) => {
+  softDeleteBook = catchAsync(async (req, res) => {
     const result = await bookService.softDeleteBookFromDB(req.params.id);
     sendSuccessResponse(res, {
       message: 'Book deleted successfully',
@@ -84,7 +81,6 @@ class BookController {
       data: result,
     });
   });
-
 }
 
 export default new BookController();

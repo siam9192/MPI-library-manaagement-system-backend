@@ -1,24 +1,24 @@
 import { Types } from 'mongoose';
-import { TModelTimeStamps } from '../../types/model.type';
+import { IModelNecessaryFields } from '../../types/model.type';
 
-export interface IBorrowRequest extends TModelTimeStamps {
-  _id: Types.ObjectId;
+export interface IBorrowRequest extends IModelNecessaryFields {
   student: Types.ObjectId;
   book: Types.ObjectId;
   borrowForDays: number;
-  rejectedFor?: string;
+  rejectReason?: string;
   expireAt: Date;
-  status: TBorrowRequestStatus;
+  status: EBorrowRequestStatus;
+  processedBy?: Types.ObjectId;
 }
 
 export type TBorrowRequestStatus = `${EBorrowRequestStatus}`;
 
 export enum EBorrowRequestStatus {
-  PENDING = 'Pending',
-  APPROVED = 'Approved',
-  CANCELED = 'Canceled',
-  REJECTED = 'Rejected',
-  EXPIRED = 'Expired',
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  CANCELED = 'canceled',
+  REJECTED = 'rejected',
+  EXPIRED = 'expired',
 }
 
 export interface ICreateBorrowRequestPayload {
@@ -26,10 +26,11 @@ export interface ICreateBorrowRequestPayload {
   borrowForDays: number;
 }
 
-export interface IManageBorrowRequestsFilterPayload {
+export interface IBorrowRequestsFilterPayload {
   roll?: string;
+  status?: EBorrowRequestStatus;
 }
 
 export interface IApproveBorrowRequestPayload {
-  expireDate: Date;
+  copyId: string;
 }

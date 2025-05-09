@@ -1,28 +1,26 @@
-import { Router } from "express";
-import validateRequest from "../../middlewares/validateRequest";
-import bookCopyValidation from "./book-copy.validation";
-import bookCopyController from "./book-copy.controller";
+import { Router } from 'express';
+import validateRequest from '../../middlewares/validateRequest';
+import bookCopyValidation from './book-copy.validation';
+import bookCopyController from './book-copy.controller';
 
-const router = Router()
+const router = Router();
 
+router.post(
+  '/',
+  validateRequest(bookCopyValidation.createBookCopy),
+  bookCopyController.createBookCopy
+);
 
-router.post("/",validateRequest(bookCopyValidation.createBookCopy),bookCopyController.createBookCopy)
+router.put(
+  '/:id',
+  validateRequest(bookCopyValidation.updateBookCopy),
+  bookCopyController.updateBookCopy
+);
 
+router.delete('/:id', bookCopyController.deleteBookCopy);
 
+router.get('/book/:bookId', bookCopyController.getBookCopies);
 
-router.put("/:id",validateRequest(bookCopyValidation.updateBookCopy),bookCopyController.updateBookCopy)
+const bookCopyRouter = router;
 
-
-
-router.delete("/:id",bookCopyController.deleteBookCopy)
-
-
-router.get("/book/:bookId",bookCopyController.getBookCopies)
-
-
-const bookCopyRouter =  router
-
-
-export default bookCopyRouter
-
-
+export default bookCopyRouter;

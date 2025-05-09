@@ -10,6 +10,7 @@ class SystemSettingService {
         maxBorrowDays: 15,
         maxBorrowItems: 2,
         lateFeePerDay: 10,
+        borrowRequestExpiryDays: 7,
         reservationExpiryDays: 7,
         studentRegistrationRequestExpiryDays: 15,
         managementRegistrationRequestExpiryDays: 15,

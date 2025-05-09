@@ -58,12 +58,14 @@ const updateBook = z
   })
   .partial();
 
-  const changeBookStatus = z.object({
-    status:z.enum([EBookStatus.ACTIVE,EBookStatus.INACTIVE],{message:`Invalid status!.Status must be in ${[EBookStatus.ACTIVE,EBookStatus.INACTIVE].join(',')} `})
-  })
+const changeBookStatus = z.object({
+  status: z.enum([EBookStatus.ACTIVE, EBookStatus.INACTIVE], {
+    message: `Invalid status!.Status must be in ${[EBookStatus.ACTIVE, EBookStatus.INACTIVE].join(',')} `,
+  }),
+});
 
 export default {
   createBook,
   updateBook,
-  changeBookStatus
+  changeBookStatus,
 };

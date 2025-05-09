@@ -18,7 +18,7 @@ const BorrowRequestModel = new Schema<IBorrowRequest>(
       min: 1,
       required: true,
     },
-    rejectedFor: {
+    rejectReason: {
       type: String,
       minlength: 1,
       trim: true,
@@ -32,6 +32,11 @@ const BorrowRequestModel = new Schema<IBorrowRequest>(
       type: String,
       enum: Object.values(EBorrowRequestStatus),
       default: EBorrowRequestStatus.PENDING,
+    },
+    processedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'Librarian',
+      default: null,
     },
   },
   {
