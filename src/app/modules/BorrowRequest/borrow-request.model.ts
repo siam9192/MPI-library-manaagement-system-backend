@@ -38,6 +38,11 @@ const BorrowRequestModel = new Schema<IBorrowRequest>(
       ref: 'Librarian',
       default: null,
     },
+    index:{
+      type:Number,
+      enum:[0,1],
+      default:1
+    }
   },
   {
     timestamps: true,

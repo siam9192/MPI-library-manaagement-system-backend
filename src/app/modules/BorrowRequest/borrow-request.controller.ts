@@ -29,7 +29,7 @@ class BorrowRequestController {
   });
 
   rejectBorrowBorrowRequest = catchAsync(async (req, res) => {
-    const result = await borrowRequestService.approveBorrowRequest(
+    const result = await borrowRequestService.rejectBorrowRequest(
       req.user,
       req.params.id,
       req.body

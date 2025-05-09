@@ -85,6 +85,7 @@ export function isNumber(value: string) {
 }
 
 export function formatSecret(secret: string, perChunk = 4) {
+ 
   const step = Math.floor(secret.length / perChunk);
   const arr = Array.from({ length: step + 1 }, (_, i) =>
     secret.slice(i * perChunk, i * perChunk + perChunk)

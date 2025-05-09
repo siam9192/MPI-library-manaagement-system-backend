@@ -24,6 +24,7 @@ import { z } from 'zod';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import { EReservationStatus } from '../../type';
+import { error } from 'console';
 
 class BorrowRequestService {
   async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
@@ -114,7 +115,7 @@ class BorrowRequestService {
       _id: objectId(payload.copyId),
       book: request.book,
     });
-
+      
     if (!copy) {
       throw new AppError(httpStatus.NOT_FOUND, 'Book copy  not found');
     }
@@ -157,29 +158,35 @@ class BorrowRequestService {
 
     const session = await startSession();
     session.startTransaction();
-
     try {
       const borrowRequestUpdate = await BorrowRequest.updateOne(
         {
           _id: objectId(id),
+        },
+        {
           status: EBorrowRequestStatus.APPROVED,
+          processedBy: authUser.profileId ,
+          index:0
         },
         { session: session }
       );
-
       if (!borrowRequestUpdate.modifiedCount) {
         throw new Error();
       }
 
       //Generate unique secret
-      let secret = formatSecret(crypto.randomBytes(20).toString());
+      let secret = formatSecret(crypto.randomBytes(20).toString("hex").slice(0,20));
       while (await Reservation.findOne({ secret })) {
-        secret = formatSecret(crypto.randomBytes(20).toString());
+        secret = formatSecret(crypto.randomBytes(20).toString("hex").slice(0,20));
       }
+
+      
 
       // Set the expire date to 7 days from now
       const expiryDate = new Date(new Date().toDateString());
       expiryDate.setDate(expiryDate.getDate() + (systemSettings.reservationExpiryDays || 7));
+
+
 
       const [createdReservation] = await Reservation.create(
         [
@@ -200,21 +207,22 @@ class BorrowRequestService {
         throw new Error();
       }
 
-      // Set librarian id
-      await BorrowRequest.updateOne(
-        { _id: request.id },
-        { processedBy: authUser.profileId },
-        { session }
-      );
+ 
 
-      await BookCopy.updateOne(
+    const updateCopy =   await BookCopy.updateOne(
         { _id: objectId(payload.copyId) },
-        { status: EBookCopyStatus.RESERVED }
+        { status: EBookCopyStatus.RESERVED },
+        {session}
       );
 
+    if(!updateCopy.modifiedCount) {
+      throw new Error()
+    }
+     
       await session.commitTransaction();
       await session.endSession();
     } catch (error) {
+     
       await session.abortTransaction();
       await session.endSession();
       throw new AppError(
@@ -253,6 +261,8 @@ class BorrowRequestService {
         {
           status: EBorrowRequestStatus.REJECTED,
           rejectReason: payload.rejectReason,
+          processedBy: authUser.profileId,
+          index:0
         },
         { session }
       );
@@ -263,18 +273,12 @@ class BorrowRequestService {
           'Request  could not be  rejected.Something went wrong'
         );
       }
-
-      // Set librarian id
-      await BorrowRequest.updateOne(
-        { _id: request.id },
-        { processedBy: authUser.profileId },
-        { session }
-      );
       await session.commitTransaction();
       return null;
     } catch (error) {
       await session.abortTransaction();
     } finally {
+      console.log(error)
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
@@ -313,6 +317,7 @@ class BorrowRequestService {
         },
         {
           status: EBorrowRequestStatus.CANCELED,
+          index:0
         },
         { session }
       );
