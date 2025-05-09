@@ -10,6 +10,7 @@ export interface IReservation extends IModelNecessaryFields {
   secret: string;
   status: EReservationStatus;
   processedBy?: Types.ObjectId;
+  index: 0 | 1;
 }
 
 export type TReservationStatus = `${EReservationStatus}`;
@@ -18,10 +19,15 @@ export enum EReservationStatus {
   AWAITING = 'awaiting',
   FULFILLED = 'fulfilled',
   CANCELED = 'canceled',
-  EXPIRED = 'EXPIRED',
+  EXPIRED = 'expired',
 }
 
-export interface IGetReservationsFilterData {
-  token?: string;
+export interface IReservationsFilterPayload {
+  secret?: string;
   roll?: string;
+  status?: EReservationStatus;
+}
+
+export interface IMyReservationsFilterPayload {
+  status?: EReservationStatus;
 }

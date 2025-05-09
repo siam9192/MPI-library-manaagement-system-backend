@@ -28,14 +28,12 @@ router.patch(
   borrowRequestController.rejectBorrowBorrowRequest
 );
 
-
 router.get('/', borrowRequestController.getBorrowRequests);
 router.get('/my', auth(EUserRole.STUDENT), borrowRequestController.getMyBorrowRequests);
 
-router.get('/:id',borrowRequestController.getBorrowRequestById)
+router.get('/:id', borrowRequestController.getBorrowRequestById);
 
-router.get('/my/id',auth(EUserRole.STUDENT),borrowRequestController.getMyBorrowRequestById)
-
+router.get('/my/id', auth(EUserRole.STUDENT), borrowRequestController.getMyBorrowRequestById);
 
 const borrowRequestRouter = router;
 

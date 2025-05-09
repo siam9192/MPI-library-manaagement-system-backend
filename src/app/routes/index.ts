@@ -12,6 +12,7 @@ import notificationRouter from '../modules/Notification/notification.route';
 import bookRouter from '../modules/Book/book.route';
 import bookCopyRouter from '../modules/BookCopy/book-copy.route';
 import borrowRequestRouter from '../modules/BorrowRequest/borro-request.route';
+import reservationRouter from '../modules/Reservation/reservation.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -59,6 +60,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/borrow-requests',
     router: borrowRequestRouter,
+  },
+  {
+    path: '/reservations',
+    router: reservationRouter,
   },
   {
     path: '/notifications',

@@ -38,11 +38,17 @@ const ReservationModel = new Schema<IReservation>(
     status: {
       type: String,
       enum: Object.values(EReservationStatus),
+      default: EReservationStatus.AWAITING,
     },
     processedBy: {
       type: String,
       ref: 'Librarian',
       default: null,
+    },
+    index: {
+      type: Number,
+      enum: [0, 1],
+      default: 1,
     },
   },
   {

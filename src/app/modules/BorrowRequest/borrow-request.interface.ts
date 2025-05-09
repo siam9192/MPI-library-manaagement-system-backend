@@ -9,7 +9,7 @@ export interface IBorrowRequest extends IModelNecessaryFields {
   expireAt: Date;
   status: EBorrowRequestStatus;
   processedBy?: Types.ObjectId;
-  index:0|1
+  index: 0 | 1;
 }
 
 export type TBorrowRequestStatus = `${EBorrowRequestStatus}`;

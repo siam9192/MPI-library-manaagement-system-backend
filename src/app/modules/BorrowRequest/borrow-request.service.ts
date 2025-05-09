@@ -115,7 +115,7 @@ class BorrowRequestService {
       _id: objectId(payload.copyId),
       book: request.book,
     });
-      
+
     if (!copy) {
       throw new AppError(httpStatus.NOT_FOUND, 'Book copy  not found');
     }
@@ -165,8 +165,8 @@ class BorrowRequestService {
         },
         {
           status: EBorrowRequestStatus.APPROVED,
-          processedBy: authUser.profileId ,
-          index:0
+          processedBy: authUser.profileId,
+          index: 0,
         },
         { session: session }
       );
@@ -175,18 +175,14 @@ class BorrowRequestService {
       }
 
       //Generate unique secret
-      let secret = formatSecret(crypto.randomBytes(20).toString("hex").slice(0,20));
+      let secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
       while (await Reservation.findOne({ secret })) {
-        secret = formatSecret(crypto.randomBytes(20).toString("hex").slice(0,20));
+        secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
       }
-
-      
 
       // Set the expire date to 7 days from now
       const expiryDate = new Date(new Date().toDateString());
       expiryDate.setDate(expiryDate.getDate() + (systemSettings.reservationExpiryDays || 7));
-
-
 
       const [createdReservation] = await Reservation.create(
         [
@@ -207,22 +203,19 @@ class BorrowRequestService {
         throw new Error();
       }
 
- 
-
-    const updateCopy =   await BookCopy.updateOne(
+      const updateCopy = await BookCopy.updateOne(
         { _id: objectId(payload.copyId) },
         { status: EBookCopyStatus.RESERVED },
-        {session}
+        { session }
       );
 
-    if(!updateCopy.modifiedCount) {
-      throw new Error()
-    }
-     
+      if (!updateCopy.modifiedCount) {
+        throw new Error();
+      }
+
       await session.commitTransaction();
       await session.endSession();
     } catch (error) {
-     
       await session.abortTransaction();
       await session.endSession();
       throw new AppError(
@@ -262,7 +255,7 @@ class BorrowRequestService {
           status: EBorrowRequestStatus.REJECTED,
           rejectReason: payload.rejectReason,
           processedBy: authUser.profileId,
-          index:0
+          index: 0,
         },
         { session }
       );
@@ -278,7 +271,7 @@ class BorrowRequestService {
     } catch (error) {
       await session.abortTransaction();
     } finally {
-      console.log(error)
+      console.log(error);
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
@@ -317,7 +310,7 @@ class BorrowRequestService {
         },
         {
           status: EBorrowRequestStatus.CANCELED,
-          index:0
+          index: 0,
         },
         { session }
       );

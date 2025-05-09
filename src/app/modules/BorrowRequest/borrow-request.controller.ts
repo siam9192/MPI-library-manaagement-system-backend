@@ -67,9 +67,8 @@ class BorrowRequestController {
     });
   });
 
-getMyBorrowRequestById = catchAsync(async (req, res) => {
-  
-    const result = await borrowRequestService.getMyBorrowRequestById(req.user,req.params.id)
+  getMyBorrowRequestById = catchAsync(async (req, res) => {
+    const result = await borrowRequestService.getMyBorrowRequestById(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Borrow request retrieved successfully',
       statusCode: httpStatus.OK,
@@ -77,17 +76,14 @@ getMyBorrowRequestById = catchAsync(async (req, res) => {
     });
   });
 
-
-getBorrowRequestById = catchAsync(async (req, res) => {
-  
-    const result = await borrowRequestService.getBorrowRequestById(req.params.id)
+  getBorrowRequestById = catchAsync(async (req, res) => {
+    const result = await borrowRequestService.getBorrowRequestById(req.params.id);
     sendSuccessResponse(res, {
       message: 'Borrow request retrieved successfully',
       statusCode: httpStatus.OK,
       data: result,
     });
   });
-
 }
 
 export default new BorrowRequestController();

@@ -471,7 +471,7 @@ class AuthService {
     const user = await User.findOne({
       email: loginData.email,
       role: {
-        $in: [...Object.values(EAdministratorLevel),EUserRole.LIBRARIAN],
+        $in: [...Object.values(EAdministratorLevel), EUserRole.LIBRARIAN],
       },
     }).select('_id email password role');
 
