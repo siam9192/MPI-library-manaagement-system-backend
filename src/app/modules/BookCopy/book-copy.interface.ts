@@ -17,6 +17,7 @@ export enum EBookCopyCondition {
 
 export enum EBookCopyStatus {
   AVAILABLE = 'available',
+  UNAVAILABLE = 'unavailable',
   CHECKED_OUT = 'checked_out',
   RESERVED = 'reserved',
   LOST = 'lost',

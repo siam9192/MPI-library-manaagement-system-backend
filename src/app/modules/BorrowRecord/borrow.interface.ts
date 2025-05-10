@@ -3,9 +3,13 @@ import { IModelNecessaryFields } from '../../types/model.type';
 
 export interface IBorrowRecord extends IModelNecessaryFields {
   book: Types.ObjectId;
+  copy: Types.ObjectId;
   student: Types.ObjectId;
   dueDate: Date;
   returnDate: Date;
+  returnCondition?: EBorrowReturnCondition;
+  isOverDue: boolean;
+  fine: Types.ObjectId;
   status: EBorrowRecordStatus;
 }
 
@@ -16,16 +20,16 @@ export enum EBorrowRecordStatus {
   LOST = 'lost',
 }
 
-export type TReturnStatus = `${EReturnStatus}`;
-export enum EReturnStatus {
-  GOOD = 'Good',
-  DAMAGED = 'Damaged',
-  LOST = 'Lost',
+export type TReturnStatus = `${EBorrowReturnCondition}`;
+export enum EBorrowReturnCondition {
+  NORMAL = 'normal',
+  DAMAGED = 'damaged',
+  LOST = 'lost',
 }
 
-export interface IReturnBorrowPayload {
-  bookStatus: TReturnStatus;
-  isMakeAvailable?: boolean;
+export interface IProcessBorrowPayload {
+  bookConditionStatus: EBorrowReturnCondition;
+  makeAvailable?: boolean;
   fineAmount?: number;
   isFineReceived?: boolean;
 }

@@ -1,230 +1,238 @@
 import { startSession } from 'mongoose';
-import envConfig from '../../config/env.config';
 import AppError from '../../Errors/AppError';
-import { objectId } from '../../helpers';
-import jwtHelpers from '../../helpers/jwtHelpers';
-import httpStatus from '../../shared/http-status';
-import { EReservationStatus } from '../Reservation/reservation.interface';
-import Reservation from '../Reservation/reservation.model';
-import { IBorrowRequest } from '../BorrowRequest/borrow-request.interface';
-import Borrow from './borrow.model';
-import { IAuthUser, IPaginationOptions } from '../../types';
-import Book from '../Book/book.model';
 import {
-  EBorrowStatus,
-  EReturnStatus,
-  IGetPendingReturnsFilterData,
-  IReturnBorrowPayload,
+  EBorrowRecordStatus,
+  EBorrowReturnCondition,
+  IProcessBorrowPayload,
 } from './borrow.interface';
 import Fine from '../Fine/fine.model';
 import { EFineStatus } from '../Fine/fine.interface';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import { Student } from '../Student/student.model';
+import BorrowRecord from './borrow.model';
+import httpStatus from '../../shared/http-status';
+import BookCopy from '../BookCopy/book-copy.model';
+import { EBookCopyStatus, IBookCopy } from '../BookCopy/book-copy.interface';
+import systemSettingService from '../SystemSetting/system-setting.service';
 
-const createBorrowIntoDB = async (authUser: IAuthUser, token: string) => {
-  let decode;
+class BorrowService {
+  async returnBorrowIntoDB(id: string, payload: IProcessBorrowPayload) {
+    const borrow = await BorrowRecord.findById(id);
+    if (!borrow) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
+    }
 
-  // Verify and decode the token
-  try {
-    decode = jwtHelpers.verifyToken(token, envConfig.jwt.borrowTicketTokenSecret as string);
-    if (!decode) throw new Error();
-  } catch (error) {
-    throw new AppError(httpStatus.UNAUTHORIZED, 'Invalid token');
+    if (borrow.status === EBorrowRecordStatus.RETURNED) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Book has already been returned.');
+    }
+    if (borrow.status === EBorrowRecordStatus.LOST) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Book has already been lost.');
+    }
+    const systemSettings = await systemSettingService.getCurrentSettings();
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const condition = payload.bookConditionStatus;
+      const now = new Date();
+      const isOverdue = now > new Date(borrow.dueDate);
+      const diffInMs = now.getTime() - new Date(borrow.dueDate).getTime();
+      const overdueDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+      const overdueFineAmount = systemSettings.lateFeePerDay * overdueDays;
+
+      if(condition === EBorrowReturnCondition.NORMAL){
+          const borrowUpdateData: Record<string, unknown> = {
+            returnCondition: payload.bookConditionStatus,
+            status: EBorrowRecordStatus.RETURNED,
+            isOverdue,
+          };
+          if (isOverdue) {
+            const fineData: Record<string, unknown> = {
+              amount: overdueFineAmount + payload.fineAmount! ,
+              student: borrow.student,
+              borrow: borrow._id,
+              issuedDate: new Date(),
+              reason:   isOverdue ? 'overdue':''
+            };
+
+            if (payload.isFineReceived) {
+              fineData.paidDate = new Date();
+              fineData.status = EFineStatus.PAID;
+            }
+            const [createdFine] = await Fine.create([fineData], { session });
+            if (!createdFine) throw new Error();
+          }
+
+          const updateBorrow = await BorrowRecord.updateOne({ _id: borrow._id }, borrowUpdateData, {
+            session,
+          });
+
+          if (!updateBorrow.modifiedCount) {
+            throw new Error();
+          }
+
+          // Determine book copy update status
+          const copyUpdateData: any = {
+            status:
+              payload.makeAvailable === true
+                ? EBookCopyStatus.AVAILABLE
+                : EBookCopyStatus.UNAVAILABLE,
+          };
+
+          const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
+            session,
+          });
+          if (!updateCopy.matchedCount) {
+            throw new Error();
+          }
+      }
+
+      else {
+          const borrowUpdateData: Record<string, unknown> = {
+            returnCondition: payload.bookConditionStatus,
+            status: EBorrowRecordStatus.RETURNED,
+            isOverdue,
+          };
+          if (isOverdue) {
+            const fineData: Record<string, unknown> = {
+              amount: overdueFineAmount,
+              student: borrow.student,
+              borrow: borrow._id,
+              issuedDate: new Date(),
+              reason: 'overdue',
+            };
+
+            if (payload.isFineReceived) {
+              fineData.paidDate = new Date();
+              fineData.status = EFineStatus.PAID;
+            }
+            const [createdFine] = await Fine.create([fineData], { session });
+            if (!createdFine) throw new Error();
+          }
+
+          const updateBorrow = await BorrowRecord.updateOne({ _id: borrow._id }, borrowUpdateData, {
+            session,
+          });
+
+          if (!updateBorrow.modifiedCount) {
+            throw new Error();
+          }
+
+          // Determine book copy update status
+          const copyUpdateData: any = {
+            status:
+              payload.makeAvailable === true
+                ? EBookCopyStatus.AVAILABLE
+                : EBookCopyStatus.UNAVAILABLE,
+          };
+
+          const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
+            session,
+          });
+          if (!updateCopy.matchedCount) {
+            throw new Error();
+          }
+      }
+
+
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+
+    return null;
+  }
+}
+{
+  // Update borrow status
+  const updateBorrow = await BorrowRecord.updateOne(
+    { _id: borrow._id },
+    {
+      returnStatus: payload.bookConditionStatus,
+      status: EBorrowRecordStatus.RETURNED,
+    },
+    { session }
+  );
+
+  if (!updateBorrow.modifiedCount) {
+    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update borrow status.');
   }
 
-  // Find the reservation associated with the token
-  const reservation = await Reservation.findOne({
-    _id: objectId(decode.reservationId),
-    status: EReservationStatus.AWAITING_PICKUP,
-  }).populate({
-    path: 'request',
+  // Validate return condition
+  const validConditions = [
+    EBorrowReturnCondition.NORMAL,
+    EBorrowReturnCondition.DAMAGED,
+    EBorrowReturnCondition.LOST,
+  ];
+  if (!validConditions.includes(payload.bookConditionStatus)) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid return condition.');
+  }
+
+  // Determine book copy update status
+  const copyUpdateData: any = {
+    status:
+      payload.makeAvailable === true ? EBookCopyStatus.AVAILABLE : EBookCopyStatus.UNAVAILABLE,
+  };
+
+  const now = new Date();
+  const isOverdue = now > new Date(borrow.dueDate);
+
+  let fineReason: string | undefined;
+
+  if (isOverdue) {
+    fineReason = 'overdue';
+
+    if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
+      fineReason += `+${payload.bookConditionStatus}`;
+      copyUpdateData.condition = payload.bookConditionStatus;
+    }
+  } else if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
+    fineReason = payload.bookConditionStatus;
+    copyUpdateData.condition = payload.bookConditionStatus;
+  }
+
+  const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
+    session,
   });
 
-  if (!reservation) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
+  if (!updateCopy.modifiedCount) {
+    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update book copy status.');
   }
 
-  const session = await startSession();
-  session.startTransaction();
+  // Calculate fine
+  let fineAmount = 0;
 
-  try {
-    const request = reservation.request as any as IBorrowRequest;
+  if (isOverdue) {
+    const diffInMs = now.getTime() - new Date(borrow.dueDate).getTime();
+    const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+    fineAmount += diffInDays * systemSettings.lateFeePerDay;
+  }
 
-    // Calculate expected return date based on borrow days
-    const expectedReturnDate = new Date();
-    expectedReturnDate.setDate(expectedReturnDate.getDate() + request.borrowForDays);
+  if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
+    fineAmount += payload.fineAmount ?? 0;
+  }
 
-    // Create the borrow record
-    const [createdBorrow] = await Borrow.create(
+  // Create fine if applicable
+  if (fineAmount > 0) {
+    const [createdFine] = await Fine.create(
       [
         {
-          book: request.book,
-          student: request.student,
-          expectedReturnDate,
-          handedOveredBy: authUser.profileId,
-          request: request._id,
+          amount: fineAmount,
+          borrow: borrow._id,
+          reason: fineReason,
+          status: payload.isFineReceived ? EFineStatus.PAID : EFineStatus.UNPAID,
         },
       ],
       { session }
     );
 
-    if (!createdBorrow) {
-      throw new Error('Failed to create borrow record');
+    if (!createdFine) {
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create fine record.');
     }
-
-    // Update the reservation status
-    const updateReservationStatus = await Reservation.updateOne(
-      { _id: reservation._id },
-      { status: EReservationStatus.AWAITING_PICKUP }
-    );
-
-    if (!updateReservationStatus.modifiedCount) {
-      throw new Error('Failed to update reservation status');
-    }
-
-    // Find the next available borrow for the book
-    const bookOngoingBorrows = await Borrow.find({
-      status: EBorrowStatus.ONGOING,
-    }).sort({ e: 1 });
-
-    // Update book's expected available date
-    const updateBookStatus = await Book.updateOne(
-      { _id: request.book },
-      { expectedAvailableDate: bookOngoingBorrows[0]?.expectedReturnDate || expectedReturnDate }
-    );
-
-    if (!updateBookStatus.modifiedCount) {
-      throw new Error('Failed to update book status');
-    }
-
-    // Commit the transaction
-    await session.commitTransaction();
-    await session.endSession();
-  } catch (error) {
-    // Rollback transaction on error
-    await session.abortTransaction();
-    await session.endSession();
-
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Handed over failed');
-  }
-};
-
-const returnBorrowIntoDB = async (id: string, payload: IReturnBorrowPayload) => {
-  const borrow = await Borrow.findById(id);
-  if (!borrow) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
   }
 
-  if (borrow.status === EBorrowStatus.RETURNED) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Book has already been returned.');
-  }
-
-  const session = await startSession();
-  session.startTransaction();
-
-  try {
-    // Update borrow status
-    const updateBorrow = await Borrow.updateOne(
-      { _id: borrow._id },
-      {
-        returnStatus: payload.bookStatus,
-        status: EBorrowStatus.RETURNED,
-      },
-      { session }
-    );
-
-    if (!updateBorrow.modifiedCount) {
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update borrow status.');
-    }
-
-    // Check if fine needs to be created
-    if ([EReturnStatus.DAMAGED, EReturnStatus.GOOD].includes(payload.bookStatus as any)) {
-      const now = new Date();
-      const isOverdue = now.getTime() > new Date(borrow.expectedReturnDate).getTime();
-
-      const fineReason = isOverdue ? `Overdue+${payload.bookStatus}` : payload.bookStatus;
-
-      const createdFine = await Fine.create(
-        [
-          {
-            amount: payload.fineAmount,
-            borrow: borrow._id,
-            reason: fineReason,
-            status: payload.isFineReceived ? EFineStatus.PAID : EFineStatus.PENDING,
-          },
-        ],
-        { session }
-      );
-
-      if (!createdFine[0]) {
-        throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create fine record.');
-      }
-    }
-
-    await session.commitTransaction();
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    await session.endSession();
-  }
-  return null;
-};
-
-const getPendingReturnsFromDB = async (
-  filterData: IGetPendingReturnsFilterData,
-  paginationOptions: IPaginationOptions
-) => {
-  const { roll } = filterData;
-  const { page, limit, skip, sortBy, sortOrder } = calculatePagination(paginationOptions);
-
-  // Build dynamic query
-  const whereConditions: any = {
-    status: { $ne: EBorrowStatus.RETURNED },
-  };
-
-  if (roll && !isNaN(parseInt(roll))) {
-    const student = await Student.findOne({ roll: parseInt(roll) });
-    if (student) whereConditions.student = student._id;
-  }
-
-  const returns = await Borrow.find(whereConditions)
-    .populate([
-      {
-        path: 'book',
-      },
-      {
-        path: 'student',
-        select: 'fullName profilePhoto roll',
-      },
-    ])
-    .sort({ [sortBy]: sortOrder })
-    .skip(skip)
-    .limit(limit);
-
-  // Remove entries where student did not match (optional: depends on your logic)
-  const filteredReturns = returns.filter((borrow) => borrow.student !== null);
-
-  const totalResult = await Borrow.countDocuments(whereConditions);
-  const total = await Borrow.countDocuments({ status: { $ne: EBorrowStatus.RETURNED } });
-
-  const meta = {
-    page,
-    limit,
-    totalResult,
-    total,
-  };
-
-  return {
-    meta,
-    data: filteredReturns,
-  };
-};
-
-const BorrowServices = {
-  createBorrowIntoDB,
-  returnBorrowIntoDB,
-  getPendingReturnsFromDB,
-};
-
-export default BorrowServices;
+  await session.commitTransaction();
+}

@@ -8,6 +8,11 @@ const BorrowModel = new Schema<IBorrowRecord>(
       ref: 'Book',
       required: true,
     },
+    copy: {
+      type: Schema.Types.ObjectId,
+      ref: 'BookCopy',
+      required: true,
+    },
     student: {
       type: Schema.Types.ObjectId,
       ref: 'Librarian',
@@ -19,6 +24,20 @@ const BorrowModel = new Schema<IBorrowRecord>(
     },
     returnDate: {
       type: Date,
+      default: null,
+    },
+    returnCondition: {
+      type: String,
+      enum: Object.values(EBorrowRecordStatus),
+      default: EBorrowRecordStatus.ONGOING,
+    },
+    isOverDue: {
+      type: Boolean,
+      default: false,
+    },
+    fine: {
+      type: Schema.Types.ObjectId,
+      ref: 'Fine',
       default: null,
     },
     status: {

@@ -1,6 +1,11 @@
 import { date, z } from 'zod';
 import { IAuthUser, IPaginationOptions } from '../../types';
-import { EReservationStatus, IMyReservationsFilterPayload, IReservationsFilterPayload } from './reservation.interface';
+import {
+  EReservationStatus,
+  IMyReservationsFilterPayload,
+  IReservation,
+  IReservationsFilterPayload,
+} from './reservation.interface';
 import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
 import Reservation from './reservation.model';
@@ -9,6 +14,8 @@ import { objectId } from '../../helpers';
 import { startSession } from 'mongoose';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
+import BorrowRecord from '../BorrowRecord/borrow.model';
+import { IBorrowRequest } from '../../type';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -144,40 +151,48 @@ class ReservationService {
     };
   }
 
-  async getMyReservationsFromDB(authUser: IAuthUser,filterPayload:IMyReservationsFilterPayload,paginationOptions:IPaginationOptions) {
-     const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-        const {  status } = filterPayload;
-    
-        // Initialize filter conditions 
-        const whereConditions: Record<string, any> = {
-         student:objectId(authUser.profileId)
-        };
-         
-        // If valid status is provided then apply it
-        if(status){
-            if(!Object.values(EReservationStatus).includes(status)){
-                throw new AppError(httpStatus.BAD_REQUEST,"Invalid status")
-            }
-            whereConditions.status =  status
-        }
+  async getMyReservationsFromDB(
+    authUser: IAuthUser,
+    filterPayload: IMyReservationsFilterPayload,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+    const { status } = filterPayload;
 
-        const reservations = await Reservation.find(whereConditions).sort({
-            index:-1,
-            [sortBy]:sortOrder
-        }).skip(skip).limit(limit).populate(["book","copy"])
-        
-        const totalResult =  await Reservation.countDocuments(whereConditions)
-        const total =  await Reservation.countDocuments({student:objectId(authUser.profileId)})
-        const meta =  {
-            page,
-            limit,
-            totalResult,
-            total
-        }
-        return {
-            data:reservations,
-            meta
-        }
+    // Initialize filter conditions
+    const whereConditions: Record<string, any> = {
+      student: objectId(authUser.profileId),
+    };
+
+    // If valid status is provided then apply it
+    if (status) {
+      if (!Object.values(EReservationStatus).includes(status)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+      }
+      whereConditions.status = status;
+    }
+
+    const reservations = await Reservation.find(whereConditions)
+      .sort({
+        index: -1,
+        [sortBy]: sortOrder,
+      })
+      .skip(skip)
+      .limit(limit)
+      .populate(['book', 'copy']);
+
+    const totalResult = await Reservation.countDocuments(whereConditions);
+    const total = await Reservation.countDocuments({ student: objectId(authUser.profileId) });
+    const meta = {
+      page,
+      limit,
+      totalResult,
+      total,
+    };
+    return {
+      data: reservations,
+      meta,
+    };
   }
 
   async getReservationById(id: string) {
@@ -229,7 +244,7 @@ class ReservationService {
             status: EReservationStatus.CANCELED,
           },
           {
-            session
+            session,
           }
         );
         if (!reservationUpdate.modifiedCount) {
@@ -244,7 +259,7 @@ class ReservationService {
             status: EBookCopyStatus.AVAILABLE,
           },
           {
-            session
+            session,
           }
         );
 
@@ -266,71 +281,89 @@ class ReservationService {
     }
   }
 
-  async checkoutReservation (authUser:IAuthUser,id:string){
-     const reservation = await Reservation.findOne({
-        _id: objectId(id),
-        student: objectId(authUser.profileId),
-      }).populate(['book', 'copy']);
+  async checkoutReservation(authUser: IAuthUser, id: string) {
+    const reservation = await Reservation.findOne({
+      _id: objectId(id),
+      student: objectId(authUser.profileId),
+    }).populate(['request']);
 
-      //Check if reservation exist
-      if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
-      // Check if reservation status is not awaiting
-      if (reservation.status !== EReservationStatus.AWAITING) {
-        throw new AppError(
-          httpStatus.FORBIDDEN,
-          `Reservation can not be checkout because it's not in awaiting`
-        );
+    //Check if reservation exist
+    if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
+    // Check if reservation status is not awaiting
+    if (reservation.status !== EReservationStatus.AWAITING) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `Reservation can not be checkout because it's not in awaiting`
+      );
+    }
+
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      // set reservation status =  fulfilled
+      const reservationUpdate = await Reservation.updateOne(
+        {
+          _id: objectId(id),
+        },
+        {
+          status: EReservationStatus.FULFILLED,
+        },
+        {
+          session,
+        }
+      );
+      if (!reservationUpdate.modifiedCount) {
+        throw new Error();
       }
 
-      const session = await startSession();
-      session.startTransaction();
-  try {
-
-    // set reservation status =  fulfilled 
-        const reservationUpdate = await Reservation.updateOne(
-          {
-            _id: objectId(id),
-          },
-          {
-            status: EReservationStatus.FULFILLED,
-          },
-          {
-            session
-          }
-        );
-        if (!reservationUpdate.modifiedCount) {
-          throw new Error();
+      // set book copy status =  checked_out
+      const updateBookCopy = await BookCopy.updateOne(
+        {
+          _id: reservation.copy,
+        },
+        {
+          status: EBookCopyStatus.CHECKED_OUT,
+        },
+        {
+          session,
         }
+      );
 
-
-         // set book copy status =  checked_out 
-        const updateBookCopy = await BookCopy.updateOne(
-          {
-            _id: reservation.copy,
-          },
-          {
-            status: EBookCopyStatus.CHECKED_OUT,
-          },
-          {
-            session
-          }
-        );
-
-        if (!updateBookCopy.matchedCount) {
-          throw new Error();
-        }
-
-        await session.commitTransaction();
-        return null;
-      } catch (error) {
-        await session.abortTransaction();
-        throw new AppError(
-          httpStatus.INTERNAL_SERVER_ERROR,
-          'Internal server error!.Reservation cancellation failed'
-        );
-      } finally {
-        session.endSession();
+      if (!updateBookCopy.matchedCount) {
+        throw new Error();
       }
+
+      const dueDate = new Date(new Date().toDateString());
+
+      dueDate.setDate(
+        dueDate.getDate() + (reservation.request as any as IBorrowRequest).borrowForDays
+      );
+
+      const [createdBorrow] = await BorrowRecord.create(
+        [
+          {
+            book: reservation.book,
+            copy: reservation.copy,
+            student: reservation.student,
+            dueDate: dueDate,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdBorrow) throw new Error();
+
+      await session.commitTransaction();
+      return null;
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Reservation cancellation failed'
+      );
+    } finally {
+      session.endSession();
+    }
   }
 }
 

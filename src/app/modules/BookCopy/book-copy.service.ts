@@ -48,7 +48,6 @@ class BookCopyService {
       await session.commitTransaction();
       return createdCopy;
     } catch (error) {
-     
       await session.abortTransaction();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
