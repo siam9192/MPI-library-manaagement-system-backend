@@ -1,29 +1,31 @@
 import { z } from 'zod';
 import { EBorrowReturnCondition } from './borrow-record.interface';
 
-
-const processBorrow = z.object({
-  bookConditionStatus: z.nativeEnum(EBorrowReturnCondition, {
-    message: "Invalid bookCondition status",
-  }),
-  makeAvailable: z.boolean().default(true),
-  fineAmount: z.number().int().optional(),
-  isFineReceived: z.boolean({
-    required_error: "isFineReceived status is required",
-  }),
-}).refine((data) => {
-  if (data.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
-    return !data.fineAmount || data.fineAmount <= 0;
-  }
-  return true;
-}, {
-  message: "Fine amount is required when book condition is not NORMAL. Fine condition must be getter then 0",
-  path: ["fineAmount"], // This helps target the specific field for the error
-});
-
-
-
+const processBorrow = z
+  .object({
+    bookConditionStatus: z.nativeEnum(EBorrowReturnCondition, {
+      message: 'Invalid bookCondition status',
+    }),
+    makeAvailable: z.boolean().default(true),
+    fineAmount: z.number().int().optional(),
+    isFineReceived: z.boolean({
+      required_error: 'isFineReceived status is required',
+    }),
+  })
+  .refine(
+    (data) => {
+      if (data.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
+        return !data.fineAmount || data.fineAmount <= 0;
+      }
+      return true;
+    },
+    {
+      message:
+        'Fine amount is required when book condition is not NORMAL. Fine condition must be getter then 0',
+      path: ['fineAmount'], // This helps target the specific field for the error
+    }
+  );
 
 export default {
-    processBorrow
-}
+  processBorrow,
+};

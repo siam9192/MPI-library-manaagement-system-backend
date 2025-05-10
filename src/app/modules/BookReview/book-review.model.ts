@@ -12,6 +12,11 @@ const BookReviewModelSchema = new Schema<IBookReview>({
     ref: 'Book',
     required: true,
   },
+   borrow: {
+    type: Schema.ObjectId,
+    ref: 'BorrowRecord',
+    required: true,
+  },
   rating: {
     type: Number,
     min: 1,

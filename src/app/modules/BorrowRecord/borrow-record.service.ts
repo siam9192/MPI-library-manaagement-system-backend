@@ -19,8 +19,7 @@ import { z } from 'zod';
 import { objectId } from '../../helpers';
 
 class BorrowRecordService {
-
-  async  processBorrowIntoDB(id: string, payload: IProcessBorrowPayload) {
+  async processBorrowIntoDB(id: string, payload: IProcessBorrowPayload) {
     const borrow = await BorrowRecord.findById(id);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
@@ -256,7 +255,7 @@ class BorrowRecordService {
   }
 
   async getBorrowRecordById(id: string) {
-    const borrowRecord = await BorrowRecord.findById(id).populate(['book','copy', 'student']);
+    const borrowRecord = await BorrowRecord.findById(id).populate(['book', 'copy', 'student']);
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
   }
@@ -265,13 +264,10 @@ class BorrowRecordService {
     const borrowRecord = await BorrowRecord.findOne({
       _id: objectId(id),
       student: objectId(authUser.profileId),
-    }).populate(['book','copy']);
+    }).populate(['book', 'copy']);
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
   }
-
-
 }
 
-
-export default new BorrowRecordService()
+export default new BorrowRecordService();
