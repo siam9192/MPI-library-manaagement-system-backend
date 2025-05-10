@@ -1,5 +1,5 @@
 import { model, now, Schema } from 'mongoose';
-import { EBorrowRecordStatus, IBorrowRecord } from './borrow.interface';
+import { EBorrowRecordStatus, IBorrowRecord } from './borrow-record.interface';
 
 const BorrowModel = new Schema<IBorrowRecord>(
   {
@@ -44,6 +44,11 @@ const BorrowModel = new Schema<IBorrowRecord>(
       type: String,
       enum: Object.values(EBorrowRecordStatus),
       default: EBorrowRecordStatus.ONGOING,
+    },
+    index: {
+      type: Number,
+      enum: [0, 1],
+      default: 1,
     },
   },
   {

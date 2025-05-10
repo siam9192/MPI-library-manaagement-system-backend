@@ -11,6 +11,7 @@ export interface IBorrowRecord extends IModelNecessaryFields {
   isOverDue: boolean;
   fine: Types.ObjectId;
   status: EBorrowRecordStatus;
+  index: 1 | 0;
 }
 
 export enum EBorrowRecordStatus {
@@ -34,6 +35,7 @@ export interface IProcessBorrowPayload {
   isFineReceived?: boolean;
 }
 
-export interface IGetPendingReturnsFilterData {
+export interface IBorrowRecordsFilterPayload {
   roll?: string;
+  status?: EBorrowRecordStatus;
 }

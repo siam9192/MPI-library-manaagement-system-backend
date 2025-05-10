@@ -17,8 +17,8 @@ import {
 import crypto from 'crypto';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import BorrowRequest from './borrow-request.model';
-import BorrowRecord from '../BorrowRecord/borrow.model';
-import { EBorrowRecordStatus } from '../BorrowRecord/borrow.interface';
+import BorrowRecord from '../BorrowRecord/borrow-record.model';
+import { EBorrowRecordStatus } from '../BorrowRecord/borrow-record.interface';
 import { Student } from '../Student/student.model';
 import { z } from 'zod';
 import BookCopy from '../BookCopy/book-copy.model';

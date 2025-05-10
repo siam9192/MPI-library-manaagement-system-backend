@@ -14,7 +14,7 @@ import { objectId } from '../../helpers';
 import { startSession } from 'mongoose';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
-import BorrowRecord from '../BorrowRecord/borrow.model';
+import BorrowRecord from '../BorrowRecord/borrow-record.model';
 import { IBorrowRequest } from '../../type';
 
 class ReservationService {
