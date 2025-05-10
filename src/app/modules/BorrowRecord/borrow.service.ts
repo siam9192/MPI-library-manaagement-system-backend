@@ -53,7 +53,7 @@ class BorrowService {
               student: borrow.student,
               borrow: borrow._id,
               issuedDate: new Date(),
-              reason:   isOverdue ? 'overdue':''
+              reason:'overdue'
             };
 
             if (payload.isFineReceived) {
@@ -96,11 +96,11 @@ class BorrowService {
           };
           if (isOverdue) {
             const fineData: Record<string, unknown> = {
-              amount: overdueFineAmount,
+              amount: overdueFineAmount+payload.fineAmount!,
               student: borrow.student,
               borrow: borrow._id,
               issuedDate: new Date(),
-              reason: 'overdue',
+              reason: 'overdue'+'+' + EBorrowReturnCondition
             };
 
             if (payload.isFineReceived) {
@@ -133,106 +133,19 @@ class BorrowService {
           if (!updateCopy.matchedCount) {
             throw new Error();
           }
-      }
 
-
-    } catch (error) {
+    } 
+   }
+   catch (error) {
       await session.abortTransaction();
-      throw error;
-    } finally {
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,"Process failed!.Internal server error");
+    }
+   finally {
       await session.endSession();
     }
 
     return null;
   }
 }
-{
-  // Update borrow status
-  const updateBorrow = await BorrowRecord.updateOne(
-    { _id: borrow._id },
-    {
-      returnStatus: payload.bookConditionStatus,
-      status: EBorrowRecordStatus.RETURNED,
-    },
-    { session }
-  );
 
-  if (!updateBorrow.modifiedCount) {
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update borrow status.');
-  }
-
-  // Validate return condition
-  const validConditions = [
-    EBorrowReturnCondition.NORMAL,
-    EBorrowReturnCondition.DAMAGED,
-    EBorrowReturnCondition.LOST,
-  ];
-  if (!validConditions.includes(payload.bookConditionStatus)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid return condition.');
-  }
-
-  // Determine book copy update status
-  const copyUpdateData: any = {
-    status:
-      payload.makeAvailable === true ? EBookCopyStatus.AVAILABLE : EBookCopyStatus.UNAVAILABLE,
-  };
-
-  const now = new Date();
-  const isOverdue = now > new Date(borrow.dueDate);
-
-  let fineReason: string | undefined;
-
-  if (isOverdue) {
-    fineReason = 'overdue';
-
-    if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
-      fineReason += `+${payload.bookConditionStatus}`;
-      copyUpdateData.condition = payload.bookConditionStatus;
-    }
-  } else if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
-    fineReason = payload.bookConditionStatus;
-    copyUpdateData.condition = payload.bookConditionStatus;
-  }
-
-  const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
-    session,
-  });
-
-  if (!updateCopy.modifiedCount) {
-    throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update book copy status.');
-  }
-
-  // Calculate fine
-  let fineAmount = 0;
-
-  if (isOverdue) {
-    const diffInMs = now.getTime() - new Date(borrow.dueDate).getTime();
-    const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
-    fineAmount += diffInDays * systemSettings.lateFeePerDay;
-  }
-
-  if (payload.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
-    fineAmount += payload.fineAmount ?? 0;
-  }
-
-  // Create fine if applicable
-  if (fineAmount > 0) {
-    const [createdFine] = await Fine.create(
-      [
-        {
-          amount: fineAmount,
-          borrow: borrow._id,
-          reason: fineReason,
-          status: payload.isFineReceived ? EFineStatus.PAID : EFineStatus.UNPAID,
-        },
-      ],
-      { session }
-    );
-
-    if (!createdFine) {
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to create fine record.');
-    }
-  }
-
-  await session.commitTransaction();
-}
+  
