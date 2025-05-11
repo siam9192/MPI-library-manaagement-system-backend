@@ -40,6 +40,11 @@ const BorrowModel = new Schema<IBorrowRecord>(
       ref: 'Fine',
       default: null,
     },
+    review: {
+      type: Schema.Types.ObjectId,
+      ref: 'BookReview',
+      default: null,
+    },
     status: {
       type: String,
       enum: Object.values(EBorrowRecordStatus),

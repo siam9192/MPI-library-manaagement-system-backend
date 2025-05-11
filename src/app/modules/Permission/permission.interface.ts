@@ -1,180 +1,119 @@
+// --- Base Permission Types ---
+type TBookPermissions = {
+  canViewBooks: boolean;
+  canAddBooks: boolean;
+  canEditBooks: boolean;
+  canDeleteBo: boolean;
+};
 
+type TCirculationPermissions = {
+  canApproveBorrowRequest: boolean;
+  canRejectBorrowRequest: boolean;
+  canOverrideDueDate: boolean;
+};
+
+type TReservationPermissions = {
+  canViewReservations: boolean;
+  canProcessReservations: boolean;
+};
+
+type TFinePermissions = {
+  canViewFines: boolean;
+  canReceiveFines: boolean;
+  canWaiveFines: boolean;
+  canAdjustFines: boolean;
+};
+
+type TNotificationPermissions = {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canSend: boolean;
+};
+
+type TReportPermissions = {
+  canGenerateBasicReports: boolean;
+  canGenerateAdvancedReports: boolean;
+};
+
+type TSystemPermissions = {
+  canChangePassword: boolean;
+  canUpdateProfile: boolean;
+  canConfigureBasicSettings: boolean;
+  canConfigureCriticalSettings?: boolean; // Optional for non-super users
+};
+
+type TStudentManagementPermissions = {
+  canViewStudents: boolean;
+  canDeleteStudents: boolean;
+  canEditStudents: boolean;
+  canEditStudentPermissions: boolean;
+};
+
+type TLibrarianManagementPermissions = {
+  canViewLibrarians: boolean;
+  canDeleteLibrarians: boolean;
+  canEditLibrarians: boolean;
+  canEditLibrarianPermissions: boolean;
+};
+
+type TAdminManagementPermissions = {
+  canViewAdmins: boolean;
+  canDeleteAdmins: boolean;
+  canEditAdmins: boolean;
+  canEditAdminPermissions: boolean;
+};
+
+// --- Student Permissions ---
 type TStudentPermission = {
   canBorrowBook: boolean;
-  canRequestWaveFine: boolean;
+  canRequestWaiveFine: boolean;
   canEditProfile: boolean;
   canChangePassword: boolean;
   canUseSupport: boolean;
-  canConfigureBasicSettings: boolean; 
+  canConfigureBasicSettings: boolean;
+  canReceiveNotifications: boolean;
 };
 
+// --- Librarian Permissions ---
+type TLibrarianPermissions = TBookPermissions &
+  TCirculationPermissions &
+  TReservationPermissions &
+  TFinePermissions &
+  TStudentManagementPermissions &
+  TReportPermissions &
+  TSystemPermissions & {
+    canReceiveNotifications: boolean;
+    studentNotifications: TNotificationPermissions;
+  };
 
-type TLibrarianPermissions = {
-  // Book Management
-  canViewBooks:boolean
-  canAddBooks:boolean,
-  canEditBooks:boolean
-  canDeleteBooks:boolean
-  // Circulation
-  canApproveBorrowRequest: boolean; // Borrow requests
-  canRejectBorrowRequest: boolean; // Book returns
-  canOverrideDueDate: boolean; // Special cases
+// --- Admin Permissions ---
+type TAdminPermissions = TBookPermissions &
+  TCirculationPermissions &
+  TReservationPermissions &
+  TFinePermissions &
+  TStudentManagementPermissions &
+  TLibrarianManagementPermissions &
+  TReportPermissions &
+  TSystemPermissions & {
+    canReceiveNotifications: boolean;
+    studentNotifications: TNotificationPermissions;
+    librarianNotifications: TNotificationPermissions;
+  };
 
-  // Reservations
-  canProcessReservations:boolean
-
-  // Fines
-  canViewFines: boolean; // Read-only access
-  canReceivedFines: boolean; // Record payments
-  canWaiveFines: boolean; // Forgive fines
-  canAdjustFines: boolean;
-
-  // User Management
-  canViewStudents: boolean; // Read student info
-  canDeleteStudents: boolean; // Update student records
-  canEditStudents:boolean
-  canEditStudentPermissions: boolean; 
-  
-
-  // Notifications
-  canViewStudentNotifications:boolean
-  canEditStudentNotification:boolean
-  canDeleteStudentNotifications:boolean
-  canSendStudentNotification:boolean
-  canReceiveNotifications:boolean
-
-  // Reports
-  canGenerateBasicReports: boolean;
-  canGenerateAdvancedReports: boolean;
-
-  // System
-  canChangePassword:boolean
-  canUpdateProfile: boolean; // Own profile only
-  canConfigureBasicSettings: boolean; // Non-critical settings
- 
-};
-
-type TAdminPermissions = {
-   // Book Management
-  canViewBooks:boolean
-  canAddBooks:boolean,
-  canEditBooks:boolean
-  canDeleteBooks:boolean
-  // Circulation
-  canApproveBorrowRequest: boolean; // Borrow requests
-  canRejectBorrowRequest: boolean; // Book returns
-  canOverrideDueDate: boolean; // Special cases
-
-  // Reservations
-  canProcessReservations:boolean
-
-  // Fines
-  canViewFines: boolean; // Read-only access
-  canReceivedFines: boolean; // Record payments
-  canWaiveFines: boolean; // Forgive fines
-  canAdjustFines: boolean;
-
-  // User Management
-  canViewStudents: boolean; // Read student info
-  canDeleteStudents: boolean; // Update student records
-  canEditStudents:boolean
-  canEditStudentPermissions: boolean; 
-  
-  canViewLibrarians:boolean;
-  canDeleteLibrarians:boolean;
-  canEditLibrarians:boolean
-  canEditLibrarianPermissions: boolean; 
-  
-
-
-  canViewStudentNotifications:boolean
-  canEditStudentNotification:boolean
-  canDeleteStudentNotifications:boolean
-  canSendStudentNotification:boolean
-
-  canViewLibrarianNotifications:boolean
-  canEditLibrarianNotification:boolean
-  canDeleteLibrarianNotifications:boolean
-  canSendLibrarianNotification:boolean
-
-  canReceiveNotifications:boolean
-  
-
-  // Reports
-  canGenerateBasicReports: boolean;
-  canGenerateAdvancedReports: boolean;
-
-  // System
-  canChangePassword:boolean
-  canUpdateProfile: boolean; // Own profile only
-  canConfigureBasicSettings: boolean; // Non-critical settings
-  
-};
-
-
-type TSuperPermissions = {
-   // Book Management
-  canViewBooks:true
-  canAddBooks:true,
-  canEditBooks:true
-  canDeleteBooks:true
-  // Circulation
-  canApproveBorrowRequest: true; // Borrow requests
-  canRejectBorrowRequest: true; // Book returns
-  canOverrideDueDate: true; // Special cases
-
-  // Reservations
-  canProcessReservations:true
-
-  // Fines
-  canViewFines: true; // Read-only access
-  canReceivedFines: true; // Record payments
-  canWaiveFines: true; // Forgive fines
-  canAdjustFines: true;
-
-  // User Management
-  canViewStudents: true; // Read student info
-  canDeleteStudents: true; // Update student records
-  canEditStudents:true
-  canEditStudentPermissions: true; 
-
-  canViewLibrarians:true;
-  canDeleteLibrarians:true;
-  canEditLibrarians:true
-  canEditLibrarianPermissions: true; 
-
-  canViewAdmins:true;
-  canDeleteAdmins:true;
-  canEditAdmins:true
-  canAdminLibrarianPermissions: true; 
-  
-  // Notifications
-  canViewStudentNotifications:true
-  canEditStudentNotification:true
-  canDeleteStudentNotifications:true
-  canSendStudentNotification:true
-
-  canViewLibrarianNotifications:true
-  canEditLibrarianNotification:true
-  canDeleteLibrarianNotifications:true
-  canSendLibrarianNotification:true
-  
-  canViewAdminNotifications:true
-  canEditAdminNotification:true
-  canDeleteAdminNotifications:true
-  canSendAdminNotification:true
-  
-  canReceiveNotifications:true
-
-  
-  // Reports
-  canGenerateBasicReports: true;
-  canGenerateAdvancedReports: true;
-
-  // System
-  canChangePassword:true
-  canUpdateProfile: true; // Own profile only
-  canConfigureBasicSettings: true; // Non-critical settings
-  canConfigureCriticalSettings: boolean; 
-  isEditable:false
-};
+// --- Super Admin Permissions ---
+type TSuperPermissions = TBookPermissions &
+  TCirculationPermissions &
+  TReservationPermissions &
+  TFinePermissions &
+  TStudentManagementPermissions &
+  TLibrarianManagementPermissions &
+  TAdminManagementPermissions &
+  TReportPermissions &
+  TSystemPermissions & {
+    canReceiveNotifications: true;
+    studentNotifications: TNotificationPermissions;
+    librarianNotifications: TNotificationPermissions;
+    adminNotifications: TNotificationPermissions;
+    isEditable: false;
+  };

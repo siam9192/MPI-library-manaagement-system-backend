@@ -45,8 +45,8 @@ class FineController {
       data: result,
     });
   });
-   changeFineStatus = catchAsync(async (req, res) => {
-    const result = await fineService.changeFineStatusIntoDB(req.params.id,req.body);
+  changeFineStatus = catchAsync(async (req, res) => {
+    const result = await fineService.changeFineStatusIntoDB(req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Fine status changed successfully',
       statusCode: httpStatus.OK,
@@ -55,6 +55,4 @@ class FineController {
   });
 }
 
-
-
-export default new FineController()
+export default new FineController();

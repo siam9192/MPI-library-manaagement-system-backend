@@ -10,6 +10,7 @@ export interface IBorrowRecord extends IModelNecessaryFields {
   returnCondition?: EBorrowReturnCondition;
   isOverDue: boolean;
   fine: Types.ObjectId;
+  review?: Types.ObjectId;
   status: EBorrowRecordStatus;
   index: 1 | 0;
 }
