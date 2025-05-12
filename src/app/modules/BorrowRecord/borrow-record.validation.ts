@@ -6,7 +6,7 @@ const processBorrow = z
     bookConditionStatus: z.nativeEnum(EBorrowReturnCondition, {
       message: 'Invalid bookCondition status',
     }),
-    makeAvailable: z.boolean().default(true),
+    makeAvailable: z.boolean({required_error:"Make available is required"}),
     fineAmount: z.number().int().optional(),
     isFineReceived: z.boolean({
       required_error: 'isFineReceived status is required',
@@ -15,7 +15,8 @@ const processBorrow = z
   .refine(
     (data) => {
       if (data.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
-        return !data.fineAmount || data.fineAmount <= 0;
+
+        return data.fineAmount && data.fineAmount > 0;
       }
       return true;
     },

@@ -16,10 +16,14 @@ import { EBookCopyStatus, IBookCopy } from '../BookCopy/book-copy.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';
-import { objectId } from '../../helpers';
+import { isValidObjectId, objectId } from '../../helpers';
 
 class BorrowRecordService {
-  async processBorrowIntoDB(id: string, payload: IProcessBorrowPayload) {
+  async processBorrowIntoDB(authUser:IAuthUser,id: string, payload: IProcessBorrowPayload) {
+    // Id validation 
+    if(!isValidObjectId(id)){
+      throw new AppError(httpStatus.BAD_REQUEST,"Invalid borrowId")
+    }
     const borrow = await BorrowRecord.findById(id);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
@@ -56,7 +60,7 @@ class BorrowRecordService {
       };
 
       // Handle fines if overdue
-      if (isOverdue) {
+      if (isOverdue||condition !== EBorrowReturnCondition.NORMAL) {
         const fineData: Record<string, unknown> = {
           amount: overdueFineAmount + (payload.fineAmount || 0),
           student: borrow.student,
@@ -108,6 +112,7 @@ class BorrowRecordService {
     return null;
   }
 
+
   async getBorrowRecordsFromDB(
     filterPayload: IBorrowRecordsFilterPayload,
     paginationOptions: IPaginationOptions
@@ -126,11 +131,12 @@ class BorrowRecordService {
     }
 
     //  Check status validation
-    if (status && !Object.values(EBorrowRecordStatus).includes(status)) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
-    } else {
-      whereConditions.status = status;
-    }
+    if (status ) {
+    if(!Object.values(EBorrowRecordStatus).includes(status)) {
+       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+      }
+    whereConditions.status = status;
+    } 
 
     // Init variables
     let borrowRecords;
@@ -163,9 +169,21 @@ class BorrowRecordService {
         {
           $unwind: '$book',
         },
+     {
+          $lookup: {
+            from: 'bookcopies',
+            localField: 'copy',
+            foreignField: '_id',
+            as: 'copy',
+          },
+        },
+        {
+          $unwind: '$copy',
+        },
 
         {
           $sort: {
+            index:-1,
             [sortBy]: sortOrder,
           },
         },
@@ -207,7 +225,7 @@ class BorrowRecordService {
         .sort({
           [sortBy]: sortOrder,
         })
-        .populate(['student', 'book']);
+        .populate(['student', 'book','copy']);
       totalResult = await BorrowRecord.countDocuments(whereConditions);
     }
 

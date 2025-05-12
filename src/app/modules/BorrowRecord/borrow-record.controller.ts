@@ -7,7 +7,7 @@ import borrowRecordService from './borrow-record.service';
 
 class BorrowRecordController {
   processBorrowRecord = catchAsync(async (req, res) => {
-    const result = await borrowRecordService.processBorrowIntoDB(req.user, req.body);
+    const result = await borrowRecordService.processBorrowIntoDB(req.user,req.params.id,req.body);
     sendSuccessResponse(res, {
       message: 'Borrow has been processed successfully!',
       statusCode: httpStatus.CREATED,
@@ -25,7 +25,7 @@ class BorrowRecordController {
     sendSuccessResponse(res, {
       message: 'Borrow records retrieved successfully',
       statusCode: httpStatus.OK,
-      data: result,
+      ...result,
     });
   });
 
@@ -35,7 +35,7 @@ class BorrowRecordController {
     sendSuccessResponse(res, {
       message: 'Borrow requests retrieved successfully',
       statusCode: httpStatus.OK,
-      data: result,
+  ...result,
     });
   });
 

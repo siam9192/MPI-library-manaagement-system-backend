@@ -2,6 +2,7 @@ import { Router } from 'express';
 import reservationController from './reservation.controller';
 import auth from '../../middlewares/auth';
 import { EUserRole } from '../../type';
+import { managementRoles } from '../../utils/constant';
 
 const router = Router();
 
@@ -11,7 +12,7 @@ router.get('/:id', reservationController.getReservationById);
 router.get('/my/:id', auth(EUserRole.STUDENT), reservationController.getMyReservationById);
 
 router.patch('/:id/cancel', auth(EUserRole.STUDENT), reservationController.cancelReservation);
-router.patch('/:id/checkout', auth(EUserRole.STUDENT), reservationController.checkoutReservation);
+router.post('/:id/checkout', auth(...managementRoles), reservationController.checkoutReservation);
 
 const reservationRouter = router;
 

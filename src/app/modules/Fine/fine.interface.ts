@@ -23,7 +23,7 @@ type TFineStatus = `${EFineStatus}`;
 export enum EFineStatus {
   UNPAID = 'unpaid',
   PAID = 'paid',
-  waived = 'waived',
+  WAIVED = 'waived',
 }
 
 export interface IFinesFilterPayload {

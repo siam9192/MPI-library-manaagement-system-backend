@@ -15,7 +15,7 @@ const BorrowModel = new Schema<IBorrowRecord>(
     },
     student: {
       type: Schema.Types.ObjectId,
-      ref: 'Librarian',
+      ref: 'Student',
       required: true,
     },
     dueDate: {
@@ -61,6 +61,6 @@ const BorrowModel = new Schema<IBorrowRecord>(
   }
 );
 
-const BorrowRecord = model<IBorrowRecord>('Borrow', BorrowModel);
+const BorrowRecord = model<IBorrowRecord>('BorrowRecord', BorrowModel);
 
 export default BorrowRecord;

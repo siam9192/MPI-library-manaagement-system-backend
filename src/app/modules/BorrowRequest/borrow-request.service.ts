@@ -38,7 +38,16 @@ class BorrowRequestService {
     if (!book) {
       throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
     }
+   
+    const bookCopies = await BookCopy.find({
+      book:book._id,
+      status:EBookCopyStatus.AVAILABLE
+    })
 
+    if(!bookCopies.length){
+       throw new AppError(httpStatus.NOT_FOUND, "The Book is not available");
+    }
+    
     const systemSettings = await systemSettingService.getCurrentSettings();
 
     const ongoingBorrowExist = await BorrowRecord.find({
@@ -97,7 +106,7 @@ class BorrowRequestService {
     payload: IApproveBorrowRequestPayload
   ) {
     const request = await BorrowRequest.findById(id);
-    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Request not found');
 
     switch (request.status) {
       case EBorrowRequestStatus.APPROVED:

@@ -85,6 +85,7 @@ class ReservationService {
 
         {
           $sort: {
+            index:-1,
             [sortBy]: sortOrder,
           },
         },
@@ -150,66 +151,6 @@ class ReservationService {
       meta,
     };
   }
-
-  async getMyReservationsFromDB(
-    authUser: IAuthUser,
-    filterPayload: IMyReservationsFilterPayload,
-    paginationOptions: IPaginationOptions
-  ) {
-    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-    const { status } = filterPayload;
-
-    // Initialize filter conditions
-    const whereConditions: Record<string, any> = {
-      student: objectId(authUser.profileId),
-    };
-
-    // If valid status is provided then apply it
-    if (status) {
-      if (!Object.values(EReservationStatus).includes(status)) {
-        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
-      }
-      whereConditions.status = status;
-    }
-
-    const reservations = await Reservation.find(whereConditions)
-      .sort({
-        index: -1,
-        [sortBy]: sortOrder,
-      })
-      .skip(skip)
-      .limit(limit)
-      .populate(['book', 'copy']);
-
-    const totalResult = await Reservation.countDocuments(whereConditions);
-    const total = await Reservation.countDocuments({ student: objectId(authUser.profileId) });
-    const meta = {
-      page,
-      limit,
-      totalResult,
-      total,
-    };
-    return {
-      data: reservations,
-      meta,
-    };
-  }
-
-  async getReservationById(id: string) {
-    const reservation = await Reservation.findById(id).populate(['student', 'book', 'copy']);
-    if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
-    return reservation;
-  }
-
-  async getMyReservationById(authUser: IAuthUser, id: string) {
-    const reservation = await Reservation.findOne({
-      _id: objectId(id),
-      student: objectId(authUser.profileId),
-    }).populate(['book', 'copy']);
-    if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
-    return reservation;
-  }
-
   async cancelReservation(authUser: IAuthUser, id: string) {
     {
       const reservation = await Reservation.findOne({
@@ -283,8 +224,7 @@ class ReservationService {
 
   async checkoutReservation(authUser: IAuthUser, id: string) {
     const reservation = await Reservation.findOne({
-      _id: objectId(id),
-      student: objectId(authUser.profileId),
+      _id: objectId(id)
     }).populate(['request']);
 
     //Check if reservation exist
@@ -307,6 +247,7 @@ class ReservationService {
         },
         {
           status: EReservationStatus.FULFILLED,
+          index:0
         },
         {
           session,
@@ -353,6 +294,8 @@ class ReservationService {
 
       if (!createdBorrow) throw new Error();
 
+    
+
       await session.commitTransaction();
       return null;
     } catch (error) {
@@ -365,6 +308,67 @@ class ReservationService {
       session.endSession();
     }
   }
+
+  async getMyReservationsFromDB(
+    authUser: IAuthUser,
+    filterPayload: IMyReservationsFilterPayload,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+    const { status } = filterPayload;
+
+    // Initialize filter conditions
+    const whereConditions: Record<string, any> = {
+      student: objectId(authUser.profileId),
+    };
+
+    // If valid status is provided then apply it
+    if (status) {
+      if (!Object.values(EReservationStatus).includes(status)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+      }
+      whereConditions.status = status;
+    }
+
+    const reservations = await Reservation.find(whereConditions)
+      .sort({
+        index: -1,
+        [sortBy]: sortOrder,
+      })
+      .skip(skip)
+      .limit(limit)
+      .populate(['book', 'copy']);
+
+    const totalResult = await Reservation.countDocuments(whereConditions);
+    const total = await Reservation.countDocuments({ student: objectId(authUser.profileId) });
+    const meta = {
+      page,
+      limit,
+      totalResult,
+      total,
+    };
+    return {
+      data: reservations,
+      meta,
+    };
+  }
+
+  async getReservationById(id: string) {
+    const reservation = await Reservation.findById(id).populate(['student', 'book', 'copy']);
+    if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
+    return reservation;
+  }
+
+  async getMyReservationById(authUser: IAuthUser, id: string) {
+    const reservation = await Reservation.findOne({
+      _id: objectId(id),
+      student: objectId(authUser.profileId),
+    }).populate(['book', 'copy']);
+    if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
+    return reservation;
+  }
+
+  
 }
 
 export default new ReservationService();
