@@ -2,14 +2,19 @@ import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
 import BorrowRecord from '../BorrowRecord/borrow-record.model';
-import { EBookReviewStatus, IBookReviewsFilterPayload, ICreateBookReviewPayload } from './book-review.interface';
+import {
+  EBookReviewStatus,
+  IBookReviewsFilterPayload,
+  ICreateBookReviewPayload,
+} from './book-review.interface';
 import BookReview from './book-review.model';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import { calculatePagination } from '../../helpers/paginationHelper';
-import { z } from 'zod';
+
 import { isValidObjectId, objectId } from '../../helpers';
+import { z } from 'zod';
 
 class BookReviewService {
   async createBookReview(authUser: IAuthUser, payload: ICreateBookReviewPayload) {
@@ -92,68 +97,74 @@ class BookReviewService {
     }
   }
 
-  async getBookReviewsFromDB (filterPayload:IBookReviewsFilterPayload,paginationOptions:IPaginationOptions){
-   const {page,skip,limit,sortBy,sortOrder} = calculatePagination(paginationOptions)
+  async getBookReviewsFromDB(
+    filterPayload: IBookReviewsFilterPayload,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+    const { bookId, roll, minRating, maxRating, status } = filterPayload;
 
-   const {bookId,roll,minRating,maxRating,status} = filterPayload
+    const whereConditions: Record<string, any> = {};
 
-   const whereConditions:Record<string,any> = {
-
-   }
-  
-   // Check if valid roll then apply it
-   if(roll){
-      if(! z.number().int().safeParse(Number(roll)).success){
-         throw new AppError(httpStatus.BAD_REQUEST,"Invalid roll")
+    // Validate and apply roll
+    if (roll) {
+      if (!z.number().int().safeParse(Number(roll)).success) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid roll');
       }
-      whereConditions.roll = parseInt(roll)
-   }
-
-   if(bookId){
-       if(!isValidObjectId(bookId)){
-         throw new AppError(httpStatus.BAD_REQUEST,"Invalid roll")
-      }
-      whereConditions.book = objectId(bookId)
-   }
-
-   if(status){
-         if(Object.values(EBookReviewStatus).includes(status)){
-         throw new AppError(httpStatus.BAD_REQUEST,"Invalid roll")
-      }
-      whereConditions.status = status
-   }
-   
-  //  If valid minRatting or maxRatting or both exist the apply 
- if (minRating || maxRating) {
-  const avgRatingCondition: Record<string, any> = {};
-
-  if (minRating) {
-    const parsed = z.number().max(5).safeParse(Number(minRating));
-    if (!parsed.success) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Invalid minimum rating (must be a number ≤ 5)");
+      whereConditions['student.roll'] = parseInt(roll);
     }
-    avgRatingCondition.$gte = parsed.data;
-  }
 
-  if (maxRating) {
-    const parsed = z.number().max(5).safeParse(Number(maxRating));
-    if (!parsed.success) {
-      throw new AppError(httpStatus.BAD_REQUEST, "Invalid maximum rating (must be a number ≤ 5)");
+    // Validate and apply bookId
+    if (bookId) {
+      if (!isValidObjectId(bookId)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid bookId');
+      }
+      whereConditions.book = objectId(bookId);
     }
-    avgRatingCondition.$lte = parsed.data;
-  }
 
-  if (Object.keys(avgRatingCondition).length > 0) {
-    whereConditions.avgRating = avgRatingCondition;
-  }
-}
+    // Validate and apply status
+    if (status) {
+      if (!Object.values(EBookReviewStatus).includes(status)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+      }
+      whereConditions.status = status;
+    }
 
+    // Validate and apply minRating and/or maxRating
+    if (minRating || maxRating) {
+      const avgRatingCondition: Record<string, any> = {};
+      if (minRating) {
+        const parsed = z.number().max(5).safeParse(Number(minRating));
+        if (!parsed.success) {
+          throw new AppError(
+            httpStatus.BAD_REQUEST,
+            'Invalid minimum rating (must be a number ≤ 5)'
+          );
+        }
+        avgRatingCondition.$gte = parsed.data;
+      }
+      if (maxRating) {
+        const parsed = z.number().max(5).safeParse(Number(maxRating));
+        if (!parsed.success) {
+          throw new AppError(
+            httpStatus.BAD_REQUEST,
+            'Invalid maximum rating (must be a number ≤ 5)'
+          );
+        }
+        avgRatingCondition.$lte = parsed.data;
+      }
 
-let reviews;
-let totalResult;
+      if (Object.keys(avgRatingCondition).length > 0) {
+        whereConditions.avgRating = avgRatingCondition;
+      }
+    }
 
-if(roll){
- reviews =  await BookReview.aggregate([
+    let reviews;
+    let totalResult;
+
+    if (roll) {
+      // Use aggregation when roll is involved
+      const aggregationPipeline = [
         {
           $lookup: {
             from: 'students',
@@ -162,12 +173,8 @@ if(roll){
             as: 'student',
           },
         },
-        {
-          $unwind: '$student',
-        },
-        {
-          $match: whereConditions
-        },
+        { $unwind: '$student' },
+        { $match: whereConditions },
         {
           $lookup: {
             from: 'books',
@@ -176,71 +183,109 @@ if(roll){
             as: 'book',
           },
         },
+        { $unwind: '$book' },
         {
-          $unwind: '$book',
-        },
-     {
           $lookup: {
-            from: 'borrowRecord',
-            localField: 'book',
+            from: 'borrowrecords',
+            localField: 'borrow',
             foreignField: '_id',
-            as: 'book',
+            as: 'borrow',
           },
         },
+        { $unwind: '$borrow' },
+        { $sort: { [sortBy]: sortOrder } },
+        { $skip: skip },
+        { $limit: limit },
+      ];
+
+      const countPipeline = [
         {
-          $unwind: '$book',
-        },
-        {
-          $sort: {
-            [sortBy]: sortOrder,
+          $lookup: {
+            from: 'students',
+            localField: 'student',
+            foreignField: '_id',
+            as: 'student',
           },
         },
-        {
-          $skip: skip,
-        },
-        {
-          $limit: limit,
-        },
+        { $unwind: '$student' },
+        { $match: whereConditions },
+        { $count: 'total' },
+      ];
+
+      const [reviewDocs, countDocs] = await Promise.all([
+        BookReview.aggregate(aggregationPipeline),
+        BookReview.aggregate(countPipeline),
       ]);
 
-      totalResult =
-        (
-          await BookReview.aggregate([
-            {
-              $lookup: {
-                from: 'students',
-                localField: 'student',
-                foreignField: '_id',
-                as: 'student',
-              },
-            },
-            {
-              $unwind: '$student',
-            },
-            {
-              $match: whereConditions,
-            },
-            {
-              $count: 'total',
-            },
-          ])
-        )[0]?.total || 0;
+      reviews = reviewDocs;
+      totalResult = countDocs[0]?.total || 0;
+    } else {
+      // Simple query with population
+      const [reviewDocs, totalDocs] = await Promise.all([
+        BookReview.find(whereConditions)
+          .sort({ [sortBy]: sortOrder })
+          .skip(skip)
+          .limit(limit)
+          .populate(['student', 'book', 'borrowRecord'])
+          .lean(),
+        BookReview.countDocuments(whereConditions),
+      ]);
+
+      reviews = reviewDocs;
+      totalResult = totalDocs;
+    }
+
+    return {
+      data: reviews,
+      meta: {
+        page,
+        limit,
+        totalResult,
+      },
+    };
   }
-  else {
-    reviews = await BookReview.find(whereConditions)
-        .sort({
-          index: -1,
-          [sortBy]: sortOrder,
-        })
-        .populate(['student', 'book','borrowRecord']);
-      totalResult = await BookReview.countDocuments();
-       const total = await BookReview.countDocuments();
+  async getBookReviewById(id: string) {
+    // Validate review ID
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid review ID');
+    }
+
+    const review = await BookReview.findOne({
+      _id: objectId(id),
+      status: {
+        $ne: EBookReviewStatus.DELETED,
+      },
+    }).populate(['student', 'book', 'borrow']);
+    if (!review) throw new AppError(httpStatus.NOT_FOUND, 'Book review not found');
+    return review;
+  }
+
+  async getPublicBookReviewsByBookId(bookId: string, paginationOptions: IPaginationOptions) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    // Validate bookId
+    if (!bookId || !isValidObjectId(bookId)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid bookId');
+    }
+
+    const whereConditions = {
+      book: objectId(bookId),
+      status: EBookReviewStatus.VISIBLE,
+    };
+    // Query reviews with population
+    const reviews = await BookReview.find(whereConditions)
+      .populate(['student', 'book'])
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    const totalResult = await BookReview.find(whereConditions).countDocuments();
 
     const meta = {
       page,
       limit,
       totalResult,
-      total,
     };
 
     return {
@@ -248,8 +293,67 @@ if(roll){
       meta,
     };
   }
-}
+  async getPublicBookReviewById(id: string) {
+    // Validate review ID
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid review ID');
+    }
 
+    const review = await BookReview.findOne({
+      _id: objectId(id),
+      status: EBookReviewStatus.VISIBLE,
+    }).populate(['student', 'book']);
+    if (!review) throw new AppError(httpStatus.NOT_FOUND, 'Book review not found');
+    return review;
   }
 
+  async changeBookReviewStatus(id: string, payload: { status: EBookReviewStatus }) {
+    // Validate review ID
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid review ID');
+    }
+    // Update the review
+    const updatedReview = await BookReview.findByIdAndUpdate(
+      id,
+      { status: payload.status },
+      { new: true }
+    )
+      .populate(['student', 'book', 'borrowRecord'])
+      .lean();
 
+    // Handle not found
+    if (!updatedReview) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Review not found');
+    }
+    return updatedReview;
+  }
+
+  async softDeleteBookReviewIntoDB(authUser: IAuthUser,id:string) {
+    // Validate review ID
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid review ID');
+    }
+
+    const review = await BookReview.findOne({
+      _id: objectId(id),
+      student: objectId(authUser.profileId),
+    });
+    if (!review) throw new AppError(httpStatus.NOT_FOUND, 'Review not found');
+
+    const updateStatus = await BookReview.updateOne(
+      { _id: objectId(id) },
+      { status: EBookReviewStatus.DELETED }
+    );
+
+    //  Check if deleted
+    if (!updateStatus.modifiedCount) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Review deletion failed'
+      );
+    }
+    return null;
+  }
+}
+
+export default new BookReviewService();

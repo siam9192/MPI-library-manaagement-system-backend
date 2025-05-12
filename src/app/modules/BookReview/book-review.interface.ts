@@ -27,7 +27,7 @@ export interface IBookReviewsFilterPayload {
   roll?: string;
   status?: EBookReviewStatus;
   minRating?: string;
-  maxRating: string;
+  maxRating?: string;
 }
 
 export interface IMyBookReviewsFilterPayload {
