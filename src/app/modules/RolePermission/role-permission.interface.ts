@@ -3,7 +3,7 @@ type TBookPermissions = {
   canViewBooks: boolean;
   canAddBooks: boolean;
   canEditBooks: boolean;
-  canDeleteBo: boolean;
+  canDeleteBooks: boolean;
 };
 
 type TCirculationPermissions = {

@@ -211,7 +211,7 @@ class FineService {
     const fine = await Fine.findOne({ _id: objectId(id) });
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine  not found');
     if (fine.status !== EFineStatus.UNPAID) {
-      throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${status}`);
+      throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${fine.status}`);
     }
     // Perform the status update
     return await Fine.findByIdAndUpdate(id, { status:EFineStatus.WAIVED }, { new: true });
@@ -221,7 +221,7 @@ class FineService {
     const fine = await Fine.findOne({ _id: objectId(id) });
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine not found');
     if (fine.status !== EFineStatus.UNPAID) {
-      throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${status}`);
+      throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${fine.status}`);
     }
     // Perform the status update
     return await Fine.findByIdAndUpdate(id, { status:EFineStatus.PAID }, { new: true });
