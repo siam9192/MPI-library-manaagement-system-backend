@@ -1,4 +1,4 @@
-import { EUserRole } from "../../type";
+import { EUserRole } from '../../type';
 
 // --- Base Permission Types ---
 export type TBookPermissions = {
@@ -9,6 +9,7 @@ export type TBookPermissions = {
 };
 
 export type TBorrowRequestPermissions = {
+  canView: true;
   canApprove: boolean;
   canReject: boolean;
   canOverrideDueDate: boolean;
@@ -54,9 +55,9 @@ export type TStudentManagementPermissions = {
 };
 
 export type TLibrarianManagementPermissions = {
-  canViewLibrarians: boolean;
-  canDeleteLibrarians: boolean;
-  canEditLibrarians: boolean;
+  canView: boolean;
+  canDelete: boolean;
+  canEdit: boolean;
   canEditPermissions: boolean;
 };
 
@@ -76,62 +77,61 @@ export type TStudentPermissions = {
   canUseSupport: boolean;
   canConfigureBasicSettings: boolean;
   canReceiveNotifications: boolean;
+  isEditable: boolean;
 };
 
 // --- Librarian Permissions ---
 export type TLibrarianPermissions = {
-  book:TBookPermissions,
-  borrowRequest:TBorrowRequestPermissions,
-  reservation:TReservationPermissions,
-  fine:TFinePermissions,
-  student:TStudentManagementPermissions,
-  report:TReportPermissions,
-  system:TSystemPermissions
+  book: TBookPermissions;
+  borrowRequest: TBorrowRequestPermissions;
+  reservation: TReservationPermissions;
+  fine: TFinePermissions;
+  student: TStudentManagementPermissions;
+  report: TReportPermissions;
+  system: TSystemPermissions;
   notification: {
-    student:TNotificationPermissions
-  }
-  isEditable:boolean
-}
+    student: TNotificationPermissions;
+  };
+  isEditable: boolean;
+};
 
 // --- Admin Permissions ---
-export type TAdminPermissions ={
-  book:TBookPermissions,
-  borrowRequest:TBorrowRequestPermissions,
-  reservation:TReservationPermissions,
-  fine:TFinePermissions,
-  student:TStudentManagementPermissions,
-  librarian:TLibrarianManagementPermissions
-  report:TReportPermissions,
-  system:TSystemPermissions
+export type TAdminPermissions = {
+  book: TBookPermissions;
+  borrowRequest: TBorrowRequestPermissions;
+  reservation: TReservationPermissions;
+  fine: TFinePermissions;
+  student: TStudentManagementPermissions;
+  librarian: TLibrarianManagementPermissions;
+  report: TReportPermissions;
+  system: TSystemPermissions;
   notification: {
-    student:TNotificationPermissions,
-    librarian:TNotificationPermissions
-  },
- isEditable:boolean
-}
+    student: TNotificationPermissions;
+    librarian: TNotificationPermissions;
+  };
+  isEditable: boolean;
+};
 
 // --- Super Admin Permissions ---
 export type TSuperPermissions = {
-  book:TBookPermissions,
-  borrowRequest:TBorrowRequestPermissions,
-  reservation:TReservationPermissions,
-  fine:TFinePermissions,
-  student:TStudentManagementPermissions,
-  librarian:TLibrarianManagementPermissions
-  admin:TAdminManagementPermissions
-  report:TReportPermissions,
-  system:TSystemPermissions
+  book: TBookPermissions;
+  borrowRequest: TBorrowRequestPermissions;
+  reservation: TReservationPermissions;
+  fine: TFinePermissions;
+  student: TStudentManagementPermissions;
+  librarian: TLibrarianManagementPermissions;
+  admin: TAdminManagementPermissions;
+  report: TReportPermissions;
+  system: TSystemPermissions;
   notification: {
-    student:TNotificationPermissions,
-    librarian:TNotificationPermissions,
-    admin:TNotificationPermissions
-  },
-  isEditable:false
+    student: TNotificationPermissions;
+    librarian: TNotificationPermissions;
+    admin: TNotificationPermissions;
+  };
+  isEditable: false;
+};
+
+export interface IRolePermission {
+  role: EUserRole;
+  permissions: TSuperPermissions | TAdminPermissions | TLibrarianPermissions | TStudentPermissions;
 }
-
-
-  export interface IRolePermission {
-    role:EUserRole,
-    permissions:TSuperPermissions | TAdminPermissions | TLibrarianPermissions | TStudentPermissions;
-  }
-

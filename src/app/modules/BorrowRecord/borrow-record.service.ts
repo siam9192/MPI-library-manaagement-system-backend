@@ -19,10 +19,10 @@ import { z } from 'zod';
 import { isValidObjectId, objectId } from '../../helpers';
 
 class BorrowRecordService {
-  async processBorrowIntoDB(authUser:IAuthUser,id: string, payload: IProcessBorrowPayload) {
-    // Id validation 
-    if(!isValidObjectId(id)){
-      throw new AppError(httpStatus.BAD_REQUEST,"Invalid borrowId")
+  async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
+    // Id validation
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
     }
     const borrow = await BorrowRecord.findById(id);
     if (!borrow) {
@@ -60,7 +60,7 @@ class BorrowRecordService {
       };
 
       // Handle fines if overdue
-      if (isOverdue||condition !== EBorrowReturnCondition.NORMAL) {
+      if (isOverdue || condition !== EBorrowReturnCondition.NORMAL) {
         const fineData: Record<string, unknown> = {
           amount: overdueFineAmount + (payload.fineAmount || 0),
           student: borrow.student,
@@ -112,7 +112,6 @@ class BorrowRecordService {
     return null;
   }
 
-
   async getBorrowRecordsFromDB(
     filterPayload: IBorrowRecordsFilterPayload,
     paginationOptions: IPaginationOptions
@@ -131,12 +130,12 @@ class BorrowRecordService {
     }
 
     //  Check status validation
-    if (status ) {
-    if(!Object.values(EBorrowRecordStatus).includes(status)) {
-       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+    if (status) {
+      if (!Object.values(EBorrowRecordStatus).includes(status)) {
+        throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
       }
-    whereConditions.status = status;
-    } 
+      whereConditions.status = status;
+    }
 
     // Init variables
     let borrowRecords;
@@ -169,7 +168,7 @@ class BorrowRecordService {
         {
           $unwind: '$book',
         },
-     {
+        {
           $lookup: {
             from: 'bookcopies',
             localField: 'copy',
@@ -183,7 +182,7 @@ class BorrowRecordService {
 
         {
           $sort: {
-            index:-1,
+            index: -1,
             [sortBy]: sortOrder,
           },
         },
@@ -225,7 +224,7 @@ class BorrowRecordService {
         .sort({
           [sortBy]: sortOrder,
         })
-        .populate(['student', 'book','copy']);
+        .populate(['student', 'book', 'copy']);
       totalResult = await BorrowRecord.countDocuments(whereConditions);
     }
 

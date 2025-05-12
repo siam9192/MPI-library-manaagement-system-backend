@@ -38,16 +38,16 @@ class BorrowRequestService {
     if (!book) {
       throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
     }
-   
-    const bookCopies = await BookCopy.find({
-      book:book._id,
-      status:EBookCopyStatus.AVAILABLE
-    })
 
-    if(!bookCopies.length){
-       throw new AppError(httpStatus.NOT_FOUND, "The Book is not available");
+    const bookCopies = await BookCopy.find({
+      book: book._id,
+      status: EBookCopyStatus.AVAILABLE,
+    });
+
+    if (!bookCopies.length) {
+      throw new AppError(httpStatus.NOT_FOUND, 'The Book is not available');
     }
-    
+
     const systemSettings = await systemSettingService.getCurrentSettings();
 
     const ongoingBorrowExist = await BorrowRecord.find({

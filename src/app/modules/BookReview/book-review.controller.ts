@@ -76,5 +76,4 @@ class BookReviewController {
   });
 }
 
-
-export default new BookReviewController()
+export default new BookReviewController();

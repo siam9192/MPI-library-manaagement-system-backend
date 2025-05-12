@@ -16,6 +16,7 @@ import reservationRouter from '../modules/Reservation/reservation.route';
 import borrowRecordRouter from '../modules/BorrowRecord/borrow-record.route';
 import fineRouter from '../modules/Fine/fine.route';
 import bookReviewRouter from '../modules/BookReview/book-review.route';
+import rolePermissionRouter from '../modules/RolePermission/role-permission.router';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -72,7 +73,7 @@ const moduleRoutes: TModuleRoutes = [
     path: '/borrows',
     router: borrowRecordRouter,
   },
-   {
+  {
     path: '/book-reviews',
     router: bookReviewRouter,
   },
@@ -88,6 +89,10 @@ const moduleRoutes: TModuleRoutes = [
     path: '/system-settings',
     router: systemSettingRouter,
   },
+  {
+    path:'/role-permissions',
+    router:rolePermissionRouter
+  }
 ];
 
 const routes = moduleRoutes.map((route) => router.use(route.path, route.router));

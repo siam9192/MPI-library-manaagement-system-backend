@@ -27,7 +27,7 @@ const FineModel = new Schema<IFine>(
     status: {
       type: String,
       enum: Object.values(EFineStatus),
-      default:EFineStatus.UNPAID
+      default: EFineStatus.UNPAID,
     },
     issuedDate: {
       type: Date,

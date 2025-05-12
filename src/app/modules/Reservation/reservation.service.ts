@@ -85,7 +85,7 @@ class ReservationService {
 
         {
           $sort: {
-            index:-1,
+            index: -1,
             [sortBy]: sortOrder,
           },
         },
@@ -224,7 +224,7 @@ class ReservationService {
 
   async checkoutReservation(authUser: IAuthUser, id: string) {
     const reservation = await Reservation.findOne({
-      _id: objectId(id)
+      _id: objectId(id),
     }).populate(['request']);
 
     //Check if reservation exist
@@ -247,7 +247,7 @@ class ReservationService {
         },
         {
           status: EReservationStatus.FULFILLED,
-          index:0
+          index: 0,
         },
         {
           session,
@@ -293,8 +293,6 @@ class ReservationService {
       );
 
       if (!createdBorrow) throw new Error();
-
-    
 
       await session.commitTransaction();
       return null;
@@ -367,8 +365,6 @@ class ReservationService {
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     return reservation;
   }
-
-  
 }
 
 export default new ReservationService();

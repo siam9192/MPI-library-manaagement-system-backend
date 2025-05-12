@@ -53,7 +53,7 @@ class FineController {
       data: result,
     });
   });
-   waveFine = catchAsync(async (req, res) => {
+  waveFine = catchAsync(async (req, res) => {
     const result = await fineService.waiveFineIntoDB(req.params.id);
     sendSuccessResponse(res, {
       message: 'Fine waved successfully',
@@ -61,8 +61,8 @@ class FineController {
       data: result,
     });
   });
-  
-    payFine = catchAsync(async (req, res) => {
+
+  payFine = catchAsync(async (req, res) => {
     const result = await fineService.payFineIntoDB(req.params.id);
     sendSuccessResponse(res, {
       message: 'Fine paid successfully',

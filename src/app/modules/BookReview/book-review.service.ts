@@ -328,7 +328,7 @@ class BookReviewService {
     return updatedReview;
   }
 
-  async softDeleteBookReviewIntoDB(authUser: IAuthUser,id:string) {
+  async softDeleteBookReviewIntoDB(authUser: IAuthUser, id: string) {
     // Validate review ID
     if (!isValidObjectId(id)) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid review ID');

@@ -8,7 +8,12 @@ import borrowRecordValidation from './borrow-record.validation';
 
 const router = Router();
 
-router.post('/:id/process',validateRequest(borrowRecordValidation.processBorrow), auth(...managementRoles), borrowRecordController.processBorrowRecord);
+router.post(
+  '/:id/process',
+  validateRequest(borrowRecordValidation.processBorrow),
+  auth(...managementRoles),
+  borrowRecordController.processBorrowRecord
+);
 router.get('/', borrowRecordController.getBorrowRecords);
 router.get('/my', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecords);
 router.get('/:id', borrowRecordController.getBorrowRecordById);
