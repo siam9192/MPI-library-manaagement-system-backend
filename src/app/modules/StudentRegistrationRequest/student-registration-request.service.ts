@@ -170,7 +170,6 @@ class StudentRegistrationRequestService {
       if (updateStatus.modifiedCount === 0) {
         throw new Error('Failed to update request status');
       }
-      console.log(request);
 
       // Create a new User with data from the request
       const [createdUser] = await User.create(

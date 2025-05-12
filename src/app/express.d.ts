@@ -6,7 +6,5 @@ declare global {
     interface Request {
       user?: IUser; // Add your custom field here
     }
-
-  
   }
 }

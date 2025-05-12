@@ -242,6 +242,77 @@ class BorrowRecordService {
       meta,
     };
   }
+  async getBorrowRecordById(id: string) {
+    const borrowRecord = await BorrowRecord.findById(id).populate(['book', 'copy', 'student']);
+    if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
+    return borrowRecord;
+  }
+
+  async getMyNotReviewedFromDB(
+    authUser: IAuthUser,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const whereConditions: any = {
+      student: objectId(authUser.profileId),
+      review:null,
+    };
+    const borrowRecords = await BorrowRecord.find(whereConditions)
+      .skip(skip)
+      .limit(limit)
+      .sort({
+        [sortBy]: sortOrder,
+      })
+      .populate(['book', 'copy']);
+
+    const totalResult = await BorrowRecord.countDocuments(whereConditions);
+
+    const meta = {
+      page,
+      limit,
+      totalResult,
+    };
+
+    return {
+      data: borrowRecords,
+      meta,
+    };
+  }
+  
+  async getMyNotReviewedBorrowRecordsFromDB(
+    authUser: IAuthUser,
+    paginationOptions: IPaginationOptions
+  ) {
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+    const whereConditions: any = {
+      student: objectId(authUser.profileId),
+      review: {
+        $eq: null,
+      },
+    };
+    const borrowRecords = await BorrowRecord.find(whereConditions)
+      .skip(skip)
+      .limit(limit)
+      .sort({
+        [sortBy]: sortOrder,
+      })
+      .populate(['book', 'copy']);
+
+    const totalResult = await BorrowRecord.countDocuments(whereConditions);
+
+    const meta = {
+      page,
+      limit,
+      totalResult,
+    };
+
+    return {
+      data: borrowRecords,
+      meta,
+    };
+  }
 
   async getMyBorrowRecordsFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
     const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
@@ -269,12 +340,6 @@ class BorrowRecordService {
       data: borrowRecords,
       meta,
     };
-  }
-
-  async getBorrowRecordById(id: string) {
-    const borrowRecord = await BorrowRecord.findById(id).populate(['book', 'copy', 'student']);
-    if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
-    return borrowRecord;
   }
 
   async getMyBorrowRecordById(authUser: IAuthUser, id: string) {

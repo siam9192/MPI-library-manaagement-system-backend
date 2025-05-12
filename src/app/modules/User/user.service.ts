@@ -230,7 +230,7 @@ class UserService {
       userMetaData: user,
     };
 
-    return  data
+    return data;
   }
 
   async changeUserStatusIntoDB(id: string, payload: { status: EUserStatus }) {

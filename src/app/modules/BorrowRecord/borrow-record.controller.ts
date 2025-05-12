@@ -38,6 +38,18 @@ class BorrowRecordController {
       ...result,
     });
   });
+  getMyNotReviewedBorrowRecords = catchAsync(async (req, res) => {
+    const paginationOptions = paginationOptionPicker(req.query);
+    const result = await borrowRecordService.getMyNotReviewedBorrowRecordsFromDB(
+      req.user,
+      paginationOptions
+    );
+    sendSuccessResponse(res, {
+      message: 'Not Borrow records retrieved successfully',
+      statusCode: httpStatus.OK,
+      ...result,
+    });
+  });
 
   getMyBorrowRecordById = catchAsync(async (req, res) => {
     const result = await borrowRecordService.getMyBorrowRecordById(req.user, req.params.id);

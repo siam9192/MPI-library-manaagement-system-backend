@@ -44,7 +44,7 @@ const UserModelSchema = new Schema<IUser>(
     },
     permissions: {
       type: Schema.Types.Mixed,
-      required: true,
+      // required: true,
     },
   },
   {
@@ -52,7 +52,6 @@ const UserModelSchema = new Schema<IUser>(
   }
 );
 
-const User = model<IUser>('User', UserModelSchema);
 UserModelSchema.pre('save', async function (next) {
   try {
     const user = this as IUser;
@@ -68,10 +67,11 @@ UserModelSchema.pre('save', async function (next) {
     user.permissions = permissions as any; // assign directly if types match
 
     next();
-  } catch (error:any) {
+  } catch (error: any) {
     next(error);
   }
 });
 
+const User = model<IUser>('User', UserModelSchema);
 
 export default User;
