@@ -1,6 +1,11 @@
-import { ILibrarian, IStudent } from '../../type';
+import { ILibrarian, IStudent, TLibrarianPermissions } from '../../type';
 import { IModelNecessaryFields } from '../../types/model.type';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
+import {
+  TAdminPermissions,
+  TStudentPermissions,
+  TSuperPermissions,
+} from '../RolePermission/role-permission.interface';
 
 export interface IUser extends IModelNecessaryFields {
   email: string;
@@ -10,6 +15,7 @@ export interface IUser extends IModelNecessaryFields {
   status: TUserStatus;
   lastLoginAt?: Date;
   lastPasswordChangedAt: Date;
+  permissions: TSuperPermissions | TAdminPermissions | TLibrarianPermissions | TStudentPermissions;
 }
 
 export type TUserRole = `${EUserRole}`;

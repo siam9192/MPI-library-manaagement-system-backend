@@ -1,18 +1,14 @@
-import { Router } from "express";
-import rolePermissionController from "./role-permission.controller";
+import { Router } from 'express';
+import rolePermissionController from './role-permission.controller';
 
-const router = Router()
+const router = Router();
 
+router.put('/:role', rolePermissionController.updateRolePermissions);
 
-router.put('/:role',rolePermissionController.updateRolePermissions)
+router.get('/', rolePermissionController.getAllRolePermissions);
 
-router.get('/',rolePermissionController.getAllRolePermissions)
+router.get('/:role', rolePermissionController.getRolePermissions);
 
-router.get('/:role',rolePermissionController.getRolePermissions)
-
-
-
-const rolePermissionRouter  = router
-
+const rolePermissionRouter = router;
 
 export default rolePermissionRouter;

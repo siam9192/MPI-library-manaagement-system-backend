@@ -1,15 +1,12 @@
-// src/@types/express.d.ts
-
-import express from 'express';
-import { TRole } from '../modules/user/user.interface';
-import { JwtPayload } from 'jsonwebtoken';
-import { IAuthUser } from './modules/Auth/auth.interface';
+// types/express.d.ts
+import { IUser } from '../interfaces/user.interface'; // adjust path as needed
 
 declare global {
   namespace Express {
-    export interface Request {
-      user: IAuthUser;
-      // Add other properties here as needed
+    interface Request {
+      user?: IUser; // Add your custom field here
     }
+
+  
   }
 }

@@ -90,9 +90,9 @@ const moduleRoutes: TModuleRoutes = [
     router: systemSettingRouter,
   },
   {
-    path:'/role-permissions',
-    router:rolePermissionRouter
-  }
+    path: '/role-permissions',
+    router: rolePermissionRouter,
+  },
 ];
 
 const routes = moduleRoutes.map((route) => router.use(route.path, route.router));

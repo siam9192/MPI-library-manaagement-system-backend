@@ -229,6 +229,8 @@ class UserService {
       profile,
       userMetaData: user,
     };
+
+    return  data
   }
 
   async changeUserStatusIntoDB(id: string, payload: { status: EUserStatus }) {

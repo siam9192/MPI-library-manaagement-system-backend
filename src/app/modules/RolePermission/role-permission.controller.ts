@@ -37,6 +37,4 @@ class RolePermissionController {
   });
 }
 
-
-
-export default new RolePermissionController()
+export default new RolePermissionController();
