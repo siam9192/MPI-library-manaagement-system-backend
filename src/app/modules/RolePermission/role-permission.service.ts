@@ -8,9 +8,11 @@ import {
   StudentDefaultPermissions,
   SuperAdminDefaultPermissions,
 } from './role-permission.constant';
-import { IRolePermission } from './role-permission.interface';
+import {TRolePermissions } from './role-permission.interface';
 import RolePermission from './role-permission.model';
 import rolePermissionValidation from './role-permission.validation';
+import { flattenObject } from '../../helpers';
+import User from '../User/user.model';
 
 class RolePermissionService {
   /**
@@ -59,7 +61,13 @@ class RolePermissionService {
    */
   async updateRolePermissionsIntoDB(
     role: EUserRole,
-    payload: Partial<Pick<IRolePermission, 'permissions'>>
+    payload:{
+      permissions:TRolePermissions,
+      options:{
+      applyAll?:boolean
+    }
+    },
+   
   ) {
     // Validate role
     if (!z.nativeEnum(EUserRole).safeParse(role).success) {
@@ -70,21 +78,22 @@ class RolePermissionService {
 
     switch (role){
       case EUserRole.STUDENT:
-      rolePermissionValidation.updateStudentPermissions.parse(payload);
+      rolePermissionValidation.updateStudentPermissions.parse(payload.permissions);
       break;
       case EUserRole.LIBRARIAN:
-      rolePermissionValidation.updateLibrarianPermissions.parse(payload)
+      rolePermissionValidation.updateLibrarianPermissions.parse(payload.permissions)
       break
       case EUserRole.ADMIN:
-      rolePermissionValidation.updateAdminPermissions.parse(payload)
+      rolePermissionValidation.updateAdminPermissions.parse(payload.permissions)
       break
       case EUserRole.SUPER_ADMIN:
-      rolePermissionValidation.updateAdminPermissions.parse(payload)
+      rolePermissionValidation.updateAdminPermissions.parse(payload.permissions)
       break
     }
 
 
     const permission = await RolePermission.findOne({ role });
+
 
     if (!permission) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Permission update failed!');
@@ -94,9 +103,25 @@ class RolePermissionService {
     if (!permission.permissions.isEditable) {
       throw new AppError(httpStatus.FORBIDDEN, 'Permissions are not editable');
     }
+  
+    const updateData:Record<string,unknown> = {}
+    flattenObject(payload.permissions,'',updateData)
+
+
 
     // Update permissions
-    await RolePermission.findOneAndUpdate({ role }, { permissions: payload }, { new: true });
+    await RolePermission.findOneAndUpdate({ role }, { permissions:updateData }, { new: true });
+    
+    // If apply all option is true then apply it to all the same role users
+     
+    if(payload.options.applyAll){
+    User.updateMany({
+        role,
+      },{
+        permissions:updateData
+      })
+    }
+
   }
 
   /**
