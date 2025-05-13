@@ -20,8 +20,6 @@ import { TRolePermissions } from '../RolePermission/role-permission.interface';
 import rolePermissionValidation from '../RolePermission/role-permission.validation';
 
 class UserService {
-
-
   async getStudentsFromDB(
     filterPayload: IRoleBaseUsersFilterPayload,
     paginationOptions: IPaginationOptions
@@ -296,59 +294,57 @@ class UserService {
     }
   }
 
-  async updateUserPermissionsIntoDB (id:string,payload:TRolePermissions){
-  if(!isValidObjectId(id)){
-    throw new AppError(httpStatus.BAD_REQUEST,"Invalid id")
-  }
-
-   const user = await User.findOne({
-    _id:objectId(id),
-    status:{
-      $ne:EUserStatus.DELETED
+  async updateUserPermissionsIntoDB(id: string, payload: TRolePermissions) {
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
     }
-   })
-   if(!user) {
-    throw new AppError(httpStatus.NOT_FOUND,"User not found")
-   }
-   if(user.role === EUserRole.SUPER_ADMIN){
-    throw new AppError(httpStatus.FORBIDDEN,"Super admin permissions can not updatable")
-   }
-   
 
-    switch (user.role){
+    const user = await User.findOne({
+      _id: objectId(id),
+      status: {
+        $ne: EUserStatus.DELETED,
+      },
+    });
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    if (user.role === EUserRole.SUPER_ADMIN) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Super admin permissions can not updatable');
+    }
+
+    switch (user.role) {
       case EUserRole.STUDENT:
-      rolePermissionValidation.updateStudentPermissions.parse(payload);
-      break;
+        rolePermissionValidation.updateStudentPermissions.parse(payload);
+        break;
       case EUserRole.LIBRARIAN:
-      rolePermissionValidation.updateLibrarianPermissions.parse(payload)
-      break
+        rolePermissionValidation.updateLibrarianPermissions.parse(payload);
+        break;
       case EUserRole.ADMIN:
-      rolePermissionValidation.updateAdminPermissions.parse(payload)
-      break
+        rolePermissionValidation.updateAdminPermissions.parse(payload);
+        break;
     }
 
-   const updatePermissionsData:any = flattenObject(payload,'permissions')
-    
-   await User.findByIdAndUpdate(id,updatePermissionsData)
+    const updatePermissionsData: any = flattenObject(payload, 'permissions');
 
+    await User.findByIdAndUpdate(id, updatePermissionsData);
   }
 
-  async getUserPermissions (id:string){
-    if(!isValidObjectId(id)){
-    throw new AppError(httpStatus.BAD_REQUEST,"Invalid id")
-  }
-
-  const user = await User.findOne({
-    _id:objectId(id),
-    status:{
-      $ne:EUserStatus.DELETED
+  async getUserPermissions(id: string) {
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
     }
-   })
-   if(!user) {
-    throw new AppError(httpStatus.NOT_FOUND,"User not found")
-   }
 
-  return user.permissions;
+    const user = await User.findOne({
+      _id: objectId(id),
+      status: {
+        $ne: EUserStatus.DELETED,
+      },
+    });
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    return user.permissions;
   }
 }
 

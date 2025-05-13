@@ -24,17 +24,16 @@ const NotificationModelSchema = new Schema<INotification>(
     action: {
       type: String,
       enum: Object.values(ENotificationAction),
-      default:ENotificationAction.NONE
+      default: ENotificationAction.NONE,
     },
-   metaData:{
-    type:Object,
-    default:null
-   },
+    metaData: {
+      type: Object,
+      default: null,
+    },
     isRead: {
       type: Boolean,
       default: false,
     },
-
   },
   {
     timestamps: true,

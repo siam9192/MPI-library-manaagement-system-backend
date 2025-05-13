@@ -133,8 +133,11 @@ export type TSuperPermissions = {
 
 export interface IRolePermission {
   role: EUserRole;
-  permissions: TRolePermissions
+  permissions: TRolePermissions;
 }
 
-
-export type TRolePermissions  =  TSuperPermissions | TAdminPermissions | TLibrarianPermissions | TStudentPermissions;
+export type TRolePermissions =
+  | TSuperPermissions
+  | TAdminPermissions
+  | TLibrarianPermissions
+  | TStudentPermissions;

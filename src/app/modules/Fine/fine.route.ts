@@ -11,7 +11,12 @@ router.get('/', fineController.getFines);
 router.get('/my', auth(EUserRole.STUDENT), fineController.getMyFines);
 
 router.get('/:id', fineController.getFineById);
-router.get('/my/:id', auth(EUserRole.STUDENT),checkPermission('canBorrowBook'),fineController.getMyFineById);
+router.get(
+  '/my/:id',
+  auth(EUserRole.STUDENT),
+  checkPermission('canBorrowBook'),
+  fineController.getMyFineById
+);
 
 router.patch('/:id/wave', auth(...managementRoles), fineController.waveFine);
 router.patch('/:id/pay', auth(...managementRoles), fineController.payFine);

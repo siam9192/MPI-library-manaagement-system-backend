@@ -17,7 +17,7 @@ router.post(
 );
 router.get('/', borrowRecordController.getBorrowRecords);
 router.get('/my', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecords);
-router.get('/my/not-reviewed',borrowRecordController.getMyNotReviewedBorrowRecords)
+router.get('/my/not-reviewed', borrowRecordController.getMyNotReviewedBorrowRecords);
 router.get('/:id', borrowRecordController.getBorrowRecordById);
 router.get('/my/:id', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecordById);
 

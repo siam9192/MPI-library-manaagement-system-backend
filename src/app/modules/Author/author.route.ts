@@ -2,9 +2,12 @@ import { Router } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import authorValidation from './author.validation';
 import authorController from './author.controller';
+import auth from '../../middlewares/auth';
+import { managementRoles } from '../../utils/constant';
+import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
-router.post('/', validateRequest(authorValidation.createAuthor), authorController.createAuthor);
+router.post('/',auth(...managementRoles),checkPermission(""),validateRequest(authorValidation.createAuthor), authorController.createAuthor);
 
 router.put('/:id', validateRequest(authorValidation.updateAuthor), authorController.updateAuthor);
 

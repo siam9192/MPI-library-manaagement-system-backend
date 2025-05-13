@@ -92,9 +92,7 @@ export function formatSecret(secret: string, perChunk = 4) {
   return arr.join('-');
 }
 
-
-
-export function flattenObject(obj:object, parent = '', result:Record<string,unknown> = {}) {
+export function flattenObject(obj: object, parent = '', result: Record<string, unknown> = {}) {
   for (const [key, value] of Object.entries(obj)) {
     const fullKey = parent ? `${parent}.${key}` : key;
 

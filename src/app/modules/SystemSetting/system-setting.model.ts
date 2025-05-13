@@ -3,14 +3,15 @@ import { ISystemSetting } from './system-setting.interface';
 
 const SystemSettingModelSchema: Schema = new Schema<ISystemSetting>(
   {
-    maxBorrowDays: { type: Number, required: true },
-    maxBorrowItems: { type: Number, required: true },
-    lateFeePerDay: { type: Number, required: true },
-    borrowRequestExpiryDays: { type: Number, required: true },
-    reservationExpiryDays: { type: Number, required: true },
-    studentRegistrationRequestExpiryDays: { type: Number, required: true },
-    managementRegistrationRequestExpiryDays: { type: Number, required: true },
-    emailVerificationExpiryMinutes: { type: Number, required: true },
+    maxBorrowDays: { type: Number, min:1, required: true },
+    maxBorrowItems: { type: Number,min:1, required: true },
+    lateFeePerDay: { type: Number, min:1, required: true },
+    borrowRequestExpiryDays: { type: Number, min:1, required: true },
+    reservationExpiryDays: { type: Number, min:1, required: true },
+    lostReputationOnCancelReservation:{ type: Number, min:0, required: true },
+    studentRegistrationRequestExpiryDays: { type: Number, min:1, required: true },
+    managementRegistrationRequestExpiryDays: { type: Number,  min:1,required: true },
+    emailVerificationExpiryMinutes: { type: Number, min:1,required: true },
     isActive: {
       type: Boolean,
       default: false,

@@ -12,7 +12,7 @@ export default function (...requirePermissions: string[]) {
       }
 
       const user = await User.findById(authUser.userId).select('permissions');
-      
+
       const permissions = user?.permissions;
 
       if (!permissions) {
@@ -20,19 +20,17 @@ export default function (...requirePermissions: string[]) {
       }
 
       const hasAllPermissions = requirePermissions.every((permission) => {
-       if(permission.includes('.')){
-           const [parent, child] = permission.split('.');
-        return (permissions as Record<string, Record<string, boolean>>)?.[parent]?.[child];
-       }
-       else {
-         return (permissions as Record<string,boolean>)[permission]
-       } 
+        if (permission.includes('.')) {
+          const [parent, child] = permission.split('.');
+          return (permissions as Record<string, Record<string, boolean>>)?.[parent]?.[child];
+        } else {
+          return (permissions as Record<string, boolean>)[permission];
+        }
       });
 
       if (!hasAllPermissions) {
         throw new AppError(httpStatus.FORBIDDEN, 'Access denied: Missing required permission(s)');
       }
-     
 
       next();
     } catch (err) {

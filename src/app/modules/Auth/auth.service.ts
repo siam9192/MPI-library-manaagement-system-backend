@@ -17,7 +17,6 @@ import { generateNumericOTP, objectId } from '../../helpers';
 import jwtHelpers from '../../helpers/jwtHelpers';
 import envConfig from '../../config/env.config';
 import EmailVerificationRequest from '../EmailVerificationRequest/email-verification-request.model';
-import { EEmailVerificationRequestStatus } from '../../type';
 import { Student } from '../Student/student.model';
 import { EUserRole, EUserStatus } from '../User/user.interface';
 import { IAuthUser } from '../../types';
@@ -33,6 +32,7 @@ import Librarian from '../Librarian/librarian.model';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
 import notificationService from '../Notification/notification.service';
 import { ENotificationType } from '../Notification/notification.interface';
+import { EEmailVerificationRequestStatus } from '../EmailVerificationRequest/email-verification-request.interface';
 
 class AuthService {
   async createStudentRegistrationRequestIntoDB(payload: ICreateStudentRegistrationRequestPayload) {
@@ -399,8 +399,12 @@ class AuthService {
           { session }
         );
       }
-
+      
       if (!createdProfile) throw new Error();
+      await notificationService.notify(createdUser._id.toString(),{
+        message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+        type:ENotificationType.SYSTEM
+      },session)
       // Commit transaction
       await session.commitTransaction();
       await session.endSession();
@@ -463,6 +467,8 @@ class AuthService {
       envConfig.jwt.refreshTokenExpireTime as string
     );
 
+    await user.updateOne({_id:user._id},{lastLoginAt:new Date()})
+
     // Return the tokens
     return {
       accessToken,
@@ -517,6 +523,8 @@ class AuthService {
       envConfig.jwt.refreshTokenExpireTime as string
     );
 
+    await user.updateOne({_id:user._id},{lastLoginAt:new Date()})
+
     // Return the tokens
     return {
       accessToken,
@@ -551,12 +559,12 @@ class AuthService {
     if (!updateResult.modifiedCount) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update password.');
     }
-  
+
     const notifyData = {
-      message:'Your password has been changed successfully',
-      type:ENotificationType.SUCCESS, 
-    }
-    notificationService.notify(authUser.userId,notifyData)
+      message: 'Your password has been changed successfully',
+      type: ENotificationType.SUCCESS,
+    };
+    notificationService.notify(authUser.userId, notifyData);
 
     // Step 6: Return success (can be null or a success message)
     return null;

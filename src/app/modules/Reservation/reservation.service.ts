@@ -3,7 +3,6 @@ import { IAuthUser, IPaginationOptions } from '../../types';
 import {
   EReservationStatus,
   IMyReservationsFilterPayload,
-  IReservation,
   IReservationsFilterPayload,
 } from './reservation.interface';
 import AppError from '../../Errors/AppError';
@@ -15,7 +14,13 @@ import { startSession } from 'mongoose';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import BorrowRecord from '../BorrowRecord/borrow-record.model';
-import { IBorrowRequest } from '../../type';
+import { IBorrowRequest } from '../BorrowRequest/borrow-request.interface';
+import notificationService from '../Notification/notification.service';
+import { IStudent } from '../Student/student.interface';
+import { ENotificationType } from '../Notification/notification.interface';
+import { IBook } from '../Book/book.interface';
+import systemSettingService from '../SystemSetting/system-setting.service';
+import { Student } from '../Student/student.model';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -156,7 +161,7 @@ class ReservationService {
       const reservation = await Reservation.findOne({
         _id: objectId(id),
         student: objectId(authUser.profileId),
-      }).populate(['book', 'copy']);
+      }).populate(['book', 'copy','student']);
 
       //Check if reservation exist
       if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
@@ -172,6 +177,8 @@ class ReservationService {
           `Reservation can not be cancel it's not in awaiting`
         );
       }
+
+      const systemSettings =  await systemSettingService.getCurrentSettings()
 
       const session = await startSession();
       session.startTransaction();
@@ -208,6 +215,30 @@ class ReservationService {
           throw new Error();
         }
 
+
+
+        const student = reservation.student as any as IStudent
+        const book = reservation.book as any as IBook
+         
+        const decrementedReputation = student.reputationIndex-systemSettings.lostReputationOnCancelReservation
+
+        // Decrement student reputation index as a punishment
+        if(systemSettings.lostReputationOnCancelReservation){
+          await Student.updateOne({
+            _id:student._id
+          },{
+            reputationIndex:decrementedReputation < 0 ?
+            0:
+            decrementedReputation
+          },{session})
+        }
+
+       // Notify student
+        await notificationService.notify(student.user.toString(),{
+        message:`You’ve successfully canceled your reservation for ${book.name}.`,
+        type:ENotificationType.SUCCESS
+      },session)
+
         await session.commitTransaction();
         return null;
       } catch (error) {
@@ -225,7 +256,7 @@ class ReservationService {
   async checkoutReservation(authUser: IAuthUser, id: string) {
     const reservation = await Reservation.findOne({
       _id: objectId(id),
-    }).populate(['request']);
+    }).populate(['request','book','student']);
 
     //Check if reservation exist
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
@@ -293,6 +324,13 @@ class ReservationService {
       );
 
       if (!createdBorrow) throw new Error();
+     const student = reservation.student as any as IStudent
+        const book = reservation.book as any as IBook
+       // Notify student
+        await notificationService.notify(student.user.toString(),{
+        message:`Your reservation for  ${book.name} has been checked out successfully.`,
+        type:ENotificationType.SUCCESS
+      },session)
 
       await session.commitTransaction();
       return null;

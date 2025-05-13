@@ -16,6 +16,7 @@ import { IPaginationOptions } from '../../types';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import { isValidObjectId, objectId } from '../../helpers';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
+import cacheService from '../../cache/cache.service';
 
 class BookService {
   async createBookIntoDB(payload: ICreateBookPayload) {
@@ -84,7 +85,9 @@ class BookService {
         { $inc: { booksCount: 1 } },
         { session }
       );
-      
+
+      await cacheService.cacheNewBookId(createdBook._id.toString())
+
       await session.commitTransaction();
       return {
         book: createdBook,

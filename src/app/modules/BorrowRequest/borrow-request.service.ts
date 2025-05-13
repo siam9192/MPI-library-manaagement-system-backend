@@ -4,7 +4,7 @@ import { formatSecret, generateChar, objectId } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
-import { EBookStatus } from '../Book/book.interface';
+import { EBookStatus, IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import Reservation from '../Reservation/reservation.model';
 
@@ -23,8 +23,12 @@ import { Student } from '../Student/student.model';
 import { z } from 'zod';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
-import { EReservationStatus } from '../../type';
+
 import { error } from 'console';
+import notificationService from '../Notification/notification.service';
+import { ENotificationAction, ENotificationType } from '../Notification/notification.interface';
+import { EReservationStatus } from '../Reservation/reservation.interface';
+import { IStudent } from '../Student/student.interface';
 
 class BorrowRequestService {
   async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
@@ -105,7 +109,7 @@ class BorrowRequestService {
     id: string,
     payload: IApproveBorrowRequestPayload
   ) {
-    const request = await BorrowRequest.findById(id);
+   const request = await BorrowRequest.findById(id).populate("student","user","book");
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Request not found');
 
     switch (request.status) {
@@ -222,6 +226,19 @@ class BorrowRequestService {
         throw new Error();
       }
 
+        const book = request.book as any as IBook
+     
+
+       // Notify student
+        await notificationService.notify(student.user.toString(),{
+        message:`Your borrow request  for ${book.name} has reserved Pick up before it will expire`,
+        type:ENotificationType.INFO,
+        action:ENotificationAction.DOWNLOAD_TICKET,
+        metaData:{
+          reservationId:createdReservation._id.toString()
+        }
+      },session)
+
       await session.commitTransaction();
       await session.endSession();
     } catch (error) {
@@ -236,7 +253,7 @@ class BorrowRequestService {
     return null;
   }
   async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
-    const request = await BorrowRequest.findById(id);
+    const request = await BorrowRequest.findById(id).populate("student","user");
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -275,12 +292,19 @@ class BorrowRequestService {
           'Request  could not be  rejected.Something went wrong'
         );
       }
+           const student = request.student as any as IStudent
+           
+       // Notify student
+        await notificationService.notify(student.user.toString(),{
+        message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+        type:ENotificationType.SYSTEM
+      },session)
       await session.commitTransaction();
       return null;
     } catch (error) {
       await session.abortTransaction();
     } finally {
-      console.log(error);
+    
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
@@ -293,7 +317,7 @@ class BorrowRequestService {
     const request = await BorrowRequest.findOne({
       _id: objectId(id),
       student: objectId(authUser.profileId),
-    });
+    }).populate("book");
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -330,6 +354,14 @@ class BorrowRequestService {
           'Request  could not be  rejected.Something went wrong'
         );
       }
+      
+      const book = request.book as any as IBook
+      
+      await notificationService.notify(authUser.userId,{
+              message:`You've successfully canceled your  borrow request for  "${book.name}" has been successfully canceled`,
+              type:ENotificationType.SUCCESS
+            },session)
+
       await session.commitTransaction();
       return null;
     } catch (error) {
@@ -498,7 +530,7 @@ class BorrowRequestService {
     });
     const totalReserved = await Reservation.countDocuments({
       student: request.student._id,
-      status: EReservationStatus.PENDING,
+      status: EReservationStatus.AWAITING,
     });
 
     const studentMetaData = {

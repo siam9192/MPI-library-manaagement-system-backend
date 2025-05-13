@@ -2,6 +2,9 @@ import { Router } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import authValidation from './auth.validation';
 import authController from './auth.controller';
+import { allRoles } from '../../utils/constant';
+import auth from '../../middlewares/auth';
+import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
 
@@ -40,6 +43,8 @@ router.post(
 
 router.post(
   '/change-password',
+  auth(...allRoles),
+  checkPermission("system.canChangePassword"),
   validateRequest(authValidation.ChangePasswordValidation),
   authController.changePassword
 );

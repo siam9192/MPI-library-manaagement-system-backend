@@ -1,4 +1,3 @@
-
 import { TContactInfo, TGender, TSemester } from '../../types/model.type';
 import { TShift } from '../Student/student.interface';
 

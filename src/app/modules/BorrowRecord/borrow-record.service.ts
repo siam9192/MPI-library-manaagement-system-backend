@@ -12,11 +12,15 @@ import { calculatePagination } from '../../helpers/paginationHelper';
 import BorrowRecord from './borrow-record.model';
 import httpStatus from '../../shared/http-status';
 import BookCopy from '../BookCopy/book-copy.model';
-import { EBookCopyStatus} from '../BookCopy/book-copy.interface';
+import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';
 import { isValidObjectId, objectId } from '../../helpers';
+import notificationService from '../Notification/notification.service';
+import { IStudent } from '../Student/student.interface';
+import { ENotificationType } from '../Notification/notification.interface';
+import { IBook } from '../Book/book.interface';
 
 class BorrowRecordService {
   async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
@@ -24,7 +28,7 @@ class BorrowRecordService {
     if (!isValidObjectId(id)) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
     }
-    const borrow = await BorrowRecord.findById(id);
+    const borrow = await BorrowRecord.findById(id).populate(["student","book"]);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
     }
@@ -37,6 +41,9 @@ class BorrowRecordService {
       throw new AppError(httpStatus.FORBIDDEN, 'Book has already been lost.');
     }
 
+    const student = borrow.student as any as IStudent 
+      const book =  borrow.book as any as IBook
+
     const systemSettings = await systemSettingService.getCurrentSettings();
     const session = await startSession();
     session.startTransaction();
@@ -48,7 +55,7 @@ class BorrowRecordService {
       const isOverdue = now > dueDate;
       const overdueDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       const overdueFineAmount = isOverdue ? systemSettings.lateFeePerDay * overdueDays : 0;
-
+      let fineAmount;
       // Prepare borrow update data
       const borrowUpdateData: Record<string, unknown> = {
         returnCondition: condition,
@@ -61,8 +68,9 @@ class BorrowRecordService {
 
       // Handle fines if overdue
       if (isOverdue || condition !== EBorrowReturnCondition.NORMAL) {
+        fineAmount = overdueFineAmount + (payload.fineAmount || 0)
         const fineData: Record<string, unknown> = {
-          amount: overdueFineAmount + (payload.fineAmount || 0),
+          amount: fineAmount,
           student: borrow.student,
           borrow: borrow._id,
           issuedDate: now,
@@ -101,6 +109,18 @@ class BorrowRecordService {
         throw new Error('Failed to update book copy status');
       }
 
+      
+
+      // if(payload.bookConditionStatus.){
+      //   await notificationService.notify(student.user.toString(),{
+      //   message:`The book "${book.name}" has been marked as lost. A fine of "${fineAmount}" has been applied to your account.`,
+      //   type:ENotificationType.WARNING
+      // },session)
+      // }
+      // else {
+
+      // }
+      
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
@@ -248,15 +268,12 @@ class BorrowRecordService {
     return borrowRecord;
   }
 
-  async getMyNotReviewedFromDB(
-    authUser: IAuthUser,
-    paginationOptions: IPaginationOptions
-  ) {
+  async getMyNotReviewedFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
     const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
     const whereConditions: any = {
       student: objectId(authUser.profileId),
-      review:null,
+      review: null,
     };
     const borrowRecords = await BorrowRecord.find(whereConditions)
       .skip(skip)
@@ -279,7 +296,7 @@ class BorrowRecordService {
       meta,
     };
   }
-  
+
   async getMyNotReviewedBorrowRecordsFromDB(
     authUser: IAuthUser,
     paginationOptions: IPaginationOptions

@@ -12,6 +12,8 @@ import { Student } from '../Student/student.model';
 import { IPaginationOptions } from '../../types';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import { EUserRole } from '../User/user.interface';
+import notificationService from '../Notification/notification.service';
+import { ENotificationType } from '../Notification/notification.interface';
 
 class StudentRegistrationRequestService {
   async getAllStudentRegistrationRequestsFromDB(
@@ -210,6 +212,10 @@ class StudentRegistrationRequestService {
       if (!createdStudent) {
         throw new Error('Failed to create student');
       }
+        await notificationService.notify(createdUser._id.toString(),{
+              message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+              type:ENotificationType.SYSTEM
+            },session)
 
       // Commit the transaction if everything succeeded
       await session.commitTransaction();

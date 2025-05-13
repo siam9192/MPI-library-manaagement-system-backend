@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const BookPermissionsSchema = z.object({
   canView: z.boolean(),
@@ -53,58 +53,67 @@ const ManagementPermissionsSchema = z.object({
   canEditPermissions: z.boolean(),
 });
 
+const updateLibrarianPermissions = z
+  .object({
+    book: BookPermissionsSchema.partial(),
+    borrowRequest: BorrowRequestPermissionsSchema.partial(),
+    reservation: ReservationPermissionsSchema.partial(),
+    fine: FinePermissionsSchema.partial(),
+    student: ManagementPermissionsSchema.partial(),
+    librarian: ManagementPermissionsSchema.partial(),
+    report: ReportPermissionsSchema.partial(),
+    system: SystemPermissionsSchema.partial(),
+    notification: z
+      .object({
+        student: NotificationPermissionsSchema.partial(),
+        librarian: NotificationPermissionsSchema.partial(),
+      })
+      .partial(),
+  })
+  .partial();
 
-const updateLibrarianPermissions = z.object({
-  book: BookPermissionsSchema.partial(),
-  borrowRequest: BorrowRequestPermissionsSchema.partial(),
-  reservation: ReservationPermissionsSchema.partial(),
-  fine: FinePermissionsSchema.partial(),
-  student: ManagementPermissionsSchema.partial(),
-  librarian: ManagementPermissionsSchema.partial(),
-  report: ReportPermissionsSchema.partial(),
-  system: SystemPermissionsSchema.partial(),
-  notification: z.object({
-    student: NotificationPermissionsSchema.partial(),
-    librarian: NotificationPermissionsSchema.partial(),
-  }).partial()
-}).partial();
-
-
- const updateAdminPermissions = z.object({
-  book: BookPermissionsSchema.partial(),
-  borrowRequest: BorrowRequestPermissionsSchema.partial(),
-  reservation: ReservationPermissionsSchema.partial(),
-  fine: FinePermissionsSchema.partial(),
-  student: ManagementPermissionsSchema.partial(),
-  librarian: ManagementPermissionsSchema.partial(),
-  report: ReportPermissionsSchema.partial(),
-  system: SystemPermissionsSchema.partial(),
-  notification: z.object({
-    student: NotificationPermissionsSchema.partial(),
-    librarian: NotificationPermissionsSchema.partial(),
-  }).partial()
-}).partial();
-
+const updateAdminPermissions = z
+  .object({
+    book: BookPermissionsSchema.partial(),
+    borrowRequest: BorrowRequestPermissionsSchema.partial(),
+    reservation: ReservationPermissionsSchema.partial(),
+    fine: FinePermissionsSchema.partial(),
+    student: ManagementPermissionsSchema.partial(),
+    librarian: ManagementPermissionsSchema.partial(),
+    report: ReportPermissionsSchema.partial(),
+    system: SystemPermissionsSchema.partial(),
+    notification: z
+      .object({
+        student: NotificationPermissionsSchema.partial(),
+        librarian: NotificationPermissionsSchema.partial(),
+      })
+      .partial(),
+  })
+  .partial();
 
 // Main SuperPermissions schema
-const updateSuperAdminPermissions = z.object({
-  book: BookPermissionsSchema.partial(),
-  borrowRequest: BorrowRequestPermissionsSchema.partial(),
-  reservation: ReservationPermissionsSchema.partial(),
-  fine: FinePermissionsSchema.partial(),
-  student: ManagementPermissionsSchema.partial(),
-  librarian: ManagementPermissionsSchema.partial(),
-  admin: ManagementPermissionsSchema.partial(),
-  report: ReportPermissionsSchema.partial(),
-  system: SystemPermissionsSchema.partial(),
-  notification: z.object({
-    student: NotificationPermissionsSchema.partial(),
-    librarian: NotificationPermissionsSchema.partial(),
-    admin: NotificationPermissionsSchema.partial(),
-  }).partial()
-}).partial();
+const updateSuperAdminPermissions = z
+  .object({
+    book: BookPermissionsSchema.partial(),
+    borrowRequest: BorrowRequestPermissionsSchema.partial(),
+    reservation: ReservationPermissionsSchema.partial(),
+    fine: FinePermissionsSchema.partial(),
+    student: ManagementPermissionsSchema.partial(),
+    librarian: ManagementPermissionsSchema.partial(),
+    admin: ManagementPermissionsSchema.partial(),
+    report: ReportPermissionsSchema.partial(),
+    system: SystemPermissionsSchema.partial(),
+    notification: z
+      .object({
+        student: NotificationPermissionsSchema.partial(),
+        librarian: NotificationPermissionsSchema.partial(),
+        admin: NotificationPermissionsSchema.partial(),
+      })
+      .partial(),
+  })
+  .partial();
 
- const updateStudentPermissions = z.object({
+const updateStudentPermissions = z.object({
   canBorrowBook: z.boolean(),
   canRequestWaiveFine: z.boolean(),
   canEditProfile: z.boolean(),
@@ -115,13 +124,9 @@ const updateSuperAdminPermissions = z.object({
   isEditable: z.boolean(),
 });
 
-
-
-
 export default {
-    updateStudentPermissions,
-    updateLibrarianPermissions,
-    updateAdminPermissions,
-    updateSuperAdminPermissions
-}
-
+  updateStudentPermissions,
+  updateLibrarianPermissions,
+  updateAdminPermissions,
+  updateSuperAdminPermissions,
+};

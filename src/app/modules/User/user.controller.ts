@@ -73,9 +73,7 @@ class UserController {
     });
   });
 
-
-   updateUserPermissions = catchAsync(async (req, res) => {
-    console.log(req.params)
+  updateUserPermissions = catchAsync(async (req, res) => {
     const result = await UserService.updateUserPermissionsIntoDB(req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'User permissions updated  successfully',
@@ -83,10 +81,6 @@ class UserController {
       data: result,
     });
   });
-
-
-
-
 }
 
 export default new UserController();

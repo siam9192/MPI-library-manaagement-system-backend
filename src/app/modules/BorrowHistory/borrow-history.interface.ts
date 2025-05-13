@@ -4,10 +4,9 @@ import { IModelNecessaryFields } from '../../types/model.type';
 export interface IBorrowHistory extends IModelNecessaryFields {
   title: string;
   description: string;
-  status:EBorrowHistoryStatus,
-  bookId:string
+  status: EBorrowHistoryStatus;
+  bookId: string;
 }
-
 
 export enum EBorrowHistoryStatus {
   REQUEST_PENDING = 'request_pending',
@@ -23,9 +22,8 @@ export enum EBorrowHistoryStatus {
   BORROW_RETURNED = 'borrow_returned',
   BORROW_OVERDUE = 'borrow_overdue',
   BORROW_LOST = 'borrow_lost',
-  
 }
 
 export enum EBorrowHistoryEnum {
-  DOWNLOAD_TICKET = ''
+  DOWNLOAD_TICKET = '',
 }

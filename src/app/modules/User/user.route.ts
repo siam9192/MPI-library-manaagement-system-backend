@@ -12,7 +12,7 @@ router.get('/librarians', userController.getLibrarians);
 
 router.get('/administrators', userController.getAdministrators);
 
-router.get('/:id',userController.getUserById)
+router.get('/:id', userController.getUserById);
 
 router.patch('/:id/status', userController.changeUserStatus);
 

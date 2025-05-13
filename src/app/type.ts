@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 import { IModelNecessaryFields, TGender, TSemester } from './types/model.type';
 import { TShift } from './modules/Student/student.interface';
 
-export interface IUser extends IModelNecessaryFields {
+ interface IUser extends IModelNecessaryFields {
   email: string;
   roll?: number;
   password: string;
@@ -12,7 +12,7 @@ export interface IUser extends IModelNecessaryFields {
   lastLoginAt?: Date;
 }
 
-export interface IEmailVerificationRequest extends IModelNecessaryFields {
+ interface IEmailVerificationRequest extends IModelNecessaryFields {
   email: string;
   otp: string;
   otpResendCount: number;
@@ -20,15 +20,15 @@ export interface IEmailVerificationRequest extends IModelNecessaryFields {
   status: TEmailVerificationRequestStatus;
 }
 
-export type TEmailVerificationRequestStatus = `${EEmailVerificationRequestStatus}`;
+ type TEmailVerificationRequestStatus = `${EEmailVerificationRequestStatus}`;
 
-export enum EEmailVerificationRequestStatus {
+ enum EEmailVerificationRequestStatus {
   PENDING = 'pending',
   VERIFIED = 'verified',
   EXPIRED = 'expired',
 }
 
-export interface IStudentRegistrationRequest extends IModelNecessaryFields {
+ interface IStudentRegistrationRequest extends IModelNecessaryFields {
   fullName: string;
   gender: TGender;
   roll: number;
@@ -45,16 +45,16 @@ export interface IStudentRegistrationRequest extends IModelNecessaryFields {
   index: number;
 }
 
-export type TStudentRegistrationRequestStatus = `${EStudentRegistrationRequestStatus}`;
+ type TStudentRegistrationRequestStatus = `${EStudentRegistrationRequestStatus}`;
 
-export enum EStudentRegistrationRequestStatus {
+ enum EStudentRegistrationRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
   EXPIRED = 'expired',
 }
 
-export interface IStudent extends IModelNecessaryFields {
+ interface IStudent extends IModelNecessaryFields {
   user: Types.ObjectId | IUser;
   fullName: string;
   roll: number;
@@ -69,7 +69,7 @@ export interface IStudent extends IModelNecessaryFields {
   reputationIndex: number;
 }
 
-export interface ILibrarian extends IModelNecessaryFields {
+ interface ILibrarian extends IModelNecessaryFields {
   user: Types.ObjectId | IUser;
   fullName: string;
   gender: TGender;
@@ -85,7 +85,7 @@ type Permission = {
   delete: boolean;
 };
 
-export type TLibrarianPermissions = {
+ type TLibrarianPermissions = {
   books: Permission;
   users: Permission;
   librarians: Permission;
@@ -99,7 +99,7 @@ type TContactInfo = {
   phoneNumber: string;
 };
 
-export interface IAdministrator {
+ interface IAdministrator {
   user: Types.ObjectId | IUser;
   fullName: string;
   gender: TGender;
@@ -109,28 +109,28 @@ export interface IAdministrator {
   permissions: TAdministratorPermissions;
 }
 
-export type TAdministratorPermissions = {
+ type TAdministratorPermissions = {
   canConfigureSystem: boolean;
   canManageUsers: boolean;
   canAuditLogs: boolean;
 };
 
-export type TUserRole = `${EUserRole}`;
+ type TUserRole = `${EUserRole}`;
 
-export enum EUserRole {
+ enum EUserRole {
   STUDENT = 'student',
   LIBRARIAN = 'librarian',
   ADMIN = 'admin',
   SUPER_ADMIN = 'superadmin',
 }
 
-export type TUserStatus = `${EUserStatus}`;
-export enum EUserStatus {
+ type TUserStatus = `${EUserStatus}`;
+ enum EUserStatus {
   ACTIVE = 'active',
   BLOCKED = 'blocked',
 }
 
-export interface IBook {
+ interface IBook {
   _id: Types.ObjectId;
   name: string;
   coverPhotoUrl: string;
@@ -146,7 +146,7 @@ export interface IBook {
   deleted: boolean;
 }
 
-export interface IBookCopies extends IModelNecessaryFields {
+ interface IBookCopies extends IModelNecessaryFields {
   book: Types.ObjectId;
   status: TBookCopyStatus;
   shelfLocation: string;
@@ -174,12 +174,12 @@ enum EBookCopyStatus {
 
 type TBookStatus = `${EBookStatus}`;
 
-export enum EBookStatus {
+ enum EBookStatus {
   ACTIVE = 'Active',
   INACTIVE = 'Inactive',
 }
 
-export interface IBorrowRequest {
+ interface IBorrowRequest {
   _id: Types.ObjectId;
   student: Types.ObjectId;
   book: Types.ObjectId;
@@ -189,9 +189,9 @@ export interface IBorrowRequest {
   status: TBorrowRequestStatus;
 }
 
-export type TBorrowRequestStatus = `${EBorrowRequestStatus}`;
+ type TBorrowRequestStatus = `${EBorrowRequestStatus}`;
 
-export enum EBorrowRequestStatus {
+ enum EBorrowRequestStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   CANCELED = 'canceled',
@@ -199,7 +199,7 @@ export enum EBorrowRequestStatus {
   EXPIRED = 'expired',
 }
 
-export interface IReservation {
+ interface IReservation {
   id: Types.ObjectId;
   student: Types.ObjectId;
   book: Types.ObjectId;
@@ -211,13 +211,13 @@ export interface IReservation {
 
 type TReservationStatus = `${EReservationStatus}`;
 
-export enum EReservationStatus {
+ enum EReservationStatus {
   PENDING = 'pending',
   FULFILLED = 'fulfilled',
   CANCELED = 'canceled',
 }
 
-export interface IBorrowRecord {
+ interface IBorrowRecord {
   request: Types.ObjectId;
   book: Types.ObjectId;
   student: Types.ObjectId;
@@ -225,14 +225,14 @@ export interface IBorrowRecord {
   returnDate: Types.ObjectId | null;
 }
 
-export enum EBorrowRecordEnum {
+ enum EBorrowRecordEnum {
   ACTIVE = 'active',
   RETURNED = 'returned',
   OVERDUE = 'overdue',
   LOST = 'Lost',
 }
 
-export interface IFine {
+ interface IFine {
   id: Types.ObjectId;
   student: Types.ObjectId;
   borrow: Types.ObjectId;
@@ -243,28 +243,28 @@ export interface IFine {
   paidDate: Date | null;
 }
 
-export type TFineReason = `${EFineReason}`;
+ type TFineReason = `${EFineReason}`;
 
-export enum EFineReason {
+ enum EFineReason {
   LATE_RETURN = 'late return',
   LOST = 'lost',
   DAMAGED = 'damaged',
 }
 
 type TFineStatus = `${EFineStatus}`;
-export enum EFineStatus {
+ enum EFineStatus {
   UNPAID = 'unpaid',
   PAID = 'paid',
   waived = 'waived',
 }
 
-export interface IBookReview extends IModelNecessaryFields {
+ interface IBookReview extends IModelNecessaryFields {
   borrow: Date;
   student: Date;
   rating: number;
 }
 
-export interface INotification extends IModelNecessaryFields {
+ interface INotification extends IModelNecessaryFields {
   student: Types.ObjectId;
   type: TNotificationType;
   message: string;
@@ -273,14 +273,13 @@ export interface INotification extends IModelNecessaryFields {
 
 type TNotificationType = `${ENotificationType}`;
 
-export enum ENotificationType {
+ enum ENotificationType {
   DUE_REMINDER = 'due reminder',
   AVAILABILITY = 'availability',
   RESERVATION = 'reservation',
   FINE = 'fine',
 }
-
-export interface ISystemSetting extends IModelNecessaryFields {
+interface ISystemSetting extends IModelNecessaryFields {
   maxBorrowDays: number;
   maxBorrowItems: number;
   lateFeePerDay: number;
@@ -291,20 +290,20 @@ export interface ISystemSetting extends IModelNecessaryFields {
   isActive: boolean;
 }
 
-export type TUserAddress = {
+ type TUserAddress = {
   present?: TAddress;
   permanent?: TAddress;
   currentIsPresent?: boolean;
 };
 
-export type TAddress = {
+ type TAddress = {
   street: string;
   city: string;
   district: string;
   country: string;
 };
 
-export interface IAuthor extends IModelNecessaryFields {
+ interface IAuthor extends IModelNecessaryFields {
   _id: Types.ObjectId;
   name: string;
   photoUrl: string;
@@ -313,19 +312,19 @@ export interface IAuthor extends IModelNecessaryFields {
   status: TAuthorStatus;
 }
 
-export type TAuthorStatus = `${EAuthorStatus}`;
+ type TAuthorStatus = `${EAuthorStatus}`;
 
-export enum EAuthorStatus {
+ enum EAuthorStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
 }
 
-export interface IFollow extends IModelNecessaryFields {
+ interface IFollow extends IModelNecessaryFields {
   student: Types.ObjectId;
   author: Types.ObjectId;
 }
 
-export interface IAuditLogs extends IModelNecessaryFields {
+ interface IAuditLogs extends IModelNecessaryFields {
   action: string;
   performedBy: Types.ObjectId;
   targetUser: Types.ObjectId;
