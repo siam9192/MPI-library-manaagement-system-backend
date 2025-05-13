@@ -1,5 +1,5 @@
-import { TContactInfo } from '../../types';
-import { TGender, TSemester } from '../../types/model.type';
+
+import { TContactInfo, TGender, TSemester } from '../../types/model.type';
 import { TShift } from '../Student/student.interface';
 
 export interface ICreateStudentRegistrationRequestPayload {

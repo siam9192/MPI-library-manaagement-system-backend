@@ -9,25 +9,49 @@ import User from '../User/user.model';
 import {
   ENotificationType,
   ICreateNotificationPayload,
-  INotification,
   INotificationsFilterPayload,
 } from './notification.interface';
 import Notification from './notification.model';
-import { Types } from 'mongoose';
+import { SessionOperation, Types } from 'mongoose';
 
 class NotificationService {
-  async notify(userId: string, message: string, type: ENotificationType) {
+  async notify(userId: string,payload:{message: string, type: ENotificationType,action?:ENotificationType,metaData?:Record<string,unknown>},session?:SessionOperation) {
     const userExist = User.findOne({ _id: objectId(userId), status: EUserStatus.ACTIVE });
 
     if (!userExist) {
       throw new Error('Notification failed User not found');
     }
 
-    return await Notification.create({
+    // Init data
+    const notificationData:any = {
       user: userId,
-      message,
-      type,
-    });
+      message:payload.message,
+      type:payload.type,
+     
+    }
+ 
+   // If action type  exist then append it with main data
+    if(payload.action){
+      notificationData.action =  payload.action
+    }
+    // If meta data exist then append it with main data
+    if(payload.metaData){
+      notificationData.metaData =   payload.metaData
+    }
+
+  let createdNotification;
+
+  /*
+   If session exist then create with session
+   otherwise create it normal way
+  */
+   if(session){
+    [createdNotification] =  await Notification.create([notificationData],{session});
+   }
+   else {
+ createdNotification =  await Notification.create(notificationData);
+   }
+  return createdNotification
   }
 
   async getMyNotificationsFromDB(authUser: IAuthUser) {

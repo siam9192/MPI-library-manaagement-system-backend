@@ -12,7 +12,7 @@ import { calculatePagination } from '../../helpers/paginationHelper';
 import BorrowRecord from './borrow-record.model';
 import httpStatus from '../../shared/http-status';
 import BookCopy from '../BookCopy/book-copy.model';
-import { EBookCopyStatus, IBookCopy } from '../BookCopy/book-copy.interface';
+import { EBookCopyStatus} from '../BookCopy/book-copy.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';

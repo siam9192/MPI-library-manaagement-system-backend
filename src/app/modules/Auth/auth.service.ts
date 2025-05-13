@@ -31,6 +31,8 @@ import authValidations from './auth.validation';
 import Administrator from '../Administrator/administrator.model';
 import Librarian from '../Librarian/librarian.model';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
+import notificationService from '../Notification/notification.service';
+import { ENotificationType } from '../Notification/notification.interface';
 
 class AuthService {
   async createStudentRegistrationRequestIntoDB(payload: ICreateStudentRegistrationRequestPayload) {
@@ -137,6 +139,7 @@ class AuthService {
       throw new AppError(httpStatus.BAD_REQUEST, 'Something went wrong');
     }
   }
+
   async resendEmailVerificationOTP(token: string) {
     // Decode the JWT token
     let decodedPayload: IStudentRegistrationRequestTokenPayload;
@@ -206,6 +209,7 @@ class AuthService {
       token: newToken,
     };
   }
+
   async verifyStudentRegistrationRequestUsingOTP(payload: { token: string; otp: string }) {
     //  Decode the JWT token
     let decodedPayload: IStudentRegistrationRequestTokenPayload;
@@ -547,6 +551,12 @@ class AuthService {
     if (!updateResult.modifiedCount) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update password.');
     }
+  
+    const notifyData = {
+      message:'Your password has been changed successfully',
+      type:ENotificationType.SUCCESS, 
+    }
+    notificationService.notify(authUser.userId,notifyData)
 
     // Step 6: Return success (can be null or a success message)
     return null;

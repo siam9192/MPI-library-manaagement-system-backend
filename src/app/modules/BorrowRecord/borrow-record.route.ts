@@ -5,6 +5,7 @@ import borrowRecordController from './borrow-record.controller';
 import { EUserRole } from '../../type';
 import validateRequest from '../../middlewares/validateRequest';
 import borrowRecordValidation from './borrow-record.validation';
+import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
 

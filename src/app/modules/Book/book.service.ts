@@ -84,6 +84,7 @@ class BookService {
         { $inc: { booksCount: 1 } },
         { session }
       );
+      
       await session.commitTransaction();
       return {
         book: createdBook,

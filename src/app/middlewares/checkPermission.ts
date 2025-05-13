@@ -11,7 +11,8 @@ export default function (...requirePermissions: string[]) {
         throw new AppError(httpStatus.UNAUTHORIZED, 'Unauthorized user');
       }
 
-      const user = await User.findById(authUser.id).select('permissions');
+      const user = await User.findById(authUser.userId).select('permissions');
+      
       const permissions = user?.permissions;
 
       if (!permissions) {
@@ -19,13 +20,19 @@ export default function (...requirePermissions: string[]) {
       }
 
       const hasAllPermissions = requirePermissions.every((permission) => {
-        const [parent, child] = permission.split('.');
+       if(permission.includes('.')){
+           const [parent, child] = permission.split('.');
         return (permissions as Record<string, Record<string, boolean>>)?.[parent]?.[child];
+       }
+       else {
+         return (permissions as Record<string,boolean>)[permission]
+       } 
       });
 
       if (!hasAllPermissions) {
         throw new AppError(httpStatus.FORBIDDEN, 'Access denied: Missing required permission(s)');
       }
+     
 
       next();
     } catch (err) {

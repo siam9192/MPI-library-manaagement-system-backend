@@ -10,6 +10,7 @@ import {
 } from './role-permission.constant';
 import { IRolePermission } from './role-permission.interface';
 import RolePermission from './role-permission.model';
+import rolePermissionValidation from './role-permission.validation';
 
 class RolePermissionService {
   /**
@@ -64,6 +65,24 @@ class RolePermissionService {
     if (!z.nativeEnum(EUserRole).safeParse(role).success) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid role');
     }
+    
+    // Validate payload base on roll
+
+    switch (role){
+      case EUserRole.STUDENT:
+      rolePermissionValidation.updateStudentPermissions.parse(payload);
+      break;
+      case EUserRole.LIBRARIAN:
+      rolePermissionValidation.updateLibrarianPermissions.parse(payload)
+      break
+      case EUserRole.ADMIN:
+      rolePermissionValidation.updateAdminPermissions.parse(payload)
+      break
+      case EUserRole.SUPER_ADMIN:
+      rolePermissionValidation.updateAdminPermissions.parse(payload)
+      break
+    }
+
 
     const permission = await RolePermission.findOne({ role });
 

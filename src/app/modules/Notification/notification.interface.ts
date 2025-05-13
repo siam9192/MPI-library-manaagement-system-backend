@@ -5,6 +5,8 @@ export interface INotification extends IModelNecessaryFields {
   user: Types.ObjectId;
   message: string;
   type: ENotificationType;
+  action:ENotificationAction,
+  metaData?:Record<string,unknown>
   isRead: boolean;
 }
 
@@ -14,6 +16,15 @@ export enum ENotificationType {
   WARNING = 'warning',
   ERROR = 'error',
 }
+
+export enum ENotificationAction {
+  DROP_REVIEW = 'drop_review',
+  DOWNLOAD_TICKET = 'download_ticket',
+  LINK_VISIT = 'link_visit',
+  NONE = 'none'
+}
+
+
 
 export interface ICreateNotificationPayload {
   userId: string;
