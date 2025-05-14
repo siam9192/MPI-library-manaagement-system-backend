@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import reservationController from './reservation.controller';
 import auth from '../../middlewares/auth';
-import { EUserRole } from '../../type';
 import { managementRoles } from '../../utils/constant';
+import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
-router.get('/', reservationController.getReservations);
-router.get('/my', auth(EUserRole.STUDENT), reservationController.getMyReservations);
-router.get('/:id', reservationController.getReservationById);
+router.get('/', auth(...managementRoles), reservationController.getReservations);
+router.get('/my',  auth(...managementRoles), reservationController.getMyReservations);
+router.get('/:id', auth(...managementRoles), reservationController.getReservationById);
 router.get('/my/:id', auth(EUserRole.STUDENT), reservationController.getMyReservationById);
 
 router.patch('/:id/cancel', auth(EUserRole.STUDENT), reservationController.cancelReservation);

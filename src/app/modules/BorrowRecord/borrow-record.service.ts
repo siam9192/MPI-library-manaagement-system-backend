@@ -108,18 +108,35 @@ class BorrowRecordService {
       if (!updateCopy.matchedCount) {
         throw new Error('Failed to update book copy status');
       }
+  
+   // Determine base message and notification type
+let message = '';
+let type = ENotificationType.WARNING;
 
-      
+if (payload.bookConditionStatus === EBorrowReturnCondition.LOST) {
+  message = `The book "${book.name}" has been marked as lost. A fine of $${fineAmount} has been applied to your account.`;
+}
+else if (payload.bookConditionStatus === EBorrowReturnCondition.DAMAGED) {
+  if (isOverdue) {
+    message = `The book "${book.name}" was returned late and in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+  } else {
+    message = `The book "${book.name}" has been returned in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+  }
+}
+else {
+  if (isOverdue) {
+    message = `The book "${book.name}" was returned late. A fine of $${fineAmount} has been applied to your account.`;
+  } else {
+    message = `The book "${book.name}" has been returned successfully.`;
+    type = ENotificationType.SUCCESS;
+  }
+}
 
-      // if(payload.bookConditionStatus.){
-      //   await notificationService.notify(student.user.toString(),{
-      //   message:`The book "${book.name}" has been marked as lost. A fine of "${fineAmount}" has been applied to your account.`,
-      //   type:ENotificationType.WARNING
-      // },session)
-      // }
-      // else {
-
-      // }
+// Send the notification
+await notificationService.notify(student.user.toString(), {
+  message,
+  type
+}, session);
       
       await session.commitTransaction();
     } catch (error) {

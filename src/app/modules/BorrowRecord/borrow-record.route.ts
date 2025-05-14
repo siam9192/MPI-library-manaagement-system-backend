@@ -2,10 +2,9 @@ import { Router } from 'express';
 import auth from '../../middlewares/auth';
 import { managementRoles } from '../../utils/constant';
 import borrowRecordController from './borrow-record.controller';
-import { EUserRole } from '../../type';
 import validateRequest from '../../middlewares/validateRequest';
 import borrowRecordValidation from './borrow-record.validation';
-import checkPermission from '../../middlewares/checkPermission';
+import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
@@ -15,10 +14,10 @@ router.post(
   auth(...managementRoles),
   borrowRecordController.processBorrowRecord
 );
-router.get('/', borrowRecordController.getBorrowRecords);
+router.get('/', auth(...managementRoles), borrowRecordController.getBorrowRecords);
 router.get('/my', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecords);
 router.get('/my/not-reviewed', borrowRecordController.getMyNotReviewedBorrowRecords);
-router.get('/:id', borrowRecordController.getBorrowRecordById);
+router.get('/:id', auth(...managementRoles),  borrowRecordController.getBorrowRecordById);
 router.get('/my/:id', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecordById);
 
 const borrowRecordRouter = router;

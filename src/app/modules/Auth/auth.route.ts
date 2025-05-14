@@ -44,7 +44,6 @@ router.post(
 router.post(
   '/change-password',
   auth(...allRoles),
-  checkPermission("system.canChangePassword"),
   validateRequest(authValidation.ChangePasswordValidation),
   authController.changePassword
 );

@@ -10,21 +10,21 @@ const router = Router();
 
 router.post(
   '/',
-  auth(...managementRoles),checkPermission("book.canAdd"),
+  auth(...managementRoles),
   validateRequest(bookCopyValidation.createBookCopy),
   bookCopyController.createBookCopy
 );
 
 router.put(
   '/:id',
-   auth(...managementRoles),checkPermission("book.canEdit"),
+   auth(...managementRoles),
   validateRequest(bookCopyValidation.updateBookCopy),
   bookCopyController.updateBookCopy
 );
 
-router.delete('/:id', auth(...managementRoles),checkPermission("book.canDelete"), bookCopyController.deleteBookCopy);
+router.delete('/:id', auth(...managementRoles), bookCopyController.deleteBookCopy);
 
-router.get('/book/:bookId', auth(...managementRoles),checkPermission("book.canView"), bookCopyController.getBookCopies);
+router.get('/book/:bookId', auth(...managementRoles),bookCopyController.getBookCopies);
 
 const bookCopyRouter = router;
 

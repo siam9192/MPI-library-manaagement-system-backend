@@ -2,21 +2,25 @@ import { Router } from 'express';
 import validateRequest from '../../middlewares/validateRequest';
 import managementAccountRegistrationRequestValidation from './management-account-registration-request.validation';
 import managementAccountRegistrationRequestController from './management-account-registration-request.controller';
+import { managementRoles } from '../../utils/constant';
+import auth from '../../middlewares/auth';
 
 const router = Router();
 
 router.post(
   '/',
+   auth(...managementRoles),
   validateRequest(managementAccountRegistrationRequestValidation.createRegistrationRequest),
   managementAccountRegistrationRequestController.createRegistrationRequest
 );
 
-router.get('/', managementAccountRegistrationRequestController.getRegistrationRequests);
+router.get('/', auth(...managementRoles), managementAccountRegistrationRequestController.getRegistrationRequests);
 
-router.get('/:id', managementAccountRegistrationRequestController.getRegistrationRequests);
+router.get('/:id', auth(...managementRoles), managementAccountRegistrationRequestController.getRegistrationRequests);
 
 router.patch(
   '/:id/cancel',
+   auth(...managementRoles),
   managementAccountRegistrationRequestController.cancelRegistrationRequest
 );
 

@@ -1,16 +1,16 @@
 import { Router } from 'express';
 import fineController from './fine.controller';
-import { EUserRole } from '../../type';
 import auth from '../../middlewares/auth';
 import { managementRoles } from '../../utils/constant';
 import checkPermission from '../../middlewares/checkPermission';
+import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
-router.get('/', fineController.getFines);
+router.get('/', auth(...managementRoles), fineController.getFines);
 router.get('/my', auth(EUserRole.STUDENT), fineController.getMyFines);
 
-router.get('/:id', fineController.getFineById);
+router.get('/:id', auth(...managementRoles), fineController.getFineById);
 router.get(
   '/my/:id',
   auth(EUserRole.STUDENT),

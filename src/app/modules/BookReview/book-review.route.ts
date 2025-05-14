@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import auth from '../../middlewares/auth';
-import { EUserRole } from '../../type';
 import bookReviewController from './book-review.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import bookReviewValidation from './book-review.validation';
 import { managementRoles } from '../../utils/constant';
+import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
