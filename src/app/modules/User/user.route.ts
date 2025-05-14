@@ -20,7 +20,6 @@ router.delete('/:id', userController.softDeleteUser);
 
 router.put('/my', auth(...Object.values(EUserRole)), userController.updateMyProfile);
 
-router.put('/:id/permissions', userController.updateUserPermissions);
 
 const userRouter = router;
 

@@ -16,7 +16,6 @@ import reservationRouter from '../modules/Reservation/reservation.route';
 import borrowRecordRouter from '../modules/BorrowRecord/borrow-record.route';
 import fineRouter from '../modules/Fine/fine.route';
 import bookReviewRouter from '../modules/BookReview/book-review.route';
-import rolePermissionRouter from '../modules/RolePermission/role-permission.router';
 import supportRouter from '../modules/Support/support.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
@@ -90,10 +89,7 @@ const moduleRoutes: TModuleRoutes = [
     path: '/system-settings',
     router: systemSettingRouter,
   },
-  {
-    path: '/role-permissions',
-    router: rolePermissionRouter,
-  },
+  
   {
     path:'/supports',
     router:supportRouter

@@ -11,7 +11,7 @@ const router = Router();
 router.post('/',auth(EUserRole.STUDENT),validateRequest(supportValidation.createSupport),supportController.createSupportIntoDB);
 
 
-router.post('/:id/resolve',auth(...administratorRoles),validateRequest(supportValidation.resolveSupport),supportController.resolveSupport);
+router.patch('/:id/resolve',auth(...administratorRoles),validateRequest(supportValidation.resolveSupport),supportController.resolveSupport);
 
 router.patch('/:id/failed',auth(...administratorRoles),supportController.setSupportAsFailed)
 
