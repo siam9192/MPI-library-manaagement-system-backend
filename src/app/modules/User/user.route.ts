@@ -6,6 +6,7 @@ import { EUserRole } from './user.interface';
 
 const router = Router();
 
+router.get('/',userController.getUsers)
 router.get('/students', userController.getStudents);
 
 router.get('/librarians', userController.getLibrarians);

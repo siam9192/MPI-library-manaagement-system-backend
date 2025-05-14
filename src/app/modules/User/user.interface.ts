@@ -1,12 +1,7 @@
 import { IModelNecessaryFields } from '../../types/model.type';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
 import { ILibrarian } from '../Librarian/librarian.interface';
-import {
-  TAdminPermissions,
-  TLibrarianPermissions,
-  TStudentPermissions,
-  TSuperPermissions,
-} from '../RolePermission/role-permission.interface';
+
 import { IStudent } from '../Student/student.interface';
 
 export interface IUser extends IModelNecessaryFields {
@@ -17,7 +12,7 @@ export interface IUser extends IModelNecessaryFields {
   status: TUserStatus;
   lastLoginAt?: Date;
   lastPasswordChangedAt: Date;
-  permissions: TSuperPermissions | TAdminPermissions | TLibrarianPermissions | TStudentPermissions;
+
 }
 
 export type TUserRole = `${EUserRole}`;
@@ -55,6 +50,11 @@ export interface IRoleBaseUsersFilterPayload {
   level?: EAdministratorLevel;
 }
 
+export  interface IUserFiltersPayload {
+  email?:string
+  status?: EUserStatus;
+  role?:EUserRole
+}
 export type TUpdateMyProfilePayload =
   | TUpdateStudentProfile
   | TUpdateLibrarianProfile
@@ -71,3 +71,4 @@ export type TUpdateLibrarianProfile = Partial<
 export type TUpdateAdministratorProfile = Partial<
   Pick<ILibrarian, 'fullName' | 'gender' | 'contactInfo'>
 >;
+

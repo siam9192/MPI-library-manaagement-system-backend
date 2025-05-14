@@ -6,10 +6,11 @@ import {
   EUserRole,
   EUserStatus,
   IRoleBaseUsersFilterPayload,
+  IUserFiltersPayload,
   TUpdateMyProfilePayload,
 } from './user.interface';
 import { Types } from 'mongoose';
-import { flattenObject, isValidObjectId, objectId } from '../../helpers';
+import { objectId } from '../../helpers';
 import Librarian from '../Librarian/librarian.model';
 import Administrator from '../Administrator/administrator.model';
 import User from './user.model';
@@ -17,7 +18,54 @@ import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
 import userValidation from './user.validation';
 
+
 class UserService {
+
+  async getUsersFromDB (filterPayload:IUserFiltersPayload,paginationOptions:IPaginationOptions){
+
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+      const whereConditions: Record<string, any> = {
+      status: {
+        $ne: EUserStatus.DELETED,
+      },
+    };
+
+    if (Object.values(filterPayload).length) {
+      Object.entries(filterPayload).map(([key, value]) => {
+        whereConditions[key] = value;
+      });
+    }
+
+
+     const users = await User.find(whereConditions)
+      .sort({
+        [sortBy]: sortOrder,
+      })
+      .skip(skip)
+      .limit(limit);
+
+    const totalResult = await User.countDocuments(whereConditions);
+
+    const total = await User.countDocuments({
+      status: {
+        $ne: EUserStatus.DELETED,
+      },
+    });
+
+    const meta = {
+      page,
+      limit,
+      totalResult,
+      total,
+    };
+
+    return {
+      data: users,
+      meta,
+    };
+  }
+
+
   async getStudentsFromDB(
     filterPayload: IRoleBaseUsersFilterPayload,
     paginationOptions: IPaginationOptions
@@ -32,6 +80,7 @@ class UserService {
       },
     };
 
+   
     //  If searchTerm provided  then apply it
     //  If searchTerm is a valid objectId then treat it as a _id
     //  If searchTerm is a valid number then treat it as a roll number
@@ -201,7 +250,7 @@ class UserService {
   }
 
   async getUserByIdFromDB(id: string) {
-    const user = await User.findOne({ _id: objectId(id), status: { $ne: EUserStatus.DELETED } });
+    const user = await User.findOne({ _id: objectId(id), status: { $ne: EUserStatus.DELETED } }).lean();
 
     // Check if user exist
     if (!user) {
@@ -226,8 +275,8 @@ class UserService {
     }
 
     const data = {
+      ...user,
       profile,
-      user,
     };
 
     return data;

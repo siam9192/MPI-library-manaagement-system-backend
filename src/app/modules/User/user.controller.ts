@@ -6,6 +6,18 @@ import { sendSuccessResponse } from '../../utils/response';
 import UserService from './user.service';
 
 class UserController {
+
+   getUsers = catchAsync(async (req, res) => {
+    const filterPayload = Pick(req.query, ['email', 'status','role']);
+    const paginationOptions = paginationOptionPicker(req.query);
+    const result = await UserService.getUsersFromDB(filterPayload, paginationOptions);
+    sendSuccessResponse(res, {
+      message: 'Users retrieved  successfully',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
+  });
+
   getStudents = catchAsync(async (req, res) => {
     const filterPayload = Pick(req.query, ['searchTerm', 'status']);
     const paginationOptions = paginationOptionPicker(req.query);
