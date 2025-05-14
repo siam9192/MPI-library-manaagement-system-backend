@@ -506,10 +506,19 @@ class AuthService {
       throw new AppError(httpStatus.NOT_FOUND, 'Wrong password!');
     }
 
+    let profileId;
+    
+    if(user.role ===  EUserRole.LIBRARIAN){
+    profileId =  ( await Librarian.findOne({_id:user._id}).lean())!._id
+    }
+    else {
+       profileId =  ( await Administrator.findOne({_id:user._id}).lean())!._id
+    }
+   
     // Prepare the token payload
     const tokenPayload = {
       userId: user._id,
-      profileId: (user as any)[user.role.toLocaleLowerCase()],
+      profileId,
       role: user.role,
     };
 
