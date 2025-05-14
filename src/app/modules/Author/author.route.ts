@@ -7,7 +7,13 @@ import { managementRoles } from '../../utils/constant';
 import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
-router.post('/',auth(...managementRoles),checkPermission(""),validateRequest(authorValidation.createAuthor), authorController.createAuthor);
+router.post(
+  '/',
+  auth(...managementRoles),
+  checkPermission(''),
+  validateRequest(authorValidation.createAuthor),
+  authorController.createAuthor
+);
 
 router.put('/:id', validateRequest(authorValidation.updateAuthor), authorController.updateAuthor);
 

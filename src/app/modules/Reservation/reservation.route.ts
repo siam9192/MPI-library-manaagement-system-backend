@@ -7,7 +7,7 @@ import { EUserRole } from '../User/user.interface';
 const router = Router();
 
 router.get('/', auth(...managementRoles), reservationController.getReservations);
-router.get('/my',  auth(...managementRoles), reservationController.getMyReservations);
+router.get('/my', auth(...managementRoles), reservationController.getMyReservations);
 router.get('/:id', auth(...managementRoles), reservationController.getReservationById);
 router.get('/my/:id', auth(EUserRole.STUDENT), reservationController.getMyReservationById);
 

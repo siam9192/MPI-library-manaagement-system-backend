@@ -1,11 +1,13 @@
-import { ILibrarian, IStudent, TLibrarianPermissions } from '../../type';
 import { IModelNecessaryFields } from '../../types/model.type';
 import { EAdministratorLevel } from '../Administrator/administrator.interface';
+import { ILibrarian } from '../Librarian/librarian.interface';
 import {
   TAdminPermissions,
+  TLibrarianPermissions,
   TStudentPermissions,
   TSuperPermissions,
 } from '../RolePermission/role-permission.interface';
+import { IStudent } from '../Student/student.interface';
 
 export interface IUser extends IModelNecessaryFields {
   email: string;
@@ -22,6 +24,18 @@ export type TUserRole = `${EUserRole}`;
 
 export enum EUserRole {
   STUDENT = 'student',
+  LIBRARIAN = 'librarian',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'superadmin',
+}
+
+export enum EManagementRole {
+  LIBRARIAN = 'librarian',
+  ADMIN = 'admin',
+  SUPER_ADMIN = 'superadmin',
+}
+
+export enum EAdministratorRole {
   LIBRARIAN = 'librarian',
   ADMIN = 'admin',
   SUPER_ADMIN = 'superadmin',

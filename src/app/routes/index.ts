@@ -17,6 +17,7 @@ import borrowRecordRouter from '../modules/BorrowRecord/borrow-record.route';
 import fineRouter from '../modules/Fine/fine.route';
 import bookReviewRouter from '../modules/BookReview/book-review.route';
 import rolePermissionRouter from '../modules/RolePermission/role-permission.router';
+import supportRouter from '../modules/Support/support.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -93,6 +94,10 @@ const moduleRoutes: TModuleRoutes = [
     path: '/role-permissions',
     router: rolePermissionRouter,
   },
+  {
+    path:'/supports',
+    router:supportRouter
+  }
 ];
 
 const routes = moduleRoutes.map((route) => router.use(route.path, route.router));

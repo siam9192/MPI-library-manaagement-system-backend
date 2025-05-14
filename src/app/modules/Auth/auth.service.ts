@@ -399,12 +399,16 @@ class AuthService {
           { session }
         );
       }
-      
+
       if (!createdProfile) throw new Error();
-      await notificationService.notify(createdUser._id.toString(),{
-        message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
-        type:ENotificationType.SYSTEM
-      },session)
+      await notificationService.notify(
+        createdUser._id.toString(),
+        {
+          message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+          type: ENotificationType.SYSTEM,
+        },
+        session
+      );
       // Commit transaction
       await session.commitTransaction();
       await session.endSession();
@@ -467,7 +471,7 @@ class AuthService {
       envConfig.jwt.refreshTokenExpireTime as string
     );
 
-    await user.updateOne({_id:user._id},{lastLoginAt:new Date()})
+    await user.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
 
     // Return the tokens
     return {
@@ -523,7 +527,7 @@ class AuthService {
       envConfig.jwt.refreshTokenExpireTime as string
     );
 
-    await user.updateOne({_id:user._id},{lastLoginAt:new Date()})
+    await user.updateOne({ _id: user._id }, { lastLoginAt: new Date() });
 
     // Return the tokens
     return {

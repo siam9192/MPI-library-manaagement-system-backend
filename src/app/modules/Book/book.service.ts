@@ -86,7 +86,7 @@ class BookService {
         { session }
       );
 
-      await cacheService.cacheNewBookId(createdBook._id.toString())
+      await cacheService.cacheNewBookId(createdBook._id.toString());
 
       await session.commitTransaction();
       return {

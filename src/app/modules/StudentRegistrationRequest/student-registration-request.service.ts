@@ -212,10 +212,14 @@ class StudentRegistrationRequestService {
       if (!createdStudent) {
         throw new Error('Failed to create student');
       }
-        await notificationService.notify(createdUser._id.toString(),{
-              message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
-              type:ENotificationType.SYSTEM
-            },session)
+      await notificationService.notify(
+        createdUser._id.toString(),
+        {
+          message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+          type: ENotificationType.SYSTEM,
+        },
+        session
+      );
 
       // Commit the transaction if everything succeeded
       await session.commitTransaction();

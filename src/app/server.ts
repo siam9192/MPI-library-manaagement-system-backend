@@ -6,7 +6,6 @@ import cacheService from './cache/cache.service';
 
 async function main() {
   try {
-  
     const connection = await mongoose.connect(envConfig.url.database as string);
     await systemSettingService.initSettings();
 

@@ -6,19 +6,18 @@ class SystemSettingService {
     const setting = await SystemSetting.findOne({ isActive: true });
     // Create new setting if active setting not exist
     if (!setting) {
-  return await SystemSetting.create({
-  maxBorrowDays: 14,
-  maxBorrowItems: 5,
-  lateFeePerDay: 5,
-  borrowRequestExpiryDays: 3,
-  reservationExpiryDays: 2,
-  lostReputationOnCancelReservation: 10,
-  studentRegistrationRequestExpiryDays: 7,
-  managementRegistrationRequestExpiryDays: 10,
-  emailVerificationExpiryMinutes: 30,
-  isActive:true
-}
-);
+      return await SystemSetting.create({
+        maxBorrowDays: 14,
+        maxBorrowItems: 5,
+        lateFeePerDay: 5,
+        borrowRequestExpiryDays: 3,
+        reservationExpiryDays: 2,
+        lostReputationOnCancelReservation: 10,
+        studentRegistrationRequestExpiryDays: 7,
+        managementRegistrationRequestExpiryDays: 10,
+        emailVerificationExpiryMinutes: 30,
+        isActive: true,
+      });
     }
   }
   async getCurrentSettings() {

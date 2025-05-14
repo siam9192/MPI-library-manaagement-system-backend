@@ -21,7 +21,7 @@ import { EFineStatus, IFine } from '../Fine/fine.interface';
 
 class BookReviewService {
   async createBookReview(authUser: IAuthUser, payload: ICreateBookReviewPayload) {
-    const borrowRecord = await BorrowRecord.findById(payload.borrowId).populate('book','fine');
+    const borrowRecord = await BorrowRecord.findById(payload.borrowId).populate('book', 'fine');
 
     //  Check borrow record existence
     if (!borrowRecord) {
@@ -33,10 +33,10 @@ class BookReviewService {
       throw new AppError(httpStatus.FORBIDDEN, 'Already reviewed!');
     }
 
-    if(borrowRecord.fine){
-      const fine =  borrowRecord.fine as any as IFine
-      if(fine.status === EFineStatus.UNPAID){
-         throw new AppError(httpStatus.FORBIDDEN,"Review is not possible because fine is unpaid ")
+    if (borrowRecord.fine) {
+      const fine = borrowRecord.fine as any as IFine;
+      if (fine.status === EFineStatus.UNPAID) {
+        throw new AppError(httpStatus.FORBIDDEN, 'Review is not possible because fine is unpaid ');
       }
     }
     const session = await startSession();
@@ -93,10 +93,14 @@ class BookReviewService {
         throw new Error();
       }
 
-      await notificationService.notify(authUser.userId,{
-        message:`Thanks for your review  for book "${book.name}"`,
-        type:ENotificationType.SUCCESS,
-      },session)
+      await notificationService.notify(
+        authUser.userId,
+        {
+          message: `Thanks for your review  for book "${book.name}"`,
+          type: ENotificationType.SUCCESS,
+        },
+        session
+      );
 
       await session.commitTransaction();
       return createdReview;

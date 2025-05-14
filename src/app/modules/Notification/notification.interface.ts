@@ -15,7 +15,7 @@ export enum ENotificationType {
   SUCCESS = 'success',
   WARNING = 'warning',
   ERROR = 'error',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
 }
 
 export enum ENotificationAction {

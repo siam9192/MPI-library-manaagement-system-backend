@@ -17,14 +17,14 @@ router.post(
 
 router.put(
   '/:id',
-   auth(...managementRoles),
+  auth(...managementRoles),
   validateRequest(bookCopyValidation.updateBookCopy),
   bookCopyController.updateBookCopy
 );
 
 router.delete('/:id', auth(...managementRoles), bookCopyController.deleteBookCopy);
 
-router.get('/book/:bookId', auth(...managementRoles),bookCopyController.getBookCopies);
+router.get('/book/:bookId', auth(...managementRoles), bookCopyController.getBookCopies);
 
 const bookCopyRouter = router;
 

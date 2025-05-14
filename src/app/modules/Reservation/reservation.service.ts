@@ -161,7 +161,7 @@ class ReservationService {
       const reservation = await Reservation.findOne({
         _id: objectId(id),
         student: objectId(authUser.profileId),
-      }).populate(['book', 'copy','student']);
+      }).populate(['book', 'copy', 'student']);
 
       //Check if reservation exist
       if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
@@ -178,7 +178,7 @@ class ReservationService {
         );
       }
 
-      const systemSettings =  await systemSettingService.getCurrentSettings()
+      const systemSettings = await systemSettingService.getCurrentSettings();
 
       const session = await startSession();
       session.startTransaction();
@@ -215,29 +215,34 @@ class ReservationService {
           throw new Error();
         }
 
+        const student = reservation.student as any as IStudent;
+        const book = reservation.book as any as IBook;
 
-
-        const student = reservation.student as any as IStudent
-        const book = reservation.book as any as IBook
-         
-        const decrementedReputation = student.reputationIndex-systemSettings.lostReputationOnCancelReservation
+        const decrementedReputation =
+          student.reputationIndex - systemSettings.lostReputationOnCancelReservation;
 
         // Decrement student reputation index as a punishment
-        if(systemSettings.lostReputationOnCancelReservation){
-          await Student.updateOne({
-            _id:student._id
-          },{
-            reputationIndex:decrementedReputation < 0 ?
-            0:
-            decrementedReputation
-          },{session})
+        if (systemSettings.lostReputationOnCancelReservation) {
+          await Student.updateOne(
+            {
+              _id: student._id,
+            },
+            {
+              reputationIndex: decrementedReputation < 0 ? 0 : decrementedReputation,
+            },
+            { session }
+          );
         }
 
-       // Notify student
-        await notificationService.notify(student.user.toString(),{
-        message:`You’ve successfully canceled your reservation for ${book.name}.`,
-        type:ENotificationType.SUCCESS
-      },session)
+        // Notify student
+        await notificationService.notify(
+          student.user.toString(),
+          {
+            message: `You’ve successfully canceled your reservation for ${book.name}.`,
+            type: ENotificationType.SUCCESS,
+          },
+          session
+        );
 
         await session.commitTransaction();
         return null;
@@ -256,7 +261,7 @@ class ReservationService {
   async checkoutReservation(authUser: IAuthUser, id: string) {
     const reservation = await Reservation.findOne({
       _id: objectId(id),
-    }).populate(['request','book','student']);
+    }).populate(['request', 'book', 'student']);
 
     //Check if reservation exist
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
@@ -324,13 +329,17 @@ class ReservationService {
       );
 
       if (!createdBorrow) throw new Error();
-     const student = reservation.student as any as IStudent
-        const book = reservation.book as any as IBook
-       // Notify student
-        await notificationService.notify(student.user.toString(),{
-        message:`Your reservation for  ${book.name} has been checked out successfully.`,
-        type:ENotificationType.SUCCESS
-      },session)
+      const student = reservation.student as any as IStudent;
+      const book = reservation.book as any as IBook;
+      // Notify student
+      await notificationService.notify(
+        student.user.toString(),
+        {
+          message: `Your reservation for  ${book.name} has been checked out successfully.`,
+          type: ENotificationType.SUCCESS,
+        },
+        session
+      );
 
       await session.commitTransaction();
       return null;

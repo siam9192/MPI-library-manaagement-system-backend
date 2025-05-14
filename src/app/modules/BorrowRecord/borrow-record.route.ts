@@ -17,7 +17,7 @@ router.post(
 router.get('/', auth(...managementRoles), borrowRecordController.getBorrowRecords);
 router.get('/my', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecords);
 router.get('/my/not-reviewed', borrowRecordController.getMyNotReviewedBorrowRecords);
-router.get('/:id', auth(...managementRoles),  borrowRecordController.getBorrowRecordById);
+router.get('/:id', auth(...managementRoles), borrowRecordController.getBorrowRecordById);
 router.get('/my/:id', auth(EUserRole.STUDENT), borrowRecordController.getMyBorrowRecordById);
 
 const borrowRecordRouter = router;

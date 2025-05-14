@@ -7,13 +7,21 @@ import { managementRoles } from '../../utils/constant';
 
 const router = Router();
 
-router.get('/', auth(...managementRoles), studentRegistrationController.getAllStudentRegistrationRequest);
+router.get(
+  '/',
+  auth(...managementRoles),
+  studentRegistrationController.getAllStudentRegistrationRequest
+);
 
-router.patch('/:id/approve', auth(...managementRoles), studentRegistrationController.approveRequest);
+router.patch(
+  '/:id/approve',
+  auth(...managementRoles),
+  studentRegistrationController.approveRequest
+);
 
 router.patch(
   '/:id/reject',
-   auth(...managementRoles),
+  auth(...managementRoles),
   validateRequest(studentRegistrationRequestValidation.reject),
   studentRegistrationController.rejectRequest
 );

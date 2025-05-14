@@ -17,14 +17,14 @@ router.post(
 
 router.patch(
   '/:id/approve',
-   auth(...managementRoles),
+  auth(...managementRoles),
   validateRequest(borrowRequestValidation.approveBorrowRequest),
   borrowRequestController.approveBorrowRequest
 );
 
 router.patch(
   '/:id/reject',
-   auth(...managementRoles),
+  auth(...managementRoles),
   validateRequest(borrowRequestValidation.rejectBorrowRequest),
   borrowRequestController.rejectBorrowBorrowRequest
 );
@@ -34,7 +34,7 @@ router.get('/my', auth(EUserRole.STUDENT), borrowRequestController.getMyBorrowRe
 
 router.get('/:id', auth(...managementRoles), borrowRequestController.getBorrowRequestById);
 
-router.get('/my/id',auth(EUserRole.STUDENT),borrowRequestController.getMyBorrowRequestById);
+router.get('/my/id', auth(EUserRole.STUDENT), borrowRequestController.getMyBorrowRequestById);
 
 const borrowRequestRouter = router;
 

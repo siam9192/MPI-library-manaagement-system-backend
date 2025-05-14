@@ -109,7 +109,7 @@ class BorrowRequestService {
     id: string,
     payload: IApproveBorrowRequestPayload
   ) {
-   const request = await BorrowRequest.findById(id).populate("student","user","book");
+    const request = await BorrowRequest.findById(id).populate('student', 'user', 'book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Request not found');
 
     switch (request.status) {
@@ -226,18 +226,21 @@ class BorrowRequestService {
         throw new Error();
       }
 
-        const book = request.book as any as IBook
-     
+      const book = request.book as any as IBook;
 
-       // Notify student
-        await notificationService.notify(student.user.toString(),{
-        message:`Your borrow request  for ${book.name} has reserved Pick up before it will expire`,
-        type:ENotificationType.INFO,
-        action:ENotificationAction.DOWNLOAD_TICKET,
-        metaData:{
-          reservationId:createdReservation._id.toString()
-        }
-      },session)
+      // Notify student
+      await notificationService.notify(
+        student.user.toString(),
+        {
+          message: `Your borrow request  for ${book.name} has reserved Pick up before it will expire`,
+          type: ENotificationType.INFO,
+          action: ENotificationAction.DOWNLOAD_TICKET,
+          metaData: {
+            reservationId: createdReservation._id.toString(),
+          },
+        },
+        session
+      );
 
       await session.commitTransaction();
       await session.endSession();
@@ -253,7 +256,7 @@ class BorrowRequestService {
     return null;
   }
   async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
-    const request = await BorrowRequest.findById(id).populate("student","user");
+    const request = await BorrowRequest.findById(id).populate('student', 'user');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -292,19 +295,22 @@ class BorrowRequestService {
           'Request  could not be  rejected.Something went wrong'
         );
       }
-           const student = request.student as any as IStudent
-           
-       // Notify student
-        await notificationService.notify(student.user.toString(),{
-        message:"Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
-        type:ENotificationType.SYSTEM
-      },session)
+      const student = request.student as any as IStudent;
+
+      // Notify student
+      await notificationService.notify(
+        student.user.toString(),
+        {
+          message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+          type: ENotificationType.SYSTEM,
+        },
+        session
+      );
       await session.commitTransaction();
       return null;
     } catch (error) {
       await session.abortTransaction();
     } finally {
-    
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
@@ -317,7 +323,7 @@ class BorrowRequestService {
     const request = await BorrowRequest.findOne({
       _id: objectId(id),
       student: objectId(authUser.profileId),
-    }).populate("book");
+    }).populate('book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -354,13 +360,17 @@ class BorrowRequestService {
           'Request  could not be  rejected.Something went wrong'
         );
       }
-      
-      const book = request.book as any as IBook
-      
-      await notificationService.notify(authUser.userId,{
-              message:`You've successfully canceled your  borrow request for  "${book.name}" has been successfully canceled`,
-              type:ENotificationType.SUCCESS
-            },session)
+
+      const book = request.book as any as IBook;
+
+      await notificationService.notify(
+        authUser.userId,
+        {
+          message: `You've successfully canceled your  borrow request for  "${book.name}" has been successfully canceled`,
+          type: ENotificationType.SUCCESS,
+        },
+        session
+      );
 
       await session.commitTransaction();
       return null;

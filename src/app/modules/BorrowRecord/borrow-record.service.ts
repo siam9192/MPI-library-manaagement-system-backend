@@ -28,7 +28,7 @@ class BorrowRecordService {
     if (!isValidObjectId(id)) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
     }
-    const borrow = await BorrowRecord.findById(id).populate(["student","book"]);
+    const borrow = await BorrowRecord.findById(id).populate(['student', 'book']);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
     }
@@ -41,8 +41,8 @@ class BorrowRecordService {
       throw new AppError(httpStatus.FORBIDDEN, 'Book has already been lost.');
     }
 
-    const student = borrow.student as any as IStudent 
-      const book =  borrow.book as any as IBook
+    const student = borrow.student as any as IStudent;
+    const book = borrow.book as any as IBook;
 
     const systemSettings = await systemSettingService.getCurrentSettings();
     const session = await startSession();
@@ -68,7 +68,7 @@ class BorrowRecordService {
 
       // Handle fines if overdue
       if (isOverdue || condition !== EBorrowReturnCondition.NORMAL) {
-        fineAmount = overdueFineAmount + (payload.fineAmount || 0)
+        fineAmount = overdueFineAmount + (payload.fineAmount || 0);
         const fineData: Record<string, unknown> = {
           amount: fineAmount,
           student: borrow.student,
@@ -108,36 +108,38 @@ class BorrowRecordService {
       if (!updateCopy.matchedCount) {
         throw new Error('Failed to update book copy status');
       }
-  
-   // Determine base message and notification type
-let message = '';
-let type = ENotificationType.WARNING;
 
-if (payload.bookConditionStatus === EBorrowReturnCondition.LOST) {
-  message = `The book "${book.name}" has been marked as lost. A fine of $${fineAmount} has been applied to your account.`;
-}
-else if (payload.bookConditionStatus === EBorrowReturnCondition.DAMAGED) {
-  if (isOverdue) {
-    message = `The book "${book.name}" was returned late and in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
-  } else {
-    message = `The book "${book.name}" has been returned in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
-  }
-}
-else {
-  if (isOverdue) {
-    message = `The book "${book.name}" was returned late. A fine of $${fineAmount} has been applied to your account.`;
-  } else {
-    message = `The book "${book.name}" has been returned successfully.`;
-    type = ENotificationType.SUCCESS;
-  }
-}
+      // Determine base message and notification type
+      let message = '';
+      let type = ENotificationType.WARNING;
 
-// Send the notification
-await notificationService.notify(student.user.toString(), {
-  message,
-  type
-}, session);
-      
+      if (payload.bookConditionStatus === EBorrowReturnCondition.LOST) {
+        message = `The book "${book.name}" has been marked as lost. A fine of $${fineAmount} has been applied to your account.`;
+      } else if (payload.bookConditionStatus === EBorrowReturnCondition.DAMAGED) {
+        if (isOverdue) {
+          message = `The book "${book.name}" was returned late and in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+        } else {
+          message = `The book "${book.name}" has been returned in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+        }
+      } else {
+        if (isOverdue) {
+          message = `The book "${book.name}" was returned late. A fine of $${fineAmount} has been applied to your account.`;
+        } else {
+          message = `The book "${book.name}" has been returned successfully.`;
+          type = ENotificationType.SUCCESS;
+        }
+      }
+
+      // Send the notification
+      await notificationService.notify(
+        student.user.toString(),
+        {
+          message,
+          type,
+        },
+        session
+      );
+
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();

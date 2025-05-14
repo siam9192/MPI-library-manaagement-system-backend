@@ -9,18 +9,26 @@ const router = Router();
 
 router.post(
   '/',
-   auth(...managementRoles),
+  auth(...managementRoles),
   validateRequest(managementAccountRegistrationRequestValidation.createRegistrationRequest),
   managementAccountRegistrationRequestController.createRegistrationRequest
 );
 
-router.get('/', auth(...managementRoles), managementAccountRegistrationRequestController.getRegistrationRequests);
+router.get(
+  '/',
+  auth(...managementRoles),
+  managementAccountRegistrationRequestController.getRegistrationRequests
+);
 
-router.get('/:id', auth(...managementRoles), managementAccountRegistrationRequestController.getRegistrationRequests);
+router.get(
+  '/:id',
+  auth(...managementRoles),
+  managementAccountRegistrationRequestController.getRegistrationRequests
+);
 
 router.patch(
   '/:id/cancel',
-   auth(...managementRoles),
+  auth(...managementRoles),
   managementAccountRegistrationRequestController.cancelRegistrationRequest
 );
 

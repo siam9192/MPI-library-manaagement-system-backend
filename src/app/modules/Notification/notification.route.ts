@@ -6,7 +6,6 @@ import auth from '../../middlewares/auth';
 import { EUserRole } from '../User/user.interface';
 import { managementRoles } from '../../utils/constant';
 
-
 const router = Router();
 
 router.post(

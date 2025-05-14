@@ -8,18 +8,28 @@ import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
 
-router.post('/',auth(...managementRoles), 
-validateRequest(bookValidation.createBook), bookController.createBook);
-router.put('/:id',auth(...managementRoles),checkPermission("book.canView","book.canEdit"), validateRequest(bookValidation.updateBook), bookController.updateBook);
+router.post(
+  '/',
+  auth(...managementRoles),
+  validateRequest(bookValidation.createBook),
+  bookController.createBook
+);
+router.put(
+  '/:id',
+  auth(...managementRoles),
+  checkPermission('book.canView', 'book.canEdit'),
+  validateRequest(bookValidation.updateBook),
+  bookController.updateBook
+);
 router.patch(
   '/:id/status',
   auth(...managementRoles),
   validateRequest(bookValidation.changeBookStatus),
   bookController.changeBookStatus
 );
-router.delete('/:id',auth(...managementRoles), bookController.softDeleteBook);
-router.get('/',auth(...managementRoles), bookController.getBooks);
-router.get('/:id',auth(...managementRoles), bookController.getBooks);
+router.delete('/:id', auth(...managementRoles), bookController.softDeleteBook);
+router.get('/', auth(...managementRoles), bookController.getBooks);
+router.get('/:id', auth(...managementRoles), bookController.getBooks);
 
 router.get('/public', bookController.getPublicBooks);
 router.get('/public/:id', bookController.getPublicBookById);

@@ -6,9 +6,19 @@ import { managementRoles } from '../../utils/constant';
 import auth from '../../middlewares/auth';
 
 const router = Router();
-router.post('/',auth(...managementRoles),validateRequest(genreValidation.createGenre), genreController.createGenre);
+router.post(
+  '/',
+  auth(...managementRoles),
+  validateRequest(genreValidation.createGenre),
+  genreController.createGenre
+);
 
-router.put('/:id', auth(...managementRoles),validateRequest(genreValidation.updateGenre), genreController.updateGenre);
+router.put(
+  '/:id',
+  auth(...managementRoles),
+  validateRequest(genreValidation.updateGenre),
+  genreController.updateGenre
+);
 
 router.patch(
   '/:id/status',
@@ -17,13 +27,13 @@ router.patch(
   genreController.changeGenreStatus
 );
 
-router.delete('/:id',auth(...managementRoles), genreController.softDeleteGenre);
+router.delete('/:id', auth(...managementRoles), genreController.softDeleteGenre);
 router.get('/public', genreController.getPublicGenres);
 router.get('/public/:id', genreController.getPublicGenreById);
 
 // This secure routes must be always below of public routes
-router.get('/',auth(...managementRoles), genreController.getGenres);
-router.get('/:id',auth(...managementRoles),  genreController.getGenreById);
+router.get('/', auth(...managementRoles), genreController.getGenres);
+router.get('/:id', auth(...managementRoles), genreController.getGenreById);
 
 const genreRouter = router;
 
