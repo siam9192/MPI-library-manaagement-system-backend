@@ -12,7 +12,6 @@ export interface IUser extends IModelNecessaryFields {
   status: TUserStatus;
   lastLoginAt?: Date;
   lastPasswordChangedAt: Date;
-
 }
 
 export type TUserRole = `${EUserRole}`;
@@ -50,10 +49,10 @@ export interface IRoleBaseUsersFilterPayload {
   level?: EAdministratorLevel;
 }
 
-export  interface IUserFiltersPayload {
-  email?:string
+export interface IUserFiltersPayload {
+  email?: string;
   status?: EUserStatus;
-  role?:EUserRole
+  role?: EUserRole;
 }
 export type TUpdateMyProfilePayload =
   | TUpdateStudentProfile
@@ -71,4 +70,3 @@ export type TUpdateLibrarianProfile = Partial<
 export type TUpdateAdministratorProfile = Partial<
   Pick<ILibrarian, 'fullName' | 'gender' | 'contactInfo'>
 >;
-

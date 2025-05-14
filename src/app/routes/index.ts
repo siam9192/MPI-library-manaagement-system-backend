@@ -89,11 +89,11 @@ const moduleRoutes: TModuleRoutes = [
     path: '/system-settings',
     router: systemSettingRouter,
   },
-  
+
   {
-    path:'/supports',
-    router:supportRouter
-  }
+    path: '/supports',
+    router: supportRouter,
+  },
 ];
 
 const routes = moduleRoutes.map((route) => router.use(route.path, route.router));

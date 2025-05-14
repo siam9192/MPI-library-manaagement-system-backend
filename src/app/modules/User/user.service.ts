@@ -65,188 +65,316 @@ class UserService {
     };
   }
 
+async getStudentsFromDB(
+  filterPayload: IRoleBaseUsersFilterPayload,
+  paginationOptions: IPaginationOptions
+) {
+  const { searchTerm, status, ...otherFilters } = filterPayload;
+  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
-  async getStudentsFromDB(
-    filterPayload: IRoleBaseUsersFilterPayload,
-    paginationOptions: IPaginationOptions
-  ) {
-    const { searchTerm, ...otherFilters } = filterPayload;
-    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+  // Base filters (exclude deleted users)
+  const whereConditions: Record<string, any> = {
+    'user.status': { $ne: EUserStatus.DELETED },
+  };
 
-    //  Initialize filter with active status
-    const whereConditions: Record<string, any> = {
-      status: {
-        $ne: EUserStatus.DELETED,
-      },
-    };
-
-   
-    //  If searchTerm provided  then apply it
-    //  If searchTerm is a valid objectId then treat it as a _id
-    //  If searchTerm is a valid number then treat it as a roll number
-    if (searchTerm) {
-      if (Types.ObjectId.isValid(searchTerm)) {
-        whereConditions._id = objectId(searchTerm);
-      } else if (z.number().int().safeParse(searchTerm).success) {
-        whereConditions.roll = Number(searchTerm);
-      } else {
-        whereConditions.fullName = { $regex: searchTerm, $options: 'i' };
-      }
+  // Handle search term
+  if (searchTerm) {
+    if (Types.ObjectId.isValid(searchTerm)) {
+      whereConditions._id = new Types.ObjectId(searchTerm);
+    } else if (z.number().int().safeParse(Number(searchTerm)).success) {
+      whereConditions.roll = Number(searchTerm);
+    } else {
+      whereConditions.$or = [
+        { fullName: { $regex: searchTerm, $options: 'i' } },
+        { 'user.email': { $regex: searchTerm, $options: 'i' } },
+      ];
     }
-    // If otherFilter (status) provided then applied it
-    if (Object.values(otherFilters).length) {
-      Object.entries(otherFilters).map(([key, value]) => {
-        whereConditions[key] = value;
-      });
-    }
-
-    // Fetch all matched  authors  with  pagination and sorting
-    const students = await Student.find(whereConditions)
-      .sort({
-        [sortBy]: sortOrder,
-      })
-      .skip(skip)
-      .limit(limit);
-
-    const totalResult = await Student.countDocuments(whereConditions);
-
-    const total = await Student.countDocuments({
-      status: {
-        $ne: EUserStatus.DELETED,
-      },
-    });
-
-    const meta = {
-      page,
-      limit,
-      totalResult,
-      total,
-    };
-
-    return {
-      data: students,
-      meta,
-    };
   }
 
-  async getLibrariansFromDB(
-    filterPayload: IRoleBaseUsersFilterPayload,
-    paginationOptions: IPaginationOptions
-  ) {
-    const { searchTerm, ...otherFilters } = filterPayload;
-    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
-
-    //  Initialize filter with active status
-    const whereConditions: Record<string, any> = {
-      status: {
-        $ne: EUserStatus.DELETED,
-      },
-    };
-
-    //  If searchTerm provided  then apply it
-    //  If searchTerm is a valid objectId then treat it as a _id
-
-    if (searchTerm) {
-      if (Types.ObjectId.isValid(searchTerm)) {
-        whereConditions._id = objectId(searchTerm);
-      } else {
-        whereConditions.fullName = { $regex: searchTerm, $options: 'i' };
-      }
+  // Validate and apply user status
+  if (status) {
+    if (!z.enum([EUserStatus.ACTIVE, EUserStatus.BLOCKED]).safeParse(status).success) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
     }
-    // If otherFilter (status) provided then applied it
-    if (Object.values(otherFilters).length) {
-      Object.entries(otherFilters).map(([key, value]) => {
-        whereConditions[key] = value;
-      });
-    }
-
-    // Fetch all matched  authors  with  pagination and sorting
-    const Librarians = await Librarian.find(whereConditions)
-      .sort({
-        [sortBy]: sortOrder,
-      })
-      .skip(skip)
-      .limit(limit);
-
-    const totalResult = await Librarian.countDocuments(whereConditions);
-
-    const total = await Librarian.countDocuments({
-      status: {
-        $ne: EUserStatus.DELETED,
-      },
-    });
-
-    const meta = {
-      page,
-      limit,
-      totalResult,
-      total,
-    };
-
-    return {
-      data: Librarians,
-      meta,
-    };
+    whereConditions['user.status'] = status;
   }
+
+  // Apply any remaining filters
+  for (const [key, value] of Object.entries(otherFilters)) {
+    whereConditions[key] = value;
+  }
+
+  // Shared aggregation stages
+  const baseStages = [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+
+  ];
+
+  // Students data pipeline
+  const studentsPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    { $sort: { [sortBy]: sortOrder } },
+    { $skip: skip },
+    { $limit: limit },
+       {$project:{
+      user:{
+        password:false,
+        permissions:false
+      }
+    }}
+  ];
+
+  // Count of filtered results
+  const filteredCountPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    { $count: 'total' },
+  ];
+
+  // Total active students (regardless of filters)
+  const totalCountPipeline = [
+    ...baseStages,
+    {
+      $match: {
+        'user.status': { $ne: EUserStatus.DELETED },
+      },
+    },
+    { $count: 'total' },
+  ];
+
+  const [students, filteredCountResult, totalCountResult] = await Promise.all([
+    Student.aggregate(studentsPipeline),
+    Student.aggregate(filteredCountPipeline),
+    Student.aggregate(totalCountPipeline),
+  ]);
+
+  const meta = {
+    page,
+    limit,
+    totalResult: filteredCountResult[0]?.total || 0,
+    total: totalCountResult[0]?.total || 0,
+  };
+
+  return {
+    data: students,
+    meta,
+  };
+}
+
+
+  
+async getLibrariansFromDB(
+  filterPayload: IRoleBaseUsersFilterPayload,
+  paginationOptions: IPaginationOptions
+) {
+  const { searchTerm, status, ...otherFilters } = filterPayload;
+  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+
+  // Base filters (exclude deleted users)
+  const whereConditions: Record<string, any> = {
+    'user.status': { $ne: EUserStatus.DELETED },
+  };
+
+  // Handle search term
+  if (searchTerm) {
+    if (Types.ObjectId.isValid(searchTerm)) {
+      whereConditions._id = new Types.ObjectId(searchTerm);
+    } else {
+      whereConditions.$or = [
+        { fullName: { $regex: searchTerm, $options: 'i' } },
+        { 'user.email': { $regex: searchTerm, $options: 'i' } },
+      ];
+    }
+  }
+
+  // Validate and apply user status
+  if (status) {
+    if (!z.enum([EUserStatus.ACTIVE, EUserStatus.BLOCKED]).safeParse(status).success) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+    }
+    whereConditions['user.status'] = status;
+  }
+
+  // Apply any remaining filters
+  for (const [key, value] of Object.entries(otherFilters)) {
+    whereConditions[key] = value;
+  }
+
+  // Shared aggregation stages
+  const baseStages = [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+  ];
+
+  // Students data pipeline
+  const studentsPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    
+    { $sort: { [sortBy]: sortOrder } },
+    { $skip: skip },
+    { $limit: limit },
+    {$project:{
+      user:{
+        password:false,
+        permissions:false
+      }
+    }}
+  ];
+
+  // Count of filtered results
+  const filteredCountPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    { $count: 'total' },
+  ];
+
+  // Total active students (regardless of filters)
+  const totalCountPipeline = [
+    ...baseStages,
+    {
+      $match: {
+        'user.status': { $ne: EUserStatus.DELETED },
+      },
+    },
+    { $count: 'total' },
+  ];
+
+  const [librarians, filteredCountResult, totalCountResult] = await Promise.all([
+    Librarian.aggregate(studentsPipeline),
+    Librarian.aggregate(filteredCountPipeline),
+    Librarian.aggregate(totalCountPipeline),
+  ]);
+
+  const meta = {
+    page,
+    limit,
+    totalResult: filteredCountResult[0]?.total || 0,
+    total: totalCountResult[0]?.total || 0,
+  };
+
+  return {
+    data: librarians,
+    meta,
+  };
+}
 
   async getAdministratorsFromDB(
     filterPayload: IRoleBaseUsersFilterPayload,
     paginationOptions: IPaginationOptions
   ) {
     const { searchTerm, status, ...otherFilters } = filterPayload;
-    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+  const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
-    //  Initialize filter with active status
-    const whereConditions: Record<string, any> = {
-      status: {
-        $ne: EUserStatus.DELETED,
+  // Base filters (exclude deleted users)
+  const whereConditions: Record<string, any> = {
+    'user.status': { $ne: EUserStatus.DELETED },
+  };
+
+  // Handle search term
+  if (searchTerm) {
+    if (Types.ObjectId.isValid(searchTerm)) {
+      whereConditions._id = new Types.ObjectId(searchTerm);
+    } else {
+      whereConditions.$or = [
+        { fullName: { $regex: searchTerm, $options: 'i' } },
+        { 'user.email': { $regex: searchTerm, $options: 'i' } },
+      ];
+    }
+  }
+
+  // Validate and apply user status
+  if (status) {
+    if (!z.enum([EUserStatus.ACTIVE, EUserStatus.BLOCKED]).safeParse(status).success) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid status');
+    }
+    whereConditions['user.status'] = status;
+  }
+
+  // Apply any remaining filters
+  for (const [key, value] of Object.entries(otherFilters)) {
+    whereConditions[key] = value;
+  }
+
+  // Shared aggregation stages
+  const baseStages = [
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'user',
       },
-    };
+    },
+    { $unwind: '$user' },
+  ];
 
-    //  If searchTerm provided  then apply it
-    //  If searchTerm is a valid objectId then treat it as a _id
-
-    if (searchTerm) {
-      if (Types.ObjectId.isValid(searchTerm)) {
-        whereConditions._id = objectId(searchTerm);
-      } else {
-        whereConditions.fullName = { $regex: searchTerm, $options: 'i' };
+  // Students data pipeline
+  const studentsPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    { $sort: { [sortBy]: sortOrder } },
+    { $skip: skip },
+    { $limit: limit },
+       {$project:{
+      user:{
+        password:false,
+        permissions:false
       }
-    }
-    // If otherFilter (level) provided then applied it
-    if (Object.values(otherFilters).length) {
-      Object.entries(otherFilters).map(([key, value]) => {
-        whereConditions[key] = value;
-      });
-    }
+    }},
+  ];
 
-    // Fetch all matched  authors  with  pagination and sorting
-    const administrators = await Administrator.find(whereConditions)
-      .sort({
-        [sortBy]: sortOrder,
-      })
-      .skip(skip)
-      .limit(limit);
+  // Count of filtered results
+  const filteredCountPipeline = [
+    ...baseStages,
+    { $match: whereConditions },
+    { $count: 'total' },
+  ];
 
-    const totalResult = await Administrator.countDocuments(whereConditions);
-
-    const total = await Administrator.countDocuments({
-      status: {
-        $ne: EUserStatus.DELETED,
+  // Total active students (regardless of filters)
+  const totalCountPipeline = [
+    ...baseStages,
+    {
+      $match: {
+        'user.status': { $ne: EUserStatus.DELETED },
       },
-    });
+    },
+    { $count: 'total' },
+  ];
 
-    const meta = {
-      page,
-      limit,
-      totalResult,
-      total,
-    };
+  const [administrator, filteredCountResult, totalCountResult] = await Promise.all([
+    Administrator.aggregate(studentsPipeline),
+    Administrator.aggregate(filteredCountPipeline),
+    Administrator.aggregate(totalCountPipeline),
+  ]);
 
-    return {
-      data: administrators,
-      meta,
-    };
+  const meta = {
+    page,
+    limit,
+    totalResult: filteredCountResult[0]?.total || 0,
+    total: totalCountResult[0]?.total || 0,
+  };
+
+  return {
+    data: administrator,
+    meta,
+  };
   }
 
   async getUserByIdFromDB(id: string) {

@@ -1,6 +1,8 @@
 import { model, Schema } from 'mongoose';
-import { EEmailVerificationRequestStatus, IEmailVerificationRequest } from './email-verification-request.interface';
-
+import {
+  EEmailVerificationRequestStatus,
+  IEmailVerificationRequest,
+} from './email-verification-request.interface';
 
 const EmailVerificationModelSchema = new Schema<IEmailVerificationRequest>(
   {

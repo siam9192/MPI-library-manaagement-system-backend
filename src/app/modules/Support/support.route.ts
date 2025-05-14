@@ -8,15 +8,22 @@ import supportValidation from './support.validation';
 
 const router = Router();
 
-router.post('/',auth(EUserRole.STUDENT),validateRequest(supportValidation.createSupport),supportController.createSupportIntoDB);
+router.post(
+  '/',
+  auth(EUserRole.STUDENT),
+  validateRequest(supportValidation.createSupport),
+  supportController.createSupportIntoDB
+);
 
+router.patch(
+  '/:id/resolve',
+  auth(...administratorRoles),
+  validateRequest(supportValidation.resolveSupport),
+  supportController.resolveSupport
+);
 
-router.patch('/:id/resolve',auth(...administratorRoles),validateRequest(supportValidation.resolveSupport),supportController.resolveSupport);
-
-router.patch('/:id/failed',auth(...administratorRoles),supportController.setSupportAsFailed)
-
+router.patch('/:id/failed', auth(...administratorRoles), supportController.setSupportAsFailed);
 
 const supportRouter = router;
 
-
-export default supportRouter
+export default supportRouter;

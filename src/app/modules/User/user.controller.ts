@@ -6,15 +6,14 @@ import { sendSuccessResponse } from '../../utils/response';
 import UserService from './user.service';
 
 class UserController {
-
-   getUsers = catchAsync(async (req, res) => {
-    const filterPayload = Pick(req.query, ['email', 'status','role']);
+  getUsers = catchAsync(async (req, res) => {
+    const filterPayload = Pick(req.query, ['email', 'status', 'role']);
     const paginationOptions = paginationOptionPicker(req.query);
     const result = await UserService.getUsersFromDB(filterPayload, paginationOptions);
     sendSuccessResponse(res, {
       message: 'Users retrieved  successfully',
       statusCode: httpStatus.OK,
-      data: result,
+     ...result,
     });
   });
 
@@ -26,7 +25,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Students retrieved  successfully',
       statusCode: httpStatus.OK,
-      data: result,
+    ...result,
     });
   });
   getLibrarians = catchAsync(async (req, res) => {
@@ -37,7 +36,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Librarians retrieved  successfully',
       statusCode: httpStatus.OK,
-      data: result,
+      ...result,
     });
   });
   getAdministrators = catchAsync(async (req, res) => {
@@ -47,7 +46,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Administrator retrieved  successfully',
       statusCode: httpStatus.OK,
-      data: result,
+     ...result,
     });
   });
   getUserById = catchAsync(async (req, res) => {
@@ -84,8 +83,6 @@ class UserController {
       data: result,
     });
   });
-
-
 }
 
 export default new UserController();
