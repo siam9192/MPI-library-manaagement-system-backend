@@ -468,7 +468,40 @@ async getLibrariansFromDB(
       return await Administrator.findByIdAndUpdate(authUser.profileId, payload, { new: true });
     }
   }
+ 
+  async getMeFromDB (authUser:IAuthUser){
 
+   const user = await User.findOne({ _id: objectId(authUser.userId), status: { $ne: EUserStatus.DELETED } }).lean();
+
+    // Check if user exist
+    if (!user) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const role = user.role;
+
+    let profile;
+    if (role === EUserRole.STUDENT) {
+      profile = await Student.findOne({
+        user: user._id,
+      });
+    } else if (role === EUserRole.LIBRARIAN) {
+      profile = await Librarian.findOne({
+        user: user._id,
+      });
+    } else {
+      profile = await Administrator.findOne({
+        user: user._id,
+      });
+    }
+
+    const data = {
+      ...user,
+      profile,
+    };
+
+    return data;
+  }
  
 }
 

@@ -58,6 +58,15 @@ class UserController {
     });
   });
 
+  getMe = catchAsync(async (req, res) => {
+    const result = await UserService.getMeFromDB(req.user);
+    sendSuccessResponse(res, {
+      message: 'Me  retrieved successfully',
+      statusCode: httpStatus.OK,
+      data: result,
+    });
+  });
+
   changeUserStatus = catchAsync(async (req, res) => {
     const result = await UserService.changeUserStatusIntoDB(req.params.id, req.body);
     sendSuccessResponse(res, {
