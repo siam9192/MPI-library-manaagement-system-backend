@@ -291,6 +291,7 @@ class BookService {
     if (!book) {
       throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
     }
+
     return book;
   }
 
@@ -317,6 +318,7 @@ class BookService {
 
   async softDeleteBookFromDB(id: string) {
     const book = await Book.findOne({ _id: objectId(id), status: { $ne: EBookStatus.DELETED } });
+
     if (!book) throw new AppError(httpStatus.NOT_FOUND, 'Book  not found');
     const copyExist = await BookCopy.findOne({
       book: objectId(id),

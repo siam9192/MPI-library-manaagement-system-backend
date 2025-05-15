@@ -12,7 +12,7 @@ const NotificationModelSchema = new Schema<INotification>(
     message: {
       type: String,
       minlength: 1,
-      maxlength: 100,
+      maxlength: 200,
     },
 
     type: {

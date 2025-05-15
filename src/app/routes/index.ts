@@ -17,6 +17,7 @@ import borrowRecordRouter from '../modules/BorrowRecord/borrow-record.route';
 import fineRouter from '../modules/Fine/fine.route';
 import bookReviewRouter from '../modules/BookReview/book-review.route';
 import supportRouter from '../modules/Support/support.route';
+import wishlistRouter from '../modules/Wishlist/wishlist.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -62,6 +63,10 @@ const moduleRoutes: TModuleRoutes = [
     router: bookCopyRouter,
   },
   {
+    path:'/wishlist',
+    router:wishlistRouter
+  },
+  {
     path: '/borrow-requests',
     router: borrowRequestRouter,
   },
@@ -89,7 +94,6 @@ const moduleRoutes: TModuleRoutes = [
     path: '/system-settings',
     router: systemSettingRouter,
   },
-
   {
     path: '/supports',
     router: supportRouter,

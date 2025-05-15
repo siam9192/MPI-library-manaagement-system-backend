@@ -2,7 +2,6 @@ import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
 import { isNumber, objectId } from '../../helpers';
 import httpStatus from '../../shared/http-status';
-import { EAuthorStatus } from '../../type';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import Author from '../Author/author.model';
 import {
@@ -12,6 +11,7 @@ import {
 } from './Follow.interface';
 import Follow from './Follow.model';
 import { calculatePagination } from '../../helpers/paginationHelper';
+import { EAuthorStatus } from '../Author/author.interface';
 
 class FollowService {
   async createFollowIntoDB(authUser: IAuthUser, payload: ICreateFollowPayload) {

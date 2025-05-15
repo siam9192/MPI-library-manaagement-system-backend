@@ -24,6 +24,7 @@ export enum EFineStatus {
   UNPAID = 'unpaid',
   PAID = 'paid',
   WAIVED = 'waived',
+  EXPIRED = 'expired',
 }
 
 export interface IFinesFilterPayload {

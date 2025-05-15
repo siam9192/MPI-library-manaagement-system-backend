@@ -4,6 +4,7 @@ import app from './app';
 import systemSettingService from './modules/SystemSetting/system-setting.service';
 import cacheService from './cache/cache.service';
 import schedulers from './schedulers';
+import reservationService from './modules/Reservation/reservation.service';
 
 async function main() {
   try {

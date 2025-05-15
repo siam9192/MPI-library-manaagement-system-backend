@@ -63,6 +63,9 @@ class ReservationController {
       data: result,
     });
   });
+  getReservationQrCode = catchAsync(async (req, res) => {
+    await reservationService.getReservationQrCode(req.params.id, res);
+  });
 }
 
 export default new ReservationController();

@@ -21,7 +21,8 @@ import { ENotificationType } from '../Notification/notification.interface';
 import { IBook } from '../Book/book.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
-
+import QrCode from 'qrcode';
+import { Response } from 'express';
 class ReservationService {
   async getReservationsFromDB(
     filterPayload: IReservationsFilterPayload,
@@ -411,6 +412,27 @@ class ReservationService {
     }).populate(['book', 'copy']);
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     return reservation;
+  }
+  async getReservationQrCode(id: string, res: Response) {
+    //  const reservation = await Reservation.findById(id);
+
+    // //  Check reservation existence
+    //  if(!reservation){
+    //   throw new AppError(httpStatus.NOT_FOUND,"Reservation not found")
+    //  }
+
+    // Create QR code content
+    const qrData = `hello`;
+
+    // Set response headers
+    res.setHeader('Content-Type', 'image/png');
+
+    // Generate QR code to response stream
+    await QrCode.toFileStream(res, qrData, {
+      type: 'png',
+      errorCorrectionLevel: 'H',
+      width: 500,
+    });
   }
 }
 
