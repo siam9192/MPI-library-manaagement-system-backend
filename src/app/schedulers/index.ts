@@ -5,5 +5,5 @@ import fineReminder from './fineReminder.schedule';
 export default function () {
   authorNewBookInformer();
   dueBorrowReminder();
-  fineReminder()
+  fineReminder();
 }
