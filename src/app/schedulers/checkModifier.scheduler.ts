@@ -1,3 +1,4 @@
+import { IBook } from '../modules/Book/book.interface';
 import { EBorrowRecordStatus } from '../modules/BorrowRecord/borrow-record.interface';
 import BorrowRecord from '../modules/BorrowRecord/borrow-record.model';
 import { EBorrowRequestStatus } from '../modules/BorrowRequest/borrow-request.interface';
@@ -6,13 +7,19 @@ import { EEmailVerificationRequestStatus } from '../modules/EmailVerificationReq
 import EmailVerificationRequest from '../modules/EmailVerificationRequest/email-verification-request.model';
 import { EManagementAccountRegistrationRequestStatus } from '../modules/ManagementAccountRegistrationRequest/management-account-registration-request.interface';
 import ManagementAccountRegistrationRequest from '../modules/ManagementAccountRegistrationRequest/management-account-registration-request.model';
+import { ENotificationType } from '../modules/Notification/notification.interface';
 import { EReservationStatus } from '../modules/Reservation/reservation.interface';
 import Reservation from '../modules/Reservation/reservation.model';
+import { IStudent } from '../modules/Student/student.interface';
 import { EStudentRegistrationRequestStatus } from '../modules/StudentRegistrationRequest/student-registration-request.interface';
 import StudentRegistrationRequest from '../modules/StudentRegistrationRequest/studentRegistrationRequest.model';
 import cron from 'node-cron';
+import systemSettingService from '../modules/SystemSetting/system-setting.service';
+import { Student } from '../modules/Student/student.model';
+import Notification from '../modules/Notification/notification.model';
 export function checkModifier() {
   cron.schedule('*/5 * * * *', async () => {
+    const systemSettings = await systemSettingService.getCurrentSettings()
     const expiredEmailVerifications = await EmailVerificationRequest.find({
       status: EEmailVerificationRequestStatus.PENDING,
       expireAt: {
@@ -39,14 +46,14 @@ export function checkModifier() {
       expireAt: {
         $lte: new Date(),
       },
-    });
+    }).populate(["student","book"]);;
 
     const expiredReservations = await BorrowRequest.find({
       status: EReservationStatus.AWAITING,
       expireAt: {
         $lte: new Date(),
       },
-    });
+    }).populate(["student","book"]);
 
     const overdueBorrowRecords = await BorrowRecord.find({
       status: EBorrowRecordStatus.ONGOING,
@@ -78,7 +85,6 @@ export function checkModifier() {
       }
     );
 
-
      //  update expired management account registration requests status
     StudentRegistrationRequest.updateMany(
       {
@@ -101,7 +107,22 @@ export function checkModifier() {
       {
         status: EBorrowRequestStatus.EXPIRED,
       }
-    );
+    ).then(()=>{
+        const notificationsData = []
+      for (const borrow of expiredBorrowRequests ){
+       const book = borrow.book as any as IBook
+       const student = borrow.student as any as IStudent
+
+       notificationsData.push({
+        user:student.user,
+        type:ENotificationType.INFO,
+        message:`The borrow request for "${book.name}" has expired due to no response. Please place a new request if you still wish to borrow this title.
+
+.
+`})
+      }
+      Notification.insertMany(notificationsData)
+    });;
 
     //  update expired expired reservations status status
     Reservation.updateMany(
@@ -113,7 +134,27 @@ export function checkModifier() {
       {
         status: EReservationStatus.EXPIRED,
       }
-    );
+    ).then(()=>{
+        const notificationsData = []
+      for (const reservation of expiredReservations ){
+       const book = reservation.book as any as IBook
+       const student = reservation.student as any as IStudent
+
+       const updatedReputation = student.reputationIndex - 3
+       Student.updateOne({
+        _id:student._id,
+       },{
+        reputationIndex:updatedReputation < 0 ? 0 : updatedReputation
+       })
+
+       notificationsData.push({
+        user:student.user,
+        type:ENotificationType.INFO,
+        message:`Your reservation for the book "${book.name}" has expired because you did not pick it up in time. As a result, You lost ${3} reputation points.
+`})
+      }
+      Notification.insertMany(notificationsData)
+    });
 
     // update Overdue borrow borrow records status
     BorrowRecord.updateMany(
