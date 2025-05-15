@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { isValidObjectId } from 'mongoose';
 import path from 'path';
+import { objectId } from '../helpers';
 
 class CacheService {
   static pathName = path.join(process.cwd(), 'src', 'app', 'cache', 'files', 'new-book-ids.txt');
@@ -14,7 +15,7 @@ class CacheService {
     if (!isFileExist) return [];
     const data = fs.readFileSync(CacheService.pathName, 'utf-8');
     const ids = data.split(/\r?\n/).filter((_) => isValidObjectId(_));
-    return ids;
+    return ids.map((_) => objectId(_));
   }
   async deleteFile() {
     fs.unlinkSync(CacheService.pathName);

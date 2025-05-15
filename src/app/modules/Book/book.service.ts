@@ -270,7 +270,6 @@ class BookService {
       data: books,
     };
   }
-
   async getPublicBookByIdFromDB(id: string) {
     const book = await Book.findOne({ _id: objectId(id), status: EBookStatus.ACTIVE }).populate([
       'genre',

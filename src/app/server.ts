@@ -3,11 +3,13 @@ import envConfig from './config/env.config';
 import app from './app';
 import systemSettingService from './modules/SystemSetting/system-setting.service';
 import cacheService from './cache/cache.service';
+import schedulers from './schedulers';
 
 async function main() {
   try {
     const connection = await mongoose.connect(envConfig.url.database as string);
     await systemSettingService.initSettings();
+    schedulers();
 
     app.listen(5000, () => {
       console.log('Server is connected');

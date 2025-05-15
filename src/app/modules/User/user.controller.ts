@@ -13,7 +13,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Users retrieved  successfully',
       statusCode: httpStatus.OK,
-     ...result,
+      ...result,
     });
   });
 
@@ -25,7 +25,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Students retrieved  successfully',
       statusCode: httpStatus.OK,
-    ...result,
+      ...result,
     });
   });
   getLibrarians = catchAsync(async (req, res) => {
@@ -46,7 +46,7 @@ class UserController {
     sendSuccessResponse(res, {
       message: 'Administrator retrieved  successfully',
       statusCode: httpStatus.OK,
-     ...result,
+      ...result,
     });
   });
   getUserById = catchAsync(async (req, res) => {

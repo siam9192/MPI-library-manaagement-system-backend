@@ -507,14 +507,13 @@ class AuthService {
     }
 
     let profileId;
-    
-    if(user.role ===  EUserRole.LIBRARIAN){
-    profileId =  ( await Librarian.findOne({_id:user._id}).lean())!._id
+
+    if (user.role === EUserRole.LIBRARIAN) {
+      profileId = (await Librarian.findOne({ _id: user._id }).lean())!._id;
+    } else {
+      profileId = (await Administrator.findOne({ _id: user._id }).lean())!._id;
     }
-    else {
-       profileId =  ( await Administrator.findOne({_id:user._id}).lean())!._id
-    }
-   
+
     // Prepare the token payload
     const tokenPayload = {
       userId: user._id,

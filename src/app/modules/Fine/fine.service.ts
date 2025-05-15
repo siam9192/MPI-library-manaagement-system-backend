@@ -206,7 +206,6 @@ class FineService {
     // Perform the status update
     return await Fine.findByIdAndUpdate(id, { status }, { new: true });
   }
-
   async waiveFineIntoDB(id: string) {
     const fine = await Fine.findOne({ _id: objectId(id) });
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine  not found');
@@ -216,7 +215,6 @@ class FineService {
     // Perform the status update
     return await Fine.findByIdAndUpdate(id, { status: EFineStatus.WAIVED }, { new: true });
   }
-
   async payFineIntoDB(id: string) {
     const fine = await Fine.findOne({ _id: objectId(id) });
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine not found');
