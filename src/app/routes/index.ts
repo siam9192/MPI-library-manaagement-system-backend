@@ -18,6 +18,7 @@ import fineRouter from '../modules/Fine/fine.route';
 import bookReviewRouter from '../modules/BookReview/book-review.route';
 import supportRouter from '../modules/Support/support.route';
 import wishlistRouter from '../modules/Wishlist/wishlist.route';
+import borrowHistoryRouter from '../modules/BorrowHistory/borrow-history.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -85,6 +86,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/fines',
     router: fineRouter,
+  },
+  {
+    path:'borrow-histories',
+    router:borrowHistoryRouter
   },
   {
     path: '/notifications',

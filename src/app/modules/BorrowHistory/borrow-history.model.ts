@@ -1,4 +1,4 @@
-import { Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 import { IBorrowHistory } from './borrow-history.interface';
 
 const BorrowHistoryModelSchema = new Schema<IBorrowHistory>({
@@ -16,6 +16,20 @@ const BorrowHistoryModelSchema = new Schema<IBorrowHistory>({
     trim: true,
     required: true,
   },
-
-  book: {},
+  student: {
+    type:Schema.Types.ObjectId,
+    ref:"Student"
+  },
+  book: {
+    type:Schema.Types.ObjectId,
+    ref:"Book"
+  },
+},{
+  timestamps:true
 });
+
+
+
+const BorrowHistory = model<IBorrowHistory>("BorrowHistory",BorrowHistoryModelSchema);
+
+export default BorrowHistory

@@ -23,6 +23,9 @@ import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
 import QrCode from 'qrcode';
 import { Response } from 'express';
+import ejs from 'ejs'
+import path from 'path';
+
 class ReservationService {
   async getReservationsFromDB(
     filterPayload: IReservationsFilterPayload,
@@ -422,18 +425,33 @@ class ReservationService {
     //  }
 
     // Create QR code content
-    const qrData = `hello`;
+    const secret = `hello`;
 
     // Set response headers
     res.setHeader('Content-Type', 'image/png');
 
     // Generate QR code to response stream
-    await QrCode.toFileStream(res, qrData, {
-      type: 'png',
-      errorCorrectionLevel: 'H',
-      width: 500,
-    });
+   const qrUrl =  await QrCode.toDataURL(secret,{
+      width:1400,
+      type:'image/webp'
+    })
+ 
+
+    const data = {
+      roll:9999,
+      qrUrl,
+      lastDate:new Date()
+    }
+    
+  await ejs.renderFile(
+    path.join(process.cwd(),'resource','ticket','index.ejs'),
+   { data},
+    async function (err, html) {
+   
+      })
+      }
+  
   }
-}
+
 
 export default new ReservationService();
