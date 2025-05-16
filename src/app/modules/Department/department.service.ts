@@ -1,7 +1,10 @@
+import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
+import { EAuditLogCategory, EDepartmentAction } from '../AuditLog/audit-log.interface';
+import AuditLog from '../AuditLog/audit-log.model';
 import {
   EDepartmentStatus,
   ICreateDepartmentPayload,
@@ -9,9 +12,10 @@ import {
   IPublicDepartmentsFilterPayload,
 } from './department.interface';
 import Department from './department.model';
+import { isValidObjectId, objectId } from '../../helpers';
 
 class DepartmentService {
-  async createDepartmentIntoDB(payload: ICreateDepartmentPayload) {
+  async createDepartmentIntoDB(authUser: IAuthUser, payload: ICreateDepartmentPayload) {
     // Remove white space
     payload.name = payload.name.trim();
     payload.shortName = payload.shortName.trim();
@@ -41,10 +45,51 @@ class DepartmentService {
         );
       }
     }
-    return await Department.create(payload);
+
+    const session = await startSession();
+
+    session.startTransaction();
+
+    try {
+      const [createdDepartment] = await Department.create([payload], { session });
+
+      if (!createdDepartment) {
+        throw new Error('Department could not be created');
+      }
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.DEPARTMENT,
+            action: EDepartmentAction.CREATE,
+            description: `Created name a new department`,
+            targetId: createdDepartment._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Department creation failed.Internal server error'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
 
-  async softDeleteDepartmentIntoDB(id: string) {
+  async softDeleteDepartmentIntoDB(authUser: IAuthUser, id: string) {
+    // Validation id
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+    }
     // Find the author
     const department = await Department.findById(id);
     if (!department) {
@@ -56,9 +101,45 @@ class DepartmentService {
       throw new AppError(httpStatus.FORBIDDEN, 'This author is already deleted');
     }
 
-    // Soft delete: Set the status to DELETED
-    await Department.findByIdAndUpdate(id, { status: EDepartmentStatus.DELETED });
-    return null;
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      // Soft delete: Set the status to DELETED
+      const departmentUpdateStatus = await Department.updateOne(
+        { _id: objectId(id) },
+        { status: EDepartmentStatus.DELETED },
+        { session }
+      );
+      if (!departmentUpdateStatus.modifiedCount) {
+        throw new Error('Department could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.MANAGEMENT_REGISTRATION,
+            action: EDepartmentAction.DELETE,
+            description: `Deleted department ID:${department._id} `,
+            targetId: department.id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      return null;
+    } catch (error) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Department deletion failed'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
 
   async getPublicDepartmentsFromDB(

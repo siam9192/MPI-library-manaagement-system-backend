@@ -25,7 +25,7 @@ const BorrowHistoryModelSchema = new Schema<IBorrowHistory>(
       type: Schema.Types.ObjectId,
       ref: 'Book',
     },
-      borrow: {
+    borrow: {
       type: Schema.Types.ObjectId,
       ref: 'BorrowRecord',
     },

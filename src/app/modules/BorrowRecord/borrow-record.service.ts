@@ -213,23 +213,27 @@ class BorrowRecordService {
           fineReason = 'overdue+lost';
           notificationBasicData.message = `The book "${book.name}" has been marked as lost with overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
 
-          notificationBasicData.type = isFineReceived ? ENotificationType.INFO : ENotificationType.WARNING 
+          notificationBasicData.type = isFineReceived
+            ? ENotificationType.INFO
+            : ENotificationType.WARNING;
           historyBasicData.title = `Book Lost: "${book.name}"`;
           historyBasicData.description = `Lost book and it's ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation:-${3}`;
-         
-
         } else if (condition === EBorrowReturnCondition.DAMAGED) {
           totalFineAmount = payload.fineAmount!;
           fineReason = 'overdue+damaged';
 
-          notificationBasicData.type = isFineReceived ? ENotificationType.INFO : ENotificationType.WARNING 
+          notificationBasicData.type = isFineReceived
+            ? ENotificationType.INFO
+            : ENotificationType.WARNING;
           notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue and in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
           historyBasicData.description = `Returned in damaged condition and ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation: -${3}`;
         } else {
           totalFineAmount = overdueDays * systemSettings.lateFeePerDay;
 
-          notificationBasicData.type = isFineReceived ? ENotificationType.INFO : ENotificationType.WARNING 
+          notificationBasicData.type = isFineReceived
+            ? ENotificationType.INFO
+            : ENotificationType.WARNING;
           notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
           historyBasicData.description = `Returned with ${overdueDays} days overdue.Fine: ${totalFineAmount}.Reputation:-${3}`;
@@ -239,19 +243,23 @@ class BorrowRecordService {
         if (isLost) {
           fineReason = 'lost';
 
-          notificationBasicData.type = isFineReceived ? ENotificationType.INFO : ENotificationType.WARNING 
+          notificationBasicData.type = isFineReceived
+            ? ENotificationType.INFO
+            : ENotificationType.WARNING;
           notificationBasicData.message = `The book "${book.name}" has been reported as lost.  A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Lost: "${book.name}"`;
           historyBasicData.description = `Reported as lost.Fine: ${totalFineAmount}.Reputation:-${3}`;
         } else if (condition === EBorrowReturnCondition.DAMAGED) {
           fineReason = 'damaged';
 
-          notificationBasicData.type = isFineReceived ? ENotificationType.INFO : ENotificationType.WARNING 
+          notificationBasicData.type = isFineReceived
+            ? ENotificationType.INFO
+            : ENotificationType.WARNING;
           notificationBasicData.message = `The book "${book.name}" has been returned successfully but  in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
           historyBasicData.description = `Returned in damaged condition.Fine: ${totalFineAmount}.Reputation: -${3}`;
         } else {
-          notificationBasicData.type = ENotificationType.SUCCESS
+          notificationBasicData.type = ENotificationType.SUCCESS;
           notificationBasicData.message = `The book "${book.name}" has been returned successfully on time`;
           historyBasicData.title = `Book Return: "${book.name}"`;
           historyBasicData.description = `Returned on time in normal condition.Reputation: +${3}`;
@@ -342,24 +350,33 @@ class BorrowRecordService {
         throw new Error('book update failed');
       }
 
-    const createdHistory =   await BorrowHistory.create([{
-        ...historyBasicData,
-        borrow:borrow._id,
-        student:student._id
-      }],{session})
+      const createdHistory = await BorrowHistory.create(
+        [
+          {
+            ...historyBasicData,
+            borrow: borrow._id,
+            student: student._id,
+          },
+        ],
+        { session }
+      );
 
-      if(!createdHistory){
-        throw new Error("Borrow history creation failed")
+      if (!createdHistory) {
+        throw new Error('Borrow history creation failed');
       }
 
+      const [createdNotification] = await Notification.create(
+        [
+          {
+            ...notificationBasicData,
+            user: student.user,
+          },
+        ],
+        { session }
+      );
 
-      const [createdNotification] =  await Notification.create([{
-        ...notificationBasicData,
-        user:student.user
-      }],{session})
-
-      if(!createdNotification) {
-        throw new Error("Notification creation failed")
+      if (!createdNotification) {
+        throw new Error('Notification creation failed');
       }
 
       await session.commitTransaction();

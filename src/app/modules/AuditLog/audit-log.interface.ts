@@ -4,7 +4,7 @@ interface AuditLog {}
 
 export enum EAuditLogCategory {
   STUDENT_REGISTRATION = 'student_registration',
-  ADMINISTRATOR_REGISTRATION = 'administrator_registration',
+  MANAGEMENT_REGISTRATION = 'administrator_registration',
 
   USER = 'user',
   STUDENT = 'student',
@@ -33,7 +33,7 @@ export enum EStudentRegistrationAction {
   REJECT = 'reject',
 }
 
-export enum EAdministratorAction {
+export enum EManagementRegistrationAction {
   CREATE = 'create',
   CANCEL = 'cancel',
 }
@@ -88,8 +88,8 @@ export enum EReservationAction {
 
 export enum EBorrowAction {
   CREATE = 'create',
-  PROCESS_RETURN = 'process:return',
-  PROCESS_LOST = 'process:lost',
+  PROCESS_RETURN = 'return',
+  PROCESS_LOST = 'ost',
 }
 
 export enum EFineAction {
@@ -104,8 +104,8 @@ export enum EBookReviewAction {
 }
 
 export enum ESupportAction {
-  RESOLVE = 'resolve',
-  FAIL = 'fail',
+  PROCESS_RESOLVE = 'process:resolve',
+  PROCESS_FAIL = 'fail',
 }
 
 export enum ESystemSettingAction {
@@ -115,7 +115,7 @@ export enum ESystemSettingAction {
 export interface IAuditLog {
   performedBy: Types.ObjectId;
   category: EAuditLogCategory;
-  targetId:Types.ObjectId
+  targetId: Types.ObjectId;
   action: string;
   description: string;
   metaData: Record<string, unknown>;

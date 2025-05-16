@@ -13,9 +13,14 @@ import ManagementAccountRegistrationRequest from './management-account-registrat
 import jwtHelpers from '../../helpers/jwtHelpers';
 import envConfig from '../../config/env.config';
 import { calculatePagination } from '../../helpers/paginationHelper';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, EManagementRegistrationAction } from '../AuditLog/audit-log.interface';
 
 class ManagementAccountRegistrationService {
-  async createRegistrationRequest(payload: ICreateManagementAccountRequestPayload) {
+  async createRegistrationRequest(
+    authUser: IAuthUser,
+    payload: ICreateManagementAccountRequestPayload
+  ) {
     //  Check if the email is already used
     const existingUserByEmail = await User.findOne({ email: payload.email });
     if (existingUserByEmail) {
@@ -47,6 +52,25 @@ class ManagementAccountRegistrationService {
       if (!createdRequest) {
         throw new Error();
       }
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.MANAGEMENT_REGISTRATION,
+            action: EManagementRegistrationAction.CREATE,
+            description: `Requested management account registration for the "${createdRequest.role}" role for ${createdRequest.email}`,
+            targetId: createdRequest._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
       const tokenPayload = {
         requestId: createdRequest._id,
       };
@@ -56,14 +80,16 @@ class ManagementAccountRegistrationService {
         `${settings.managementRegistrationRequestExpiryDays}d`
       );
       await session.commitTransaction();
-      await session.endSession();
+
       return {
         token,
       };
     } catch (error) {
       await session.abortTransaction();
-      await session.endSession();
+
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Something went wrong');
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -190,16 +216,50 @@ class ManagementAccountRegistrationService {
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
     }
 
-    // Step 3: Update the request status to REJECTED with reason
-    const updateResult = await ManagementAccountRegistrationRequest.updateOne(
-      { _id: request._id },
-      {
-        status: CANCELED,
-        index: 0,
-      }
-    );
+    const session = await startSession();
 
-    if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
+    session.startTransaction();
+
+    try {
+      // Step 3: Update the request status to REJECTED with reason
+      const updateRequestStatus = await ManagementAccountRegistrationRequest.updateOne(
+        { _id: request._id },
+        {
+          status: CANCELED,
+          index: 0,
+        }
+      );
+
+      if (!updateRequestStatus.modifiedCount) throw new Error('Request update failed');
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.MANAGEMENT_REGISTRATION,
+            action: EManagementRegistrationAction.CANCEL,
+            description: `Canceled management registration request ID:${request._id}`,
+            targetId: request._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Request cancel failed.Internal server error'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
 
   async rejectRegistrationRequest(authUser: IAuthUser, id: string) {

@@ -7,7 +7,10 @@ import managementAccountRegistrationService from './management-account-registrat
 
 class ManagementAccountRegistrationRequestController {
   createRegistrationRequest = catchAsync(async (req, res) => {
-    const result = await managementAccountRegistrationService.createRegistrationRequest(req.body);
+    const result = await managementAccountRegistrationService.createRegistrationRequest(
+      req.user,
+      req.body
+    );
     sendSuccessResponse(res, {
       message: 'Request created successfully',
       statusCode: httpStatus.CREATED,

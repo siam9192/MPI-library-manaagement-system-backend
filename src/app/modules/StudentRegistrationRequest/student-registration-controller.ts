@@ -17,11 +17,14 @@ class StudentRegistrationController {
     sendSuccessResponse(res, {
       message: 'Student registration requests retrieved successfully',
       statusCode: httpStatus.OK,
-     ...result,
+      ...result,
     });
   });
   approveRequest = catchAsync(async (req, res) => {
-    const result = await studentRegistrationRequestService.approveRequestIntoDB(req.params.id);
+    const result = await studentRegistrationRequestService.approveRequestIntoDB(
+      req.user,
+      req.params.id
+    );
     sendSuccessResponse(res, {
       message: 'Registration request approved successfully',
       statusCode: httpStatus.OK,
@@ -30,6 +33,7 @@ class StudentRegistrationController {
   });
   rejectRequest = catchAsync(async (req, res) => {
     const result = await studentRegistrationRequestService.rejectRequestIntoDB(
+      req.user,
       req.params.id,
       req.body
     );

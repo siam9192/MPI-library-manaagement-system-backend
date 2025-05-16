@@ -9,11 +9,14 @@ import {
 import StudentRegistrationRequest from './studentRegistrationRequest.model';
 import User from '../User/user.model';
 import { Student } from '../Student/student.model';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import { EUserRole } from '../User/user.interface';
 import notificationService from '../Notification/notification.service';
 import { ENotificationType } from '../Notification/notification.interface';
+import Notification from '../Notification/notification.model';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, EStudentRegistrationAction } from '../AuditLog/audit-log.interface';
 
 class StudentRegistrationRequestService {
   async getAllStudentRegistrationRequestsFromDB(
@@ -43,7 +46,7 @@ class StudentRegistrationRequestService {
 
     // Fetch filtered and paginated registration requests
     const requests = await StudentRegistrationRequest.find(andConditions)
-      .sort({ [sortBy]: sortOrder, index: 1 }) // Sort by requested field and preserve original order
+      .sort({ index: -1, [sortBy]: sortOrder }) // Sort by requested field and preserve original order
       .skip(skip)
       .limit(limit);
 
@@ -67,7 +70,11 @@ class StudentRegistrationRequestService {
     };
   }
 
-  async rejectRequestIntoDB(id: string, payload: IRejectStudentRegistrationRequestPayload) {
+  async rejectRequestIntoDB(
+    authUser: IAuthUser,
+    id: string,
+    payload: IRejectStudentRegistrationRequestPayload
+  ) {
     const { rejectReason } = payload;
 
     // Find the registration request by ID
@@ -95,24 +102,57 @@ class StudentRegistrationRequestService {
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
     }
 
-    //  Update the request status to REJECTED with reason
-    const updateResult = await StudentRegistrationRequest.updateOne(
-      { _id: request._id },
-      {
-        status: REJECTED,
-        rejectReason,
-        index: 0,
-      }
-    );
+    // Start a database session for transaction
+    const session = await startSession();
+    session.startTransaction();
 
-    if (!updateResult.modifiedCount) {
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Unable to reject the request');
+    try {
+      //  Update the request status to REJECTED with reason
+      const updateResult = await StudentRegistrationRequest.updateOne(
+        { _id: request._id },
+        {
+          status: REJECTED,
+          rejectReason,
+          index: 0,
+        },
+        { session }
+      );
+
+      if (!updateResult.modifiedCount) {
+        throw new Error();
+      }
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.STUDENT_REGISTRATION,
+            action: EStudentRegistrationAction.APPROVE,
+            description: 'Approve student registration request',
+            targetId: request._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      await session.commitTransaction();
+      return null;
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed Reject the request');
+    } finally {
+      await session.endSession();
     }
 
     return null;
   }
 
-  async approveRequestIntoDB(id: string) {
+  async approveRequestIntoDB(authUser: IAuthUser, id: string) {
     // Fetch the registration request by ID
     const request = await StudentRegistrationRequest.findById(id);
 
@@ -212,30 +252,49 @@ class StudentRegistrationRequestService {
       if (!createdStudent) {
         throw new Error('Failed to create student');
       }
-      await notificationService.notify(
-        createdUser._id.toString(),
-        {
-          message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
-          type: ENotificationType.SYSTEM,
-        },
-        session
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.STUDENT_REGISTRATION,
+            action: EStudentRegistrationAction.APPROVE,
+            description: 'Approve student registration request',
+            targetId: request._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
       );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      // Send notification (non-blocked)
+      Notification.create({
+        user: createdUser._id,
+        type: ENotificationType.SYSTEM,
+        message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
+      });
 
       // Commit the transaction if everything succeeded
       await session.commitTransaction();
       // End the database session
-      session.endSession();
+
       return null;
     } catch (error) {
       console.log(error);
       // Rollback transaction in case of error
       await session.abortTransaction();
       // End the database session
-      session.endSession();
+
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
         'Approval failed. Something went wrong.'
       );
+    } finally {
+      await session.endSession();
     }
   }
 }
