@@ -17,7 +17,7 @@ class StudentRegistrationController {
     sendSuccessResponse(res, {
       message: 'Student registration requests retrieved successfully',
       statusCode: httpStatus.OK,
-      data: result,
+     ...result,
     });
   });
   approveRequest = catchAsync(async (req, res) => {

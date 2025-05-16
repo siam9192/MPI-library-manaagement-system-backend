@@ -7,7 +7,7 @@ export interface ISystemSetting extends IModelNecessaryFields {
   borrowRequestExpiryDays: number;
   reservationExpiryDays: number;
   lostReputationOnCancelReservation: number;
-  lostReputationOnExpireReservation:number;
+  lostReputationOnExpireReservation: number;
   studentRegistrationRequestExpiryDays: number;
   managementRegistrationRequestExpiryDays: number;
   emailVerificationExpiryMinutes: number;

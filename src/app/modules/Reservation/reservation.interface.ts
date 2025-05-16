@@ -9,7 +9,10 @@ export interface IReservation extends IModelNecessaryFields {
   expiryDate: Date;
   secret: string;
   status: EReservationStatus;
-  processedBy?: Types.ObjectId;
+  processedBy?: {
+    id: Types.ObjectId;
+    at: Date;
+  };
   index: 0 | 1;
 }
 

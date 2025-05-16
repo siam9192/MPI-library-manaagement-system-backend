@@ -34,8 +34,16 @@ const BorrowRequestModel = new Schema<IBorrowRequest>(
       default: EBorrowRequestStatus.PENDING,
     },
     processedBy: {
-      type: Schema.Types.ObjectId,
-      ref: 'Librarian',
+      type: new Schema({
+        id: {
+          type: Schema.Types.ObjectId,
+          required: true,
+        },
+        at: {
+          type: Date,
+          required: true,
+        },
+      }),
       default: null,
     },
     index: {

@@ -45,8 +45,8 @@ class WishlistService {
 
   async deleteMyWishlistBookFromDB(author: IAuthUser, id: string) {
     const isExist = await Wishlist.findOne({
-        _id:objectId(id),
-        student:objectId(author.profileId)
+      _id: objectId(id),
+      student: objectId(author.profileId),
     });
 
     // Check if the book exist  in wishlist
@@ -70,11 +70,11 @@ class WishlistService {
   async getMyWishlistBooksFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
     const { page, limit, skip, sortBy, sortOrder } = calculatePagination(paginationOptions);
     const filterPipeline = Wishlist.aggregate([
-        {
-            $match:{
-                student:objectId(authUser.profileId)
-            }
+      {
+        $match: {
+          student: objectId(authUser.profileId),
         },
+      },
       {
         $lookup: {
           from: 'books',
@@ -88,7 +88,7 @@ class WishlistService {
       },
       {
         $match: {
-          "book.status": EBookStatus.ACTIVE,
+          'book.status': EBookStatus.ACTIVE,
         },
       },
       {
@@ -105,12 +105,11 @@ class WishlistService {
     ]);
 
     const totalResultCountPipeline = Wishlist.aggregate([
-
-          {
-            $match:{
-                student:objectId(authUser.profileId)
-            }
+      {
+        $match: {
+          student: objectId(authUser.profileId),
         },
+      },
       {
         $lookup: {
           from: 'books',
@@ -124,7 +123,7 @@ class WishlistService {
       },
       {
         $match: {
-          "book.status": EBookStatus.ACTIVE,
+          'book.status': EBookStatus.ACTIVE,
         },
       },
       {
@@ -151,5 +150,4 @@ class WishlistService {
   }
 }
 
-
-export default new WishlistService()
+export default new WishlistService();

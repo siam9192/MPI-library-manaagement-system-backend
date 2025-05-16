@@ -64,8 +64,8 @@ const moduleRoutes: TModuleRoutes = [
     router: bookCopyRouter,
   },
   {
-    path:'/wishlist',
-    router:wishlistRouter
+    path: '/wishlist',
+    router: wishlistRouter,
   },
   {
     path: '/borrow-requests',
@@ -88,8 +88,8 @@ const moduleRoutes: TModuleRoutes = [
     router: fineRouter,
   },
   {
-    path:'borrow-histories',
-    router:borrowHistoryRouter
+    path: 'borrow-histories',
+    router: borrowHistoryRouter,
   },
   {
     path: '/notifications',

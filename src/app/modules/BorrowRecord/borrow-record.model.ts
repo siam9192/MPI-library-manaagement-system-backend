@@ -35,6 +35,11 @@ const BorrowModel = new Schema<IBorrowRecord>(
       type: Boolean,
       default: false,
     },
+    overDueDays: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
     fine: {
       type: Schema.Types.ObjectId,
       ref: 'Fine',
@@ -49,6 +54,19 @@ const BorrowModel = new Schema<IBorrowRecord>(
       type: String,
       enum: Object.values(EBorrowRecordStatus),
       default: EBorrowRecordStatus.ONGOING,
+    },
+    processedBy: {
+      type: new Schema({
+        id: {
+          type: Schema.Types.ObjectId,
+          required: true,
+        },
+        at: {
+          type: Date,
+          required: true,
+        },
+      }),
+      default: null,
     },
     index: {
       type: Number,

@@ -23,8 +23,10 @@ import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
 import QrCode from 'qrcode';
 import { Response } from 'express';
-import ejs from 'ejs'
+import ejs from 'ejs';
 import path from 'path';
+import BorrowHistory from '../BorrowHistory/borrow-history.model';
+import Librarian from '../Librarian/librarian.model';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -238,11 +240,28 @@ class ReservationService {
           );
         }
 
+        // Create borrow history
+        const [createdHistory] = await BorrowHistory.create(
+          [
+            {
+              title: `Canceled Reservation: ${book.name}`,
+              description: `You canceled your reservation for "${book.name}".Reputation: -${systemSettings.lostReputationOnCancelReservation}`,
+              book: book._id,
+              student: student._id,
+            },
+          ],
+          { session }
+        );
+
+        if (!createdHistory) {
+          throw new Error();
+        }
+
         // Notify student
         await notificationService.notify(
           student.user.toString(),
           {
-            message: `You’ve successfully canceled your reservation for ${book.name}.`,
+            message: `You’ve successfully canceled your reservation for "${book.name}" but you had lost ${systemSettings.lostReputationOnCancelReservation} reputation point as a penalty.`,
             type: ENotificationType.SUCCESS,
           },
           session
@@ -335,11 +354,31 @@ class ReservationService {
       if (!createdBorrow) throw new Error();
       const student = reservation.student as any as IStudent;
       const book = reservation.book as any as IBook;
+
+      const librarian = await Librarian.findById(authUser.profileId).select('fullName');
+
+      // Create borrow history
+      const [createdHistory] = await BorrowHistory.create(
+        [
+          {
+            title: `Book Picked Up: ${book.name}`,
+            description: `Handed over by ${librarian?.fullName || ''}`,
+            book: book._id,
+            student: student._id,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdHistory) {
+        throw new Error();
+      }
+
       // Notify student
       await notificationService.notify(
         student.user.toString(),
         {
-          message: `Your reservation for  ${book.name} has been checked out successfully.`,
+          message: `Your reservation for  "${book.name}" has been checked out successfully.`,
           type: ENotificationType.SUCCESS,
         },
         session
@@ -431,27 +470,23 @@ class ReservationService {
     res.setHeader('Content-Type', 'image/png');
 
     // Generate QR code to response stream
-   const qrUrl =  await QrCode.toDataURL(secret,{
-      width:1400,
-      type:'image/webp'
-    })
- 
+    const qrUrl = await QrCode.toDataURL(secret, {
+      width: 1400,
+      type: 'image/webp',
+    });
 
     const data = {
-      roll:9999,
+      roll: 9999,
       qrUrl,
-      lastDate:new Date()
-    }
-    
-  await ejs.renderFile(
-    path.join(process.cwd(),'resource','ticket','index.ejs'),
-   { data},
-    async function (err, html) {
-   
-      })
-      }
-  
-  }
+      lastDate: new Date(),
+    };
 
+    await ejs.renderFile(
+      path.join(process.cwd(), 'resource', 'ticket', 'index.ejs'),
+      { data },
+      async function (err, html) {}
+    );
+  }
+}
 
 export default new ReservationService();

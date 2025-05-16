@@ -1,12 +1,12 @@
-import { paginationOptionPicker } from "../../helpers/paginationHelper";
-import httpStatus from "../../shared/http-status";
-import catchAsync from "../../utils/catchAsync";
-import Pick from "../../utils/pick";
-import { sendSuccessResponse } from "../../utils/response";
-import wishlistService from "./wishlist.service";
+import { paginationOptionPicker } from '../../helpers/paginationHelper';
+import httpStatus from '../../shared/http-status';
+import catchAsync from '../../utils/catchAsync';
+import Pick from '../../utils/pick';
+import { sendSuccessResponse } from '../../utils/response';
+import wishlistService from './wishlist.service';
 
 class WishlistController {
- createWishlistBook = catchAsync(async (req, res) => {
+  createWishlistBook = catchAsync(async (req, res) => {
     const result = await wishlistService.createWishlistBookIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Wishlist book created  successfully',
@@ -24,15 +24,14 @@ class WishlistController {
       ...result,
     });
   });
-deleteWishlistBook = catchAsync(async (req, res) => {
-    const result = await wishlistService.deleteMyWishlistBookFromDB(req.user,req.params.id);
+  deleteWishlistBook = catchAsync(async (req, res) => {
+    const result = await wishlistService.deleteMyWishlistBookFromDB(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Book delete from wishlist successfully',
       statusCode: httpStatus.OK,
-      data:result
+      data: result,
     });
   });
 }
 
-
-export default new WishlistController()
+export default new WishlistController();

@@ -8,7 +8,10 @@ export interface IBorrowRequest extends IModelNecessaryFields {
   rejectReason?: string;
   expireAt: Date;
   status: EBorrowRequestStatus;
-  processedBy?: Types.ObjectId;
+  processedBy?: {
+    id: Types.ObjectId;
+    at: Date;
+  };
   index: 0 | 1;
 }
 

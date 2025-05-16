@@ -29,6 +29,7 @@ import notificationService from '../Notification/notification.service';
 import { ENotificationAction, ENotificationType } from '../Notification/notification.interface';
 import { EReservationStatus } from '../Reservation/reservation.interface';
 import { IStudent } from '../Student/student.interface';
+import BorrowHistory from '../BorrowHistory/borrow-history.model';
 
 class BorrowRequestService {
   async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
@@ -178,7 +179,10 @@ class BorrowRequestService {
         },
         {
           status: EBorrowRequestStatus.APPROVED,
-          processedBy: authUser.profileId,
+          processedBy: {
+            id: authUser.userId,
+            at: new Date(),
+          },
           index: 0,
         },
         { session: session }
@@ -228,11 +232,27 @@ class BorrowRequestService {
 
       const book = request.book as any as IBook;
 
+      // Create borrow history
+      const [createdHistory] = await BorrowHistory.create(
+        [
+          {
+            title: `Approved: ${book.name}`,
+            description: `The book is reserved for you. Kindly collect it before ${expiryDate.toDateString()} at ${expiryDate.toLocaleTimeString()} to avoid penalty`,
+            book: book._id,
+            student: student._id,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdHistory) {
+        throw new Error();
+      }
       // Notify student
       await notificationService.notify(
         student.user.toString(),
         {
-          message: `Your borrow request  for ${book.name} has reserved Pick up before it will expire`,
+          message: `Your borrow request  for" ${book.name}" has reserved Pick up before it will expire`,
           type: ENotificationType.INFO,
           action: ENotificationAction.DOWNLOAD_TICKET,
           metaData: {
@@ -283,7 +303,10 @@ class BorrowRequestService {
         {
           status: EBorrowRequestStatus.REJECTED,
           rejectReason: payload.rejectReason,
-          processedBy: authUser.profileId,
+          processedBy: {
+            id: authUser.userId,
+            at: new Date(),
+          },
           index: 0,
         },
         { session }

@@ -9,9 +9,14 @@ export interface IBorrowRecord extends IModelNecessaryFields {
   returnDate: Date;
   returnCondition?: EBorrowReturnCondition;
   isOverDue: boolean;
+  overDueDays: number;
   fine: Types.ObjectId;
   review?: Types.ObjectId;
   status: EBorrowRecordStatus;
+  processedBy?: {
+    id: Types.ObjectId;
+    at: Date;
+  };
   index: 1 | 0;
 }
 
@@ -30,7 +35,7 @@ export enum EBorrowReturnCondition {
 }
 
 export interface IProcessBorrowPayload {
-  bookConditionStatus: EBorrowReturnCondition;
+  bookCondition: EBorrowReturnCondition;
   makeAvailable?: boolean;
   fineAmount?: number;
   isFineReceived?: boolean;

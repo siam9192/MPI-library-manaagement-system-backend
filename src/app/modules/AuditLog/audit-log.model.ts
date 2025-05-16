@@ -1,28 +1,34 @@
-import { Schema } from "mongoose";
-import { EAuditLogCategory, IAuditLog } from "./audit-log.interface";
+import { Schema } from 'mongoose';
+import { EAuditLogCategory, IAuditLog } from './audit-log.interface';
 
-const AuditLogModelSchema =  new Schema<IAuditLog>({
-    performedBy:{
-        type:Schema.Types.ObjectId,
-        ref:"user"
+const AuditLogModelSchema = new Schema<IAuditLog>(
+  {
+  
+    category: {
+      type: String,
+      enum: Object.values(EAuditLogCategory),
+      required: true,
     },
-    category:{
-        type:String,
-        enum:Object.values(EAuditLogCategory),
-        required:true
+    action: {
+      type: String,
+      required: true,
     },
-     action:{
-        type:String,
-        required:true
+    description: {
+      type: String,
+      required: true,
     },
-    description:{
-         type:String,
-        required:true
+    targetId:Schema.Types.ObjectId,
+    metaData: {
+      type: Object,
+      default: false,
     },
-     metaData:{
-        type:Object,
-        default:false
-     }
-},{
-    timestamps:true
-})
+
+      performedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'user',
+    }
+  },
+  {
+    timestamps: true,
+  }
+);

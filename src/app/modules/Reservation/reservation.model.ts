@@ -1,4 +1,4 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import { EReservationStatus, IReservation } from './reservation.interface';
 
 const ReservationModel = new Schema<IReservation>(
@@ -41,8 +41,16 @@ const ReservationModel = new Schema<IReservation>(
       default: EReservationStatus.AWAITING,
     },
     processedBy: {
-      type: String,
-      ref: 'Librarian',
+      type: new Schema({
+        id: {
+          type: Schema.Types.ObjectId,
+          required: true,
+        },
+        at: {
+          type: Date,
+          required: true,
+        },
+      }),
       default: null,
     },
     index: {
