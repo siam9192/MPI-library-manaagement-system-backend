@@ -1,8 +1,9 @@
+import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { generateSlug } from '../../helpers';
+import { generateSlug, isValidObjectId, objectId } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
 import {
   EGenreStatus,
   ICreateGenrePayload,
@@ -11,9 +12,16 @@ import {
   IPublicGenresFilterPayload,
 } from './genre.interface';
 import Genre from './genre.model';
+import AuditLog from '../AuditLog/audit-log.model';
+import {
+  EAuditLogCategory,
+  EGenreAction,
+} from '../AuditLog/audit-log.interface';
+import Book from '../Book/book.model';
+import { EBookStatus } from '../Book/book.interface';
 
 class GenreService {
-  async createGenreIntoDB(payload: ICreateGenrePayload) {
+  async createGenreIntoDB(authUser: IAuthUser, payload: ICreateGenrePayload) {
     // Generate initial slug from the genre name
     let slug = generateSlug(payload.name);
 
@@ -25,24 +33,55 @@ class GenreService {
       counter++;
     }
 
-    // Attempt to create the genre in the database
-    const createdGenre = await Genre.create({ ...payload, slug });
+    const session = await startSession();
+    session.startTransaction();
 
-    // Throw an error if creation failed
-    if (!createdGenre) {
+    try {
+      // Attempt to create the genre in the database
+      const [createdGenre] = await Genre.create([{ ...payload, slug }], { session });
+
+      // Throw an error if creation failed
+      if (!createdGenre) {
+        throw new Error('Genre could not be created');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.GENRE,
+            action: EGenreAction.CREATE,
+            description: `Created new genre: ${createdGenre.name} `,
+            targetId: createdGenre._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+
+      // Return the created genre (you were returning null earlier — assuming that was a mistake)
+      return createdGenre;
+    } catch (error) {
+      await session.abortTransaction();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        'Genre cannot be created. Something went wrong!'
+        'Internal server error!.Genre creation failed'
       );
+    } finally {
+      await session.endSession();
     }
-
-    // Return the created genre (you were returning null earlier — assuming that was a mistake)
-    return createdGenre;
   }
 
-  async updateGenreIntoDB(id: string, payload: IGenreUpdatePayload) {
-    // Find the author by ID
-    const genre = await Genre.findById(id);
+  async updateGenreIntoDB(authUser: IAuthUser, id: string, payload: IGenreUpdatePayload) {
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+    }
+
+    // Find the genre
+    const genre = await Genre.findOne({ _id: objectId(id), status: EGenreStatus.DELETED });
     if (!genre) {
       throw new AppError(httpStatus.NOT_FOUND, 'Genre not found');
     }
@@ -62,17 +101,59 @@ class GenreService {
       }
     }
 
-    // Update the author with new data and slug
-    return await Genre.findByIdAndUpdate(
-      id,
-      {
-        ...payload,
-        slug,
-      },
-      { new: true }
-    );
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      // Update the author with new data and slug
+      const genreUpdateStatus = await Genre.updateOne(
+        { _id: objectId(id) },
+        {
+          ...payload,
+          slug,
+        },
+        { session }
+      );
+
+      if (!genreUpdateStatus.modifiedCount) {
+        throw new Error('Genre could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.GENRE,
+            action: EGenreAction.UPDATE,
+            description: `Update genre`,
+            targetId: genre._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return await Genre.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Genre update failed'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
-  async changeGenreStatusIntoDB(id: string, payload: { status: EGenreStatus }) {
+  async changeGenreStatusIntoDB(
+    authUser: IAuthUser,
+    id: string,
+    payload: { status: EGenreStatus }
+  ) {
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+    }
     const { status } = payload;
     // Prevent setting status to DELETED via this method
     if (status === EGenreStatus.DELETED) {
@@ -82,43 +163,127 @@ class GenreService {
       );
     }
 
-    // Find the author
-    const author = await Genre.findById(id);
-    if (!author) {
+    // Find the genre
+    const genre = await Genre.findOne({ _id: objectId(id), status: EGenreStatus.DELETED });
+    if (!genre) {
       throw new AppError(httpStatus.NOT_FOUND, 'Genre not found');
     }
 
     // Prevent status changes if the author is already deleted
-    if (author.status === EGenreStatus.DELETED) {
+    if (genre.status === EGenreStatus.DELETED) {
       throw new AppError(httpStatus.FORBIDDEN, 'Cannot change the status of a deleted genre.');
     }
 
-    // Perform the status update
-    return await Genre.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true } // return the updated document
-    );
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      const genreUpdateStatus = Genre.updateOne(
+        { _id: objectId },
+        { status },
+        { new: true } // return the updated document
+      );
+
+      if (!genreUpdateStatus) {
+        throw new Error('Genre could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.GENRE,
+            action: EGenreAction.CHANGE_STATUS,
+            description: `Changed genre "${genre.name}"  status ${genre.status} to ${status}`,
+            targetId: genre._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      await session.commitTransaction();
+
+      return await Genre.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Genre status change failed'
+      );
+    }
   }
 
-  async softDeleteGenreIntoDB(id: string) {
-    // Find the author
-    const author = await Genre.findById(id);
-    if (!author) {
+  async softDeleteGenreIntoDB(authUser: IAuthUser, id: string) {
+    if (!isValidObjectId(id)) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+    }
+
+    // Find the genre
+    const genre = await Genre.findOne({ _id: objectId(id), status: EGenreStatus.DELETED });
+    if (!genre) {
       throw new AppError(httpStatus.NOT_FOUND, 'Genre not found');
     }
 
-    // Prevent deleting an already deleted author
-    if (author.status === EGenreStatus.DELETED) {
-      throw new AppError(httpStatus.FORBIDDEN, 'This Genre is already deleted');
+    const bookExist = await Book.find({
+      genre: genre._id,
+      status: {
+        $ne: EBookStatus.DELETED,
+      },
+    }).countDocuments();
+
+    // Check book existence
+    if (bookExist) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `This genre cannot be deleted as it is associated with ${bookExist} books.`
+      );
     }
 
-    // Soft delete: Set the status to DELETED
-    return await Genre.findByIdAndUpdate(
-      id,
-      { status: EGenreStatus.DELETED },
-      { new: true } // return the updated document
-    );
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      // Update the author with new data and slug
+      const genreUpdateStatus = await Genre.updateOne(
+        { _id: objectId(id) },
+        {
+          status: EGenreStatus.DELETED,
+        },
+        { session }
+      );
+
+      if (!genreUpdateStatus.modifiedCount) {
+        throw new Error('Genre could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.DEPARTMENT,
+            action: EGenreAction.DELETE,
+            description: `Deleted genre "${genre.name}"`,
+            targetId: genre._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return await Genre.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Genre update failed'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
 
   async getPublicGenreByIdFromDB(id: string) {

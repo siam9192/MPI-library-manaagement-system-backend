@@ -59,6 +59,7 @@ export enum EAuthorAction {
 export enum EGenreAction {
   CREATE = 'create',
   UPDATE = 'update',
+  CHANGE_STATUS = 'change_status',
   DELETE = 'delete',
 }
 
@@ -99,8 +100,8 @@ export enum EFineAction {
 }
 
 export enum EBookReviewAction {
-  CHANGE_STATUS_HIDDEN = 'change_status:hidden',
-  CHANGE_STATUS_VISIBLE = 'change_status:visible',
+  CHANGE_STATUS_HIDDEN = 'change_status',
+  CHANGE_STATUS_VISIBLE = 'change_status',
 }
 
 export enum ESupportAction {

@@ -70,7 +70,6 @@ class DepartmentService {
         ],
         { session }
       );
-
       if (!createdLog) {
         throw new Error('Audit log creation failed');
       }

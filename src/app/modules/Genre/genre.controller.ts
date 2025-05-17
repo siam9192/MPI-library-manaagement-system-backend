@@ -7,7 +7,7 @@ import genreService from './genre.service';
 
 class GenreController {
   createGenre = catchAsync(async (req, res) => {
-    const result = await genreService.createGenreIntoDB(req.body);
+    const result = await genreService.createGenreIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Genre created successfully',
       statusCode: httpStatus.CREATED,
@@ -15,7 +15,7 @@ class GenreController {
     });
   });
   updateGenre = catchAsync(async (req, res) => {
-    const result = await genreService.updateGenreIntoDB(req.params.id, req.body);
+    const result = await genreService.updateGenreIntoDB(req.user, req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Genre updated successfully',
       statusCode: httpStatus.OK,
@@ -24,7 +24,7 @@ class GenreController {
   });
 
   changeGenreStatus = catchAsync(async (req, res) => {
-    const result = await genreService.changeGenreStatusIntoDB(req.params.id, req.body);
+    const result = await genreService.changeGenreStatusIntoDB(req.user, req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Genre status changed successfully',
       statusCode: httpStatus.OK,
@@ -32,7 +32,7 @@ class GenreController {
     });
   });
   softDeleteGenre = catchAsync(async (req, res) => {
-    const result = await genreService.softDeleteGenreIntoDB(req.params.id);
+    const result = await genreService.softDeleteGenreIntoDB(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Genre deleted successfully',
       statusCode: httpStatus.OK,
