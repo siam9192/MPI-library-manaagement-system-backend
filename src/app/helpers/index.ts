@@ -1,9 +1,17 @@
 import { Types } from 'mongoose';
+import httpStatus from '../shared/http-status';
+import AppError from '../Errors/AppError';
 
 export const objectId = (id: string) => new Types.ObjectId(id);
 
 export function isValidObjectId(id: string) {
   return Types.ObjectId.isValid(id);
+}
+
+export function validateObjectId(id: string) {
+  if (!isValidObjectId(id)) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+  }
 }
 
 export function generateSlug(name: string) {

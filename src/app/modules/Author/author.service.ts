@@ -1,8 +1,9 @@
+import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { generateSlug, objectId } from '../../helpers';
+import { generateSlug, objectId, validateObjectId } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
 import {
   EAuthorStatus,
   ICreateAuthorPayload,
@@ -10,20 +11,68 @@ import {
   IUpdateAuthorPayload,
 } from './author.interface';
 import Author from './author.model';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, EAuthorAction } from '../AuditLog/audit-log.interface';
+import Book from '../Book/book.model';
+import { EBookStatus } from '../Book/book.interface';
 
 class AuthorService {
-  async createAuthorIntoDB(payload: ICreateAuthorPayload) {
+  async createAuthorIntoDB(authUser: IAuthUser, payload: ICreateAuthorPayload) {
     let slug = generateSlug(payload.name);
     let count = 2;
     while (await Author.findOne({ slug })) {
       slug = generateSlug(`${payload.name} ${count}`);
     }
-    return await Author.create({ ...payload, slug });
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const [createdAuthor] = await Author.create([{ ...payload, slug }], { session });
+
+      if (!createdAuthor) {
+        throw new Error('Author could not be created');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.AUTHOR,
+            action: EAuthorAction.CREATE,
+            description: `Created author "${createdAuthor.name}"`,
+            targetId: createdAuthor._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return createdAuthor;
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Author creation failed'
+      );
+    } finally {
+      await session.endSession();
+    }
   }
 
-  async updateAuthorIntoDB(id: string, payload: IUpdateAuthorPayload) {
+  async updateAuthorIntoDB(authUser: IAuthUser, id: string, payload: IUpdateAuthorPayload) {
+    // Validate id
+    validateObjectId(id);
     // Find the author by ID
-    const author = await Author.findById(id);
+    const author = await Author.findOne({
+      _id: objectId(id),
+      status: {
+        $ne: EAuthorStatus.DELETED,
+      },
+    });
+
     if (!author) {
       throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
     }
@@ -43,63 +92,179 @@ class AuthorService {
       }
     }
 
-    // Update the author with new data and slug
-    return await Author.findByIdAndUpdate(
-      id,
-      {
-        ...payload,
-        slug,
-      },
-      { new: true }
-    );
-  }
-  async changeAuthorStatusIntoDB(id: string, payload: { status: EAuthorStatus }) {
-    const { status } = payload;
-    // Prevent setting status to DELETED via this method
-    if (status === EAuthorStatus.DELETED) {
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const authorUpdateStatus = await Author.updateOne(
+        { _id: author._id },
+        {
+          ...payload,
+          slug,
+        },
+        { session }
+      );
+
+      if (!authorUpdateStatus) {
+        throw new Error('Author could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.AUTHOR,
+            action: EAuthorAction.CREATE,
+            description: `Updated author`,
+            targetId: author._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return await Author.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
       throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "Cannot set status to 'deleted' using this method."
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Author update failed'
+      );
+    } finally {
+      await session.endSession();
+    }
+  }
+  async changeAuthorStatusIntoDB(
+    authUser: IAuthUser,
+    id: string,
+    payload: { status: EAuthorStatus }
+  ) {
+    const { status } = payload;
+
+    // Find the author
+    const author = await Author.findOne({
+      _id: objectId(id),
+      status: {
+        $ne: EAuthorStatus.DELETED,
+      },
+    });
+
+    if (!author) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
+    }
+
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      const authorUpdateStatus = await await Author.updateOne(
+        { _id: objectId(id) },
+        { status },
+        { session }
+      );
+
+      if (!authorUpdateStatus) {
+        throw new Error('Author could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.AUTHOR,
+            action: EAuthorAction.CREATE,
+            description: `Changed  author "${author.name}" status ${author.status} to ${payload.status} `,
+            targetId: author._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return await Author.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Author change status failed'
+      );
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async softDeleteAuthorIntoDB(authUser: IAuthUser, id: string) {
+    // Validate id
+    validateObjectId(id);
+    // Find the author
+    const author = await Author.findOne({
+      _id: objectId(id),
+      status: { $ne: EAuthorStatus.DELETED },
+    });
+    if (!author) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
+    }
+
+    const bookExist = await Book.find({
+      author: author._id,
+      status: {
+        $ne: EBookStatus.DELETED,
+      },
+    }).countDocuments();
+
+    // Check book existence
+    if (bookExist) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `This author could not be deleted as it is associated with ${bookExist} books.`
       );
     }
 
-    // Find the author
-    const author = await Author.findById(id);
-    if (!author) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
+    const session = await startSession();
+    session.startTransaction();
+
+    try {
+      // Soft delete: Set the status to DELETED
+      const authorUpdateStatus = await Author.updateOne(
+        { _id: objectId },
+        { status: EAuthorStatus.DELETED },
+        { session }
+      );
+
+      if (!authorUpdateStatus) {
+        throw new Error('Author could not be updated');
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.AUTHOR,
+            action: EAuthorAction.CREATE,
+            description: `Deleted  author "${author.name}" `,
+            targetId: author._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+      await session.commitTransaction();
+      return await Author.findById(id);
+    } catch (error) {
+      await session.abortTransaction();
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!.Author deletion failed'
+      );
+    } finally {
+      await session.endSession();
     }
-
-    // Prevent status changes if the author is already deleted
-    if (author.status === EAuthorStatus.DELETED) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Cannot change the status of a deleted author.');
-    }
-
-    // Perform the status update
-    return await Author.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true } // return the updated document
-    );
-  }
-
-  async softDeleteAuthorIntoDB(id: string) {
-    // Find the author
-    const author = await Author.findById(id);
-    if (!author) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
-    }
-
-    // Prevent deleting an already deleted author
-    if (author.status === EAuthorStatus.DELETED) {
-      throw new AppError(httpStatus.FORBIDDEN, 'This author is already deleted');
-    }
-
-    // Soft delete: Set the status to DELETED
-    return await Author.findByIdAndUpdate(
-      id,
-      { status: EAuthorStatus.DELETED },
-      { new: true } // return the updated document
-    );
   }
 
   async getPublicAuthorByIdFromDB(id: string) {
@@ -112,7 +277,6 @@ class AuthorService {
     if (author.status !== EAuthorStatus.ACTIVE) {
       throw new AppError(httpStatus.NOT_FOUND, 'This author is no longer available');
     }
-
     return author;
   }
 

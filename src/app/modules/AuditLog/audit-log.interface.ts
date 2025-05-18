@@ -1,7 +1,5 @@
 import { Types } from 'mongoose';
 
-interface AuditLog {}
-
 export enum EAuditLogCategory {
   STUDENT_REGISTRATION = 'student_registration',
   MANAGEMENT_REGISTRATION = 'administrator_registration',
@@ -100,8 +98,7 @@ export enum EFineAction {
 }
 
 export enum EBookReviewAction {
-  CHANGE_STATUS_HIDDEN = 'change_status',
-  CHANGE_STATUS_VISIBLE = 'change_status',
+  CHANGE_STATUS = 'change_status',
 }
 
 export enum ESupportAction {

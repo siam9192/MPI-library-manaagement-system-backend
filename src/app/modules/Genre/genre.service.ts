@@ -13,10 +13,7 @@ import {
 } from './genre.interface';
 import Genre from './genre.model';
 import AuditLog from '../AuditLog/audit-log.model';
-import {
-  EAuditLogCategory,
-  EGenreAction,
-} from '../AuditLog/audit-log.interface';
+import { EAuditLogCategory, EGenreAction } from '../AuditLog/audit-log.interface';
 import Book from '../Book/book.model';
 import { EBookStatus } from '../Book/book.interface';
 

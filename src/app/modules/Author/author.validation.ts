@@ -19,7 +19,7 @@ const createAuthor = z.object({
 const updateAuthor = createAuthor.partial();
 
 const changeAuthorStatus = z.object({
-  status: z.enum([EAuthorStatus.ACTIVE, EAuthorStatus.INACTIVE]),
+  status: z.enum([EAuthorStatus.ACTIVE, EAuthorStatus.INACTIVE], { message: 'Invalid status' }),
 });
 
 export default {
