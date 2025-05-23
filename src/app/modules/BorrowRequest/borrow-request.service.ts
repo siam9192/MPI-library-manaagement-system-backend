@@ -7,7 +7,6 @@ import { IAuthUser, IPaginationOptions } from '../../types';
 import { EBookStatus, IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import Reservation from '../Reservation/reservation.model';
-
 import {
   EBorrowRequestStatus,
   IApproveBorrowRequestPayload,
@@ -23,8 +22,6 @@ import { Student } from '../Student/student.model';
 import { z } from 'zod';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
-
-import { error } from 'console';
 import notificationService from '../Notification/notification.service';
 import { ENotificationAction, ENotificationType } from '../Notification/notification.interface';
 import { EReservationStatus } from '../Reservation/reservation.interface';

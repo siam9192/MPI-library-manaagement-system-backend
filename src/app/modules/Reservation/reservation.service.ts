@@ -27,6 +27,8 @@ import ejs from 'ejs';
 import path from 'path';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Librarian from '../Librarian/librarian.model';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, EReservationAction } from '../AuditLog/audit-log.interface';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -369,9 +371,25 @@ class ReservationService {
         ],
         { session }
       );
-
       if (!createdHistory) {
         throw new Error();
+      }
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.RESERVATION,
+            action: EReservationAction.PROCESS_CHECKOUT,
+            description: `Handed over reserved book`,
+            targetId: reservation._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
       }
 
       // Notify student

@@ -63,7 +63,7 @@ class DepartmentService {
           {
             category: EAuditLogCategory.DEPARTMENT,
             action: EDepartmentAction.CREATE,
-            description: `Created name a new department`,
+            description: `Created  a new department "${createdDepartment.name}"`,
             targetId: createdDepartment._id,
             performedBy: authUser.userId,
           },

@@ -13,7 +13,7 @@ class SystemSettingController {
     });
   });
   updateSystemSetting = catchAsync(async (req, res) => {
-    const result = await systemSettingService.updateSystemSetting(req.body);
+    const result = await systemSettingService.updateSystemSetting(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'System setting updated successfully',
       statusCode: httpStatus.OK,

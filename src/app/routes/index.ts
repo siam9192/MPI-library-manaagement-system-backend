@@ -19,6 +19,7 @@ import bookReviewRouter from '../modules/BookReview/book-review.route';
 import supportRouter from '../modules/Support/support.route';
 import wishlistRouter from '../modules/Wishlist/wishlist.route';
 import borrowHistoryRouter from '../modules/BorrowHistory/borrow-history.route';
+import auditLogRouter from '../modules/AuditLog/audit-log.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -102,6 +103,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/supports',
     router: supportRouter,
+  },
+  {
+    path: '/audit-logs',
+    router: auditLogRouter,
   },
 ];
 

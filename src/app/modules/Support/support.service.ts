@@ -18,6 +18,8 @@ import Librarian from '../Librarian/librarian.model';
 import Administrator from '../Administrator/administrator.model';
 import { isValidObjectId, objectId } from '../../helpers';
 import { IStudent } from '../Student/student.interface';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, ESupportAction } from '../AuditLog/audit-log.interface';
 
 class SupportService {
   async createSupportIntoDB(authUser: IAuthUser, payload: ICreateSupportPayload) {
@@ -271,7 +273,7 @@ class SupportService {
         [
           {
             user: student.user,
-            message: `Your support request regarding [${support.subject}] has been resolved. If you have any further concerns, feel free to contact us again.`,
+            message: `Your support request regarding "${support.subject}" has been resolved. If you have any further concerns, feel free to contact us again.`,
             type: ENotificationType.INFO,
             action: ENotificationAction.LINK_VISIT,
             metaData: {
@@ -281,6 +283,23 @@ class SupportService {
         ],
         { session }
       );
+
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.SUPPORT,
+            action: ESupportAction.PROCESS_RESOLVE,
+            description: `Resolve a support  request`,
+            targetId: support._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
       return await Support.findById(id);
     } catch (error) {
       await session.commitTransaction();
@@ -335,7 +354,21 @@ class SupportService {
         ],
         { session }
       );
-
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.SUPPORT,
+            action: ESupportAction.PROCESS_RESOLVE,
+            description: `Set  a support  request as  failed`,
+            targetId: support._id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
       return await Support.findById(id);
     } catch (error) {
       await session.commitTransaction();

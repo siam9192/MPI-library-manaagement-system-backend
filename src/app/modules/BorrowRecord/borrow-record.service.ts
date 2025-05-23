@@ -17,148 +17,147 @@ import systemSettingService from '../SystemSetting/system-setting.service';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';
 import { isValidObjectId, objectId } from '../../helpers';
-import notificationService from '../Notification/notification.service';
 import { IStudent } from '../Student/student.interface';
 import { ENotificationType } from '../Notification/notification.interface';
-import { EBookStatus, IBook } from '../Book/book.interface';
+import { IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Notification from '../Notification/notification.model';
 
 class BorrowRecordService {
-  async process(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
-    // Id validation
-    if (!isValidObjectId(id)) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
-    }
-    const borrow = await BorrowRecord.findById(id).populate(['student', 'book']);
-    if (!borrow) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
-    }
+  // async process(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
+  //   // Id validation
+  //   if (!isValidObjectId(id)) {
+  //     throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
+  //   }
+  //   const borrow = await BorrowRecord.findById(id).populate(['student', 'book']);
+  //   if (!borrow) {
+  //     throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
+  //   }
 
-    if (borrow.status === EBorrowRecordStatus.RETURNED) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Book has already been returned.');
-    }
+  //   if (borrow.status === EBorrowRecordStatus.RETURNED) {
+  //     throw new AppError(httpStatus.FORBIDDEN, 'Book has already been returned.');
+  //   }
 
-    if (borrow.status === EBorrowRecordStatus.LOST) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Book has already been lost.');
-    }
+  //   if (borrow.status === EBorrowRecordStatus.LOST) {
+  //     throw new AppError(httpStatus.FORBIDDEN, 'Book has already been lost.');
+  //   }
 
-    const student = borrow.student as any as IStudent;
-    const book = borrow.book as any as IBook;
+  //   const student = borrow.student as any as IStudent;
+  //   const book = borrow.book as any as IBook;
 
-    const systemSettings = await systemSettingService.getCurrentSettings();
-    const session = await startSession();
-    session.startTransaction();
+  //   const systemSettings = await systemSettingService.getCurrentSettings();
+  //   const session = await startSession();
+  //   session.startTransaction();
 
-    try {
-      const condition = payload.bookConditionStatus;
-      const now = new Date();
-      const dueDate = new Date(borrow.dueDate);
-      const isOverdue = now > dueDate;
-      const overdueDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const overdueFineAmount = isOverdue ? systemSettings.lateFeePerDay * overdueDays : 0;
-      let fineAmount;
-      // Prepare borrow update data
-      const borrowUpdateData: Record<string, unknown> = {
-        returnCondition: condition,
-        status:
-          condition === EBorrowReturnCondition.LOST
-            ? EBorrowRecordStatus.LOST
-            : EBorrowRecordStatus.RETURNED,
-        isOverdue,
-      };
+  //   try {
+  //     const condition = payload.bookConditionStatus;
+  //     const now = new Date();
+  //     const dueDate = new Date(borrow.dueDate);
+  //     const isOverdue = now > dueDate;
+  //     const overdueDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+  //     const overdueFineAmount = isOverdue ? systemSettings.lateFeePerDay * overdueDays : 0;
+  //     let fineAmount;
+  //     // Prepare borrow update data
+  //     const borrowUpdateData: Record<string, unknown> = {
+  //       returnCondition: condition,
+  //       status:
+  //         condition === EBorrowReturnCondition.LOST
+  //           ? EBorrowRecordStatus.LOST
+  //           : EBorrowRecordStatus.RETURNED,
+  //       isOverdue,
+  //     };
 
-      // Handle fines if overdue
-      if (isOverdue || condition !== EBorrowReturnCondition.NORMAL) {
-        fineAmount = overdueFineAmount + (payload.fineAmount || 0);
-        const fineData: Record<string, unknown> = {
-          amount: fineAmount,
-          student: borrow.student,
-          borrow: borrow._id,
-          issuedDate: now,
-          reason:
-            condition === EBorrowReturnCondition.NORMAL ? 'overdue' : `overdue + ${condition}`,
-        };
+  //     // Handle fines if overdue
+  //     if (isOverdue || condition !== EBorrowReturnCondition.NORMAL) {
+  //       fineAmount = overdueFineAmount + (payload.fineAmount || 0);
+  //       const fineData: Record<string, unknown> = {
+  //         amount: fineAmount,
+  //         student: borrow.student,
+  //         borrow: borrow._id,
+  //         issuedDate: now,
+  //         reason:
+  //           condition === EBorrowReturnCondition.NORMAL ? 'overdue' : `overdue + ${condition}`,
+  //       };
 
-        if (payload.isFineReceived) {
-          fineData.paidDate = now;
-          fineData.status = EFineStatus.PAID;
-        }
+  //       if (payload.isFineReceived) {
+  //         fineData.paidDate = now;
+  //         fineData.status = EFineStatus.PAID;
+  //       }
 
-        const [createdFine] = await Fine.create([fineData], { session });
-        if (!createdFine) throw new Error('Failed to create fine record');
-      }
+  //       const [createdFine] = await Fine.create([fineData], { session });
+  //       if (!createdFine) throw new Error('Failed to create fine record');
+  //     }
 
-      // Update borrow record
-      const updateBorrow = await BorrowRecord.updateOne({ _id: borrow._id }, borrowUpdateData, {
-        session,
-      });
+  //     // Update borrow record
+  //     const updateBorrow = await BorrowRecord.updateOne({ _id: borrow._id }, borrowUpdateData, {
+  //       session,
+  //     });
 
-      if (!updateBorrow.modifiedCount) {
-        throw new Error('Failed to update borrow record');
-      }
+  //     if (!updateBorrow.modifiedCount) {
+  //       throw new Error('Failed to update borrow record');
+  //     }
 
-      // Update book copy status
-      const copyUpdateData: Record<string, unknown> = {
-        status: payload.makeAvailable ? EBookCopyStatus.AVAILABLE : EBookCopyStatus.UNAVAILABLE,
-      };
+  //     // Update book copy status
+  //     const copyUpdateData: Record<string, unknown> = {
+  //       status: payload.makeAvailable ? EBookCopyStatus.AVAILABLE : EBookCopyStatus.UNAVAILABLE,
+  //     };
 
-      const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
-        session,
-      });
+  //     const updateCopy = await BookCopy.updateOne({ _id: borrow.copy }, copyUpdateData, {
+  //       session,
+  //     });
 
-      if (!updateCopy.matchedCount) {
-        throw new Error('Failed to update book copy status');
-      }
+  //     if (!updateCopy.matchedCount) {
+  //       throw new Error('Failed to update book copy status');
+  //     }
 
-      // Determine base message and notification type
-      let message = '';
-      let type = ENotificationType.WARNING;
-      let historyTitle;
-      let historyDescription;
-      if (payload.bookConditionStatus === EBorrowReturnCondition.LOST) {
-        message = `The book "${book.name}" has been marked as lost. A fine of $${fineAmount} has been applied to your account.`;
-        historyTitle = `Book Lost:${book.name}`;
-        historyDescription = `Book has been lost as reported.Fine: ${fineAmount}.Reputation: -${3}`;
-      } else if (payload.bookConditionStatus === EBorrowReturnCondition.DAMAGED) {
-        if (isOverdue) {
-          message = `The book "${book.name}" was returned late and in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
-          historyDescription = `Book has been returned but in overdue.Fine: ${fineAmount}.Reputation: -${1}`;
-        } else {
-          message = `The book "${book.name}" has been returned in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
-          historyDescription = `Book has been returned on time.Fine: ${fineAmount}.Reputation: +${1}`;
-        }
-        historyTitle = `Book Returned:${book.name}`;
-      } else {
-        if (isOverdue) {
-          message = `The book "${book.name}" was returned late. A fine of $${fineAmount} has been applied to your account.`;
-        } else {
-          message = `The book "${book.name}" has been returned successfully.`;
-          type = ENotificationType.SUCCESS;
-        }
-      }
+  //     // Determine base message and notification type
+  //     let message = '';
+  //     let type = ENotificationType.WARNING;
+  //     let historyTitle;
+  //     let historyDescription;
+  //     if (payload.bookConditionStatus === EBorrowReturnCondition.LOST) {
+  //       message = `The book "${book.name}" has been marked as lost. A fine of $${fineAmount} has been applied to your account.`;
+  //       historyTitle = `Book Lost:${book.name}`;
+  //       historyDescription = `Book has been lost as reported.Fine: ${fineAmount}.Reputation: -${3}`;
+  //     } else if (payload.bookConditionStatus === EBorrowReturnCondition.DAMAGED) {
+  //       if (isOverdue) {
+  //         message = `The book "${book.name}" was returned late and in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+  //         historyDescription = `Book has been returned but in overdue.Fine: ${fineAmount}.Reputation: -${1}`;
+  //       } else {
+  //         message = `The book "${book.name}" has been returned in damaged condition. A fine of $${fineAmount} has been applied to your account.`;
+  //         historyDescription = `Book has been returned on time.Fine: ${fineAmount}.Reputation: +${1}`;
+  //       }
+  //       historyTitle = `Book Returned:${book.name}`;
+  //     } else {
+  //       if (isOverdue) {
+  //         message = `The book "${book.name}" was returned late. A fine of $${fineAmount} has been applied to your account.`;
+  //       } else {
+  //         message = `The book "${book.name}" has been returned successfully.`;
+  //         type = ENotificationType.SUCCESS;
+  //       }
+  //     }
 
-      // Send the notification
-      await notificationService.notify(
-        student.user.toString(),
-        {
-          message,
-          type,
-        },
-        session
-      );
+  //     // Send the notification
+  //     await notificationService.notify(
+  //       student.user.toString(),
+  //       {
+  //         message,
+  //         type,
+  //       },
+  //       session
+  //     );
 
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Process failed! Internal server error');
-    } finally {
-      await session.endSession();
-    }
+  //     await session.commitTransaction();
+  //   } catch (error) {
+  //     await session.abortTransaction();
+  //     throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Process failed! Internal server error');
+  //   } finally {
+  //     await session.endSession();
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 
   async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
     // Id validation
