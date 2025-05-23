@@ -1,6 +1,8 @@
 import { IModelNecessaryFields } from '../../types/model.type';
 
 export interface ISystemSetting extends IModelNecessaryFields {
+  name: string;
+  logo: string;
   maxBorrowDays: number;
   maxBorrowItems: number;
   lateFeePerDay: number;
