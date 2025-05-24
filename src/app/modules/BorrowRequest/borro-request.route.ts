@@ -18,7 +18,6 @@ router.post(
 router.patch(
   '/:id/approve',
   auth(...managementRoles),
-  validateRequest(borrowRequestValidation.approveBorrowRequest),
   borrowRequestController.approveBorrowRequest
 );
 

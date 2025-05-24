@@ -1,10 +1,11 @@
 import { startSession } from 'mongoose';
 import { ISystemSetting, IUpdateSystemSettingPayload } from './system-setting.interface';
-import { SystemSetting } from './system-setting.model';
+
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, ESystemSettingAction } from '../AuditLog/audit-log.interface';
 import { IAuthUser } from '../../types';
 import { defaultSystemSetting } from '../../utils/constant';
+import SystemSetting from './system-setting.model';
 
 class SystemSettingService {
   async initSettings() {

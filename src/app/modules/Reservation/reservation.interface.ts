@@ -35,7 +35,6 @@ export interface IMyReservationsFilterPayload {
   status?: EReservationStatus;
 }
 
-
 export interface ICreateReservationPayload {
   bookId: string;
   borrowForDays: number;

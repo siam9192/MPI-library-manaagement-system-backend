@@ -31,7 +31,6 @@ import Librarian from '../Librarian/librarian.model';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EReservationAction } from '../AuditLog/audit-log.interface';
 import Book from '../Book/book.model';
-import { EBorrowRecordStatus } from '../BorrowRecord/borrow-record.interface';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -509,8 +508,8 @@ class ReservationService {
     );
   }
 
-  async createReservation (authUser:IAuthUser,payload:ICreateReservationPayload){
-     // Find the book and make sure it's active
+  async createReservation(authUser: IAuthUser, payload: ICreateReservationPayload) {
+    // Find the book and make sure it's active
     const book = await Book.findOne({
       _id: objectId(payload.bookId),
       status: EBookStatus.ACTIVE,
@@ -518,7 +517,7 @@ class ReservationService {
 
     // Check is book exist
     if (!book) {
-      throw new AppError(httpStatus.NOT_FOUND, "Book not found");
+      throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
     }
 
     const bookCopies = await BookCopy.find({

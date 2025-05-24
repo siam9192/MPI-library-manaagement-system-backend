@@ -9,17 +9,16 @@ class BorrowRequestController {
   createBorrowRequest = catchAsync(async (req, res) => {
     const result = await borrowRequestService.createBorrowRequestIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
-      message: 'Borrow request has been created successfully',
+      message: result.message,
       statusCode: httpStatus.CREATED,
-      data: result,
+      data: result.data,
     });
   });
 
   approveBorrowRequest = catchAsync(async (req, res) => {
     const result = await borrowRequestService.approveBorrowRequest(
       req.user,
-      req.params.id,
-      req.body
+      req.params.id
     );
     sendSuccessResponse(res, {
       message: 'Request has been approved successfully',

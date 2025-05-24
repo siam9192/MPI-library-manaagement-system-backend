@@ -27,6 +27,8 @@ import { ENotificationAction, ENotificationType } from '../Notification/notifica
 import { EReservationStatus } from '../Reservation/reservation.interface';
 import { IStudent } from '../Student/student.interface';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
+import Notification from '../Notification/notification.model';
+import { defaultErrorMessage } from '../../utils/constant';
 
 class BorrowRequestService {
   async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
@@ -40,6 +42,13 @@ class BorrowRequestService {
     if (!book) {
       throw new AppError(httpStatus.NOT_FOUND, "Book doesn't exist");
     }
+    const student = await Student.findById(authUser.profileId);
+
+    if (!student)
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!something went wrong'
+      );
 
     const bookCopies = await BookCopy.find({
       book: book._id,
@@ -50,66 +59,198 @@ class BorrowRequestService {
       throw new AppError(httpStatus.NOT_FOUND, 'The Book is not available');
     }
 
-    const systemSettings = await systemSettingService.getCurrentSettings();
+    const systemSetting = await systemSettingService.getCurrentSettings();
 
-    const ongoingBorrowExist = await BorrowRecord.find({
+    const totalOngoingBorrowExist = await BorrowRecord.find({
       student: objectId(authUser.profileId),
       status: {
         $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
       },
-    });
+    }).countDocuments();
+
+    const totalReservationExist = await Reservation.find({
+      student: objectId(authUser.profileId),
+      book: objectId(payload.bookId),
+      status: EReservationStatus.AWAITING,
+    }).countDocuments();
+
+    const totalActiveBorrow = totalReservationExist + totalOngoingBorrowExist;
 
     // Check is student already have maximum active borrows
-    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
+    if (systemSetting.borrowingPolicy.maxBorrowItems < totalReservationExist) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        `Borrow request failed!.Requester Already have  ${ongoingBorrowExist} active borrows `
+        `Borrow request failed!.Requester Already have  ${totalActiveBorrow} active borrows `
       );
     }
+    if (student.reputationIndex <= 0) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        'Request not possible because Reputation index is 0'
+      );
+    }
+    const session = await startSession();
+    session.startTransaction();
 
-    const student = await Student.findById(authUser.profileId);
+    let data;
+    let message;
 
-    if (!student)
+    try {
+      if (student.reputationIndex < systemSetting.borrowingPolicy.minReputationRequired) {
+        // Set the expire date
+        const expireAt = new Date(new Date().toDateString());
+        expireAt.setDate(
+          expireAt.getDate() + systemSetting.reservationPolicy.borrowRequestExpiryDays
+        );
+
+        // Created reservation
+        const [createdRequest] = await BorrowRequest.create(
+          [
+            {
+              student: authUser.profileId,
+              book: payload.bookId,
+              borrowForDays: payload.borrowForDays,
+              expireAt,
+            },
+          ],
+          { session }
+        );
+
+        // Check if creation failed
+        if (!createdRequest) {
+          throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Internal server error');
+        }
+
+        message = `Your borrow request for "${book.name}" is currently pending due to a low reputation score. We're reviewing it and will get back to you shortly. Thank you for your patience!`;
+
+        // Notify student
+        const [createdNotification] = await Notification.create(
+          [
+            {
+              user: student.user,
+              message: `Your borrow request for "${book.name}" is currently pending due to a low reputation score. We're reviewing it and will get back to you shortly. Thank you for your patience!`,
+              type: ENotificationType.INFO,
+              action: ENotificationAction.DOWNLOAD_TICKET,
+              metaData: {
+                borrowRequestId: createdRequest.id,
+              },
+            },
+          ],
+          {
+            session,
+          }
+        );
+
+        if (!createdNotification) {
+          throw new Error('notification creation failed');
+        }
+        data = createdRequest;
+      } else {
+        // Set the expire date
+        const expireAt = new Date(new Date().toDateString());
+        expireAt.setDate(
+          expireAt.getDate() + systemSetting.reservationPolicy.reservationExpiryDays
+        );
+        let secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
+        while (await Reservation.findOne({ secret })) {
+          secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
+        }
+        const [createdReservation] = await Reservation.create(
+          [
+            {
+              student: authUser.profileId,
+              book: payload.bookId,
+              copy: bookCopies[0]._id,
+              expiryDate: expireAt,
+              secret,
+            },
+          ],
+          { session }
+        );
+
+        if (!createdReservation) {
+          throw new Error('Reservation creation failed');
+        }
+
+
+           // Throw error if reservation not created
+      if (!createdReservation) {
+        throw new Error();
+      }
+
+      const updateCopyStatus = await BookCopy.updateOne(
+        { _id:bookCopies[0]._id },
+        { status: EBookCopyStatus.RESERVED },
+        { session }
+      );
+     if (!updateCopyStatus.modifiedCount) {
+        throw new Error("Book copy update failed");
+      }
+
+      
+        // Create borrow history
+        const [createdHistory] = await BorrowHistory.create(
+          [
+            {
+              title: `Reserved: ${book.name}`,
+              description: `The book is reserved for you on your borrow request. Kindly collect it before ${expireAt.toDateString()}  to avoid penalties`,
+              book: book._id,
+              student: student._id,
+            },
+          ],
+          { session }
+        );
+
+        if (!createdHistory) {
+          throw new Error();
+        }
+        // Notify student
+        const [createdNotification] = await Notification.create(
+          [
+            {
+              user: student.user,
+              message: `Great news! Your borrow request for "${book.name}" is now reserved. Kindly pick it up before it expires.`,
+              type: ENotificationType.INFO,
+              action: ENotificationAction.DOWNLOAD_TICKET,
+              metaData: {
+                reservationId: createdReservation._id.toString(),
+              },
+            },
+          ],
+          {
+            session,
+          }
+        );
+
+        if (!createdNotification) {
+          throw new Error('notification creation failed');
+        }
+        message = `Congratulations! The book has been reserved for you. Please collect it before ${expireAt.toDateString()} to avoid any penalties.`;
+        data = createdReservation;
+      }
+    } catch (error) {
+      await session.abortTransaction();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!something went wrong'
+        'There is something happened wrong.Please try again later'
       );
-
-    if (student.reputationIndex < 3) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Request Failed!.Reputation index  too low');
+    } finally {
+      await session.commitTransaction();
     }
 
-    // Set the expire date to 7 days from now
-    const expireAt = new Date(new Date().toDateString());
-    expireAt.setDate(expireAt.getDate() + (systemSettings.borrowRequestExpiryDays || 7));
-
-    // Create the borrow request
-    const createdRequest = await BorrowRequest.create({
-      student: authUser.profileId,
-      book: payload.bookId,
-      borrowForDays: payload.borrowForDays,
-      expireAt,
-    });
-
-    // Check if creation failed
-    if (!createdRequest) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Something went wrong while creating the borrow request'
-      );
-    }
-
-    return createdRequest; // (optional) return created data if you need it
+    return {
+      data,
+      message,
+    };
   }
 
   async approveBorrowRequest(
     authUser: IAuthUser,
-    id: string,
-    payload: IApproveBorrowRequestPayload
+    id: string
   ) {
     const request = await BorrowRequest.findById(id).populate('student', 'user', 'book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Request not found');
-
+    
     switch (request.status) {
       case EBorrowRequestStatus.APPROVED:
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
@@ -122,53 +263,27 @@ class BorrowRequestService {
       case EBorrowRequestStatus.EXPIRED:
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
     }
-    const copy = await BookCopy.findOne({
-      _id: objectId(payload.copyId),
-      book: request.book,
+
+
+    const book = request.book as any as IBook
+    
+    const bookCopies = await BookCopy.find({
+      book: book._id,
+      status: EBookCopyStatus.AVAILABLE,
     });
 
-    if (!copy) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Book copy  not found');
-    }
-
-    if (copy.status !== EBookCopyStatus.AVAILABLE) {
-      throw new AppError(httpStatus.FORBIDDEN, 'The book copy is not available');
+    if (!bookCopies.length) {
+      throw new AppError(httpStatus.NOT_FOUND, 'The Book is not available');
     }
 
     const systemSettings = await systemSettingService.getCurrentSettings();
-
-    const ongoingBorrowExist = await BorrowRecord.find({
-      student: objectId(authUser.profileId),
-      status: {
-        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
-      },
-    });
-
-    // Check is student already have maximum active borrows
-    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        `Approval failed!.Student Already have maximum   ${ongoingBorrowExist} active borrows `
-      );
-    }
-
     const student = await Student.findById(request.student);
 
-    if (!student)
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!something went wrong'
-      );
-
-    if (student.reputationIndex < 3) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        'Approval failed!.Student reputation index  too low'
-      );
-    }
+    if (!student) throw new Error();
 
     const session = await startSession();
     session.startTransaction();
+
     try {
       const borrowRequestUpdate = await BorrowRequest.updateOne(
         {
@@ -194,16 +309,18 @@ class BorrowRequestService {
         secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
       }
 
-      // Set the expire date to 7 days from now
+      // Set the expire date from now
       const expiryDate = new Date(new Date().toDateString());
-      expiryDate.setDate(expiryDate.getDate() + (systemSettings.reservationExpiryDays || 7));
+      expiryDate.setDate(
+        expiryDate.getDate() + systemSettings.reservationPolicy.reservationExpiryDays
+      );
 
       const [createdReservation] = await Reservation.create(
         [
           {
             student: request.student,
             book: request.book,
-            copy: payload.copyId,
+            copy: bookCopies[0]._id,
             request: id,
             expiryDate,
             secret,
@@ -218,13 +335,13 @@ class BorrowRequestService {
       }
 
       const updateCopy = await BookCopy.updateOne(
-        { _id: objectId(payload.copyId) },
+        { _id:bookCopies[0]._id },
         { status: EBookCopyStatus.RESERVED },
         { session }
       );
 
       if (!updateCopy.modifiedCount) {
-        throw new Error();
+        throw new Error("Book copy update failed");
       }
 
       const book = request.book as any as IBook;
@@ -233,8 +350,8 @@ class BorrowRequestService {
       const [createdHistory] = await BorrowHistory.create(
         [
           {
-            title: `Approved: ${book.name}`,
-            description: `The book is reserved for you. Kindly collect it before ${expiryDate.toDateString()} at ${expiryDate.toLocaleTimeString()} to avoid penalty`,
+            title: `Reserved: ${book.name}`,
+            description: `The book is reserved for you on your borrow request. Kindly collect it before ${expiryDate.toDateString()}  to avoid penalties`,
             book: book._id,
             student: student._id,
           },
@@ -245,20 +362,28 @@ class BorrowRequestService {
       if (!createdHistory) {
         throw new Error();
       }
+
       // Notify student
-      await notificationService.notify(
-        student.user.toString(),
-        {
-          message: `Your borrow request  for" ${book.name}" has reserved Pick up before it will expire`,
-          type: ENotificationType.INFO,
-          action: ENotificationAction.DOWNLOAD_TICKET,
-          metaData: {
-            reservationId: createdReservation._id.toString(),
+      const [createdNotification] = await Notification.create(
+        [
+          {
+            user: student.user,
+            message: `Great news! Your borrow request for "${book.name}" has been approved. The book is now reserved for you. Kindly pick it up before it expires.`,
+            type: ENotificationType.INFO,
+            action: ENotificationAction.DOWNLOAD_TICKET,
+            metaData: {
+              reservationId: createdReservation._id.toString(),
+            },
           },
-        },
-        session
+        ],
+        {
+          session,
+        }
       );
 
+      if (!createdNotification) {
+        throw new Error('notification creation failed');
+      }
       await session.commitTransaction();
       await session.endSession();
     } catch (error) {
@@ -266,14 +391,14 @@ class BorrowRequestService {
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!.Request approval  failed'
+        'Oops! There is something happened wrong.Please try again later'
       );
     }
 
     return null;
   }
   async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
-    const request = await BorrowRequest.findById(id).populate('student', 'user');
+    const request = await BorrowRequest.findById(id).populate('student', 'user','book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -289,9 +414,12 @@ class BorrowRequestService {
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
     }
 
+
+    const book = request.book as any as IBook
+
     const session = await startSession();
     session.startTransaction();
-
+  
     try {
       const updateStatus = await BorrowRequest.updateOne(
         {
@@ -310,22 +438,34 @@ class BorrowRequestService {
       );
 
       if (!updateStatus.modifiedCount) {
-        throw new AppError(
-          httpStatus.INTERNAL_SERVER_ERROR,
-          'Request  could not be  rejected.Something went wrong'
+        throw new Error(
+          'Borrow request update failed'
         );
       }
       const student = request.student as any as IStudent;
 
       // Notify student
-      await notificationService.notify(
-        student.user.toString(),
+      const [createdNotification] = await Notification.create(
+        [
+          {
+            user: student.user,
+            message: `Your borrow request for "${book.name}" has been rejected`,
+            type: ENotificationType.INFO,
+            action: ENotificationAction.DOWNLOAD_TICKET,
+            metaData: {
+             borrowRequestId:request._id
+            },
+          },
+        ],
         {
-          message: "Hey welcome,Thanks for joining MPI library. We're glad to have you here!",
-          type: ENotificationType.SYSTEM,
-        },
-        session
+          session,
+        }
       );
+
+      if (!createdNotification) {
+        throw new Error('notification creation failed');
+      }
+
       await session.commitTransaction();
       return null;
     } catch (error) {
@@ -334,7 +474,7 @@ class BorrowRequestService {
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!.Request rejection  failed'
+        'Oops! There is something happened wrong.Please try again later'
       );
     }
   }
@@ -375,9 +515,8 @@ class BorrowRequestService {
       );
 
       if (!updateStatus.modifiedCount) {
-        throw new AppError(
-          httpStatus.INTERNAL_SERVER_ERROR,
-          'Request  could not be  rejected.Something went wrong'
+        throw new Error(
+          'Borrow request  update failed'
         );
       }
 
@@ -400,7 +539,7 @@ class BorrowRequestService {
       await session.endSession();
       throw new AppError(
         httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!.Request rejection  failed'
+        defaultErrorMessage
       );
     }
   }
