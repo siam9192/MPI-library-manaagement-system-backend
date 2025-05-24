@@ -1,4 +1,4 @@
-import { EUiTheme } from '../modules/SystemSetting/system-setting.interface';
+import { EUiTheme, ISystemSetting } from '../modules/SystemSetting/system-setting.interface';
 import { EAdministratorRole, EUserRole } from '../modules/User/user.interface';
 
 export const PAGINATION_OPTION_KEYS = ['page', 'limit', 'sortBy', 'sortOrder'];
@@ -27,6 +27,10 @@ export const DEFAULT_SYSTEM_SETTING = {
     maxRenewals: 2,
     allowBorrowHistoryView: true,
     requireApprovalBeforeBorrowing: false,
+    reputationLoss:{
+      onDamage:2,
+      onLate:1
+    }
   },
   reservationPolicy: {
     borrowRequestExpiryDays: 2,
@@ -37,10 +41,15 @@ export const DEFAULT_SYSTEM_SETTING = {
       onExpire: 5,
       onCancel: 3,
     },
-    reputationIncrease: {
+    reputationGain: {
       onCheckout: 2,
     },
   },
+  finePolicy: {
+  fineExpiryDays:7,      
+  reputationLossOnUnpaidFine: 2,       
+  reputationGainOnFinePayment:2     
+},
   registrationPolicy: {
     studentRequestExpiryDays: 5,
     managementRequestExpiryDays: 7,

@@ -13,16 +13,16 @@ import BorrowRecord from './borrow-record.model';
 import httpStatus from '../../shared/http-status';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
-import systemSettingService from '../SystemSetting/system-setting.service';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';
-import { isValidObjectId, objectId } from '../../helpers';
+import { isValidObjectId, objectId, throwInternalError } from '../../helpers';
 import { IStudent } from '../Student/student.interface';
 import { ENotificationType } from '../Notification/notification.interface';
 import { IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Notification from '../Notification/notification.model';
+import systemSettingService from '../SystemSetting/system-setting.service';
 
 class BorrowRecordService {
   // async process(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
@@ -46,7 +46,7 @@ class BorrowRecordService {
   //   const student = borrow.student as any as IStudent;
   //   const book = borrow.book as any as IBook;
 
-  //   const systemSettings = await systemSettingService.getCurrentSettings();
+  //   const systemSetting = await systemSettingervice.getCurrentSettings();
   //   const session = await startSession();
   //   session.startTransaction();
 
@@ -56,7 +56,7 @@ class BorrowRecordService {
   //     const dueDate = new Date(borrow.dueDate);
   //     const isOverdue = now > dueDate;
   //     const overdueDays = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-  //     const overdueFineAmount = isOverdue ? systemSettings.lateFeePerDay * overdueDays : 0;
+  //     const overdueFineAmount = isOverdue ? systemSetting.lateFeePerDay * overdueDays : 0;
   //     let fineAmount;
   //     // Prepare borrow update data
   //     const borrowUpdateData: Record<string, unknown> = {
@@ -180,7 +180,7 @@ class BorrowRecordService {
     const student = borrow.student as any as IStudent;
     const book = borrow.book as any as IBook;
 
-    const systemSettings = await systemSettingService.getCurrentSettings();
+    const systemSetting = await systemSettingService.getCurrentSettings();
     const session = await startSession();
     session.startTransaction();
 
@@ -208,7 +208,7 @@ class BorrowRecordService {
       // Overdue
       if (isOverdue) {
         if (isLost) {
-          totalFineAmount = payload.fineAmount! + overdueDays * systemSettings.lateFeePerDay;
+          totalFineAmount = payload.fineAmount! + overdueDays * systemSetting.borrowingPolicy.lateFeePerDay;
           fineReason = 'overdue+lost';
           notificationBasicData.message = `The book "${book.name}" has been marked as lost with overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
 
@@ -228,7 +228,7 @@ class BorrowRecordService {
           historyBasicData.title = `Book Return: "${book.name}"`;
           historyBasicData.description = `Returned in damaged condition and ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation: -${3}`;
         } else {
-          totalFineAmount = overdueDays * systemSettings.lateFeePerDay;
+          totalFineAmount = overdueDays * systemSetting.lateFeePerDay;
 
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
@@ -381,7 +381,7 @@ class BorrowRecordService {
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Process failed! Internal server error');
+      throwInternalError()
     } finally {
       await session.endSession();
     }

@@ -20,8 +20,16 @@ export interface ISystemSetting extends IModelNecessaryFields {
     maxRenewals: number;
     allowBorrowHistoryView: boolean;
     requireApprovalBeforeBorrowing: boolean;
+      reputationLoss: {
+      onLate: number;
+      onDamage: number;
+    };
   };
-
+ finePolicy: {
+  fineExpiryDays:number,      
+  reputationLossOnUnpaidFine: number;       
+  reputationGainOnFinePayment: number;     
+}
   reservationPolicy: {
     borrowRequestExpiryDays: number;
     reservationExpiryDays: number;
@@ -31,7 +39,7 @@ export interface ISystemSetting extends IModelNecessaryFields {
       onExpire: number;
       onCancel: number;
     };
-    reputationIncrease: {
+    reputationGain: {
       onCheckout: number;
     };
   };
