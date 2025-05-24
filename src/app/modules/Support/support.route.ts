@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { administratorRoles } from '../../utils/constant';
+import { ADMINISTRATOR_ROLES } from '../../utils/constant';
 import auth from '../../middlewares/auth';
 import supportController from './support.controller';
 import { EUserRole } from '../User/user.interface';
@@ -17,12 +17,12 @@ router.post(
 
 router.patch(
   '/:id/resolve',
-  auth(...administratorRoles),
+  auth(...ADMINISTRATOR_ROLES),
   validateRequest(supportValidation.resolveSupport),
   supportController.resolveSupport
 );
 
-router.patch('/:id/failed', auth(...administratorRoles), supportController.setSupportAsFailed);
+router.patch('/:id/failed', auth(...ADMINISTRATOR_ROLES), supportController.setSupportAsFailed);
 
 const supportRouter = router;
 

@@ -1,5 +1,5 @@
 import { IPaginationOptions } from '../types';
-import { paginationOptionKeys } from '../utils/constant';
+import { PAGINATION_OPTION_KEYS } from '../utils/constant';
 import Pick from '../utils/pick';
 
 interface IOptionsResult {
@@ -28,4 +28,4 @@ export const calculatePagination = (
   };
 };
 
-export const paginationOptionPicker = (query: any) => Pick(query, paginationOptionKeys);
+export const paginationOptionPicker = (query: any) => Pick(query, PAGINATION_OPTION_KEYS);

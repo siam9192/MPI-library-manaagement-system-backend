@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import httpStatus from '../shared/http-status';
 import AppError from '../Errors/AppError';
+import { GLOBAL_ERROR_MESSAGE } from '../utils/constant';
 
 export const objectId = (id: string) => new Types.ObjectId(id);
 
@@ -111,4 +112,10 @@ export function flattenObject(obj: object, parent = '', result: Record<string, u
     }
   }
   return result;
+}
+
+
+
+export function throwInternalError (){
+  throw new AppError(httpStatus.INTERNAL_SERVER_ERROR,GLOBAL_ERROR_MESSAGE)
 }

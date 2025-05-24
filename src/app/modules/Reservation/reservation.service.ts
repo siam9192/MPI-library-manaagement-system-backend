@@ -2,7 +2,6 @@ import { date, z } from 'zod';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import {
   EReservationStatus,
-  ICreateReservationPayload,
   IMyReservationsFilterPayload,
   IReservationsFilterPayload,
 } from './reservation.interface';
@@ -30,6 +29,8 @@ import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Librarian from '../Librarian/librarian.model';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EReservationAction } from '../AuditLog/audit-log.interface';
+import Notification from '../Notification/notification.model';
+import { GLOBAL_ERROR_MESSAGE } from '../../utils/constant';
 import Book from '../Book/book.model';
 
 class ReservationService {
@@ -166,6 +167,7 @@ class ReservationService {
       meta,
     };
   }
+
   async cancelReservation(authUser: IAuthUser, id: string) {
     {
       const reservation = await Reservation.findOne({
@@ -190,6 +192,9 @@ class ReservationService {
 
       const systemSettings = await systemSettingService.getCurrentSettings();
 
+      const student = reservation.student as any as IStudent;
+      const book = reservation.book as any as IBook;
+
       const session = await startSession();
       session.startTransaction();
 
@@ -209,7 +214,8 @@ class ReservationService {
           throw new Error();
         }
 
-        const updateBookCopy = await BookCopy.updateOne(
+        // Update book copy
+        const bookCopyUpdateStatus = await BookCopy.updateOne(
           {
             _id: reservation.copy,
           },
@@ -221,19 +227,32 @@ class ReservationService {
           }
         );
 
-        if (!updateBookCopy.matchedCount) {
-          throw new Error();
+        if (!bookCopyUpdateStatus.matchedCount) {
+          throw new Error('Book copy update failed');
         }
 
-        const student = reservation.student as any as IStudent;
-        const book = reservation.book as any as IBook;
+        const bookUpdateStatus = await Book.updateOne(
+          {
+            _id: book._id,
+          },
+          {
+            $inc: {
+              'count.availableCopies': 1,
+            },
+          },
+          { session }
+        );
 
-        const decrementedReputation =
-          student.reputationIndex - systemSettings.lostReputationOnCancelReservation;
+        if (!bookUpdateStatus.matchedCount) {
+          throw new Error('Book  update failed');
+        }
+
+        const reputationLoos = systemSettings.reservationPolicy.reputationLoss.onCancel;
+        const decrementedReputation = student.reputationIndex - reputationLoos;
 
         // Decrement student reputation index as a punishment
-        if (systemSettings.lostReputationOnCancelReservation) {
-          await Student.updateOne(
+        if (reputationLoos) {
+          const studentUpdateStatus = await Student.updateOne(
             {
               _id: student._id,
             },
@@ -242,6 +261,10 @@ class ReservationService {
             },
             { session }
           );
+
+          if (studentUpdateStatus.modifiedCount) {
+            throw new Error('Student update failed');
+          }
         }
 
         // Create borrow history
@@ -249,7 +272,7 @@ class ReservationService {
           [
             {
               title: `Canceled Reservation: ${book.name}`,
-              description: `You canceled your reservation for "${book.name}".Reputation: -${systemSettings.lostReputationOnCancelReservation}`,
+              description: `Your reservation for "${book.name}" has been canceled. Your reputation has decreased by ${reputationLoos}. Keep engaging positively to improve your score!`,
               book: book._id,
               student: student._id,
             },
@@ -262,23 +285,30 @@ class ReservationService {
         }
 
         // Notify student
-        await notificationService.notify(
-          student.user.toString(),
+        const [createdNotification] = await Notification.create(
+          [
+            {
+              user: student.user,
+              message: `Your reservation for "${book.name}" has been canceled successfully!`,
+              type: ENotificationType.INFO,
+              metaData: {
+                reservationId: reservation.id,
+              },
+            },
+          ],
           {
-            message: `You’ve successfully canceled your reservation for "${book.name}" but you had lost ${systemSettings.lostReputationOnCancelReservation} reputation point as a penalty.`,
-            type: ENotificationType.SUCCESS,
-          },
-          session
+            session,
+          }
         );
 
+        if (!createdNotification) {
+          throw new Error('notification creation failed');
+        }
         await session.commitTransaction();
         return null;
       } catch (error) {
         await session.abortTransaction();
-        throw new AppError(
-          httpStatus.INTERNAL_SERVER_ERROR,
-          'Internal server error!.Reservation cancellation failed'
-        );
+        throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
       } finally {
         session.endSession();
       }
@@ -296,7 +326,7 @@ class ReservationService {
     if (reservation.status !== EReservationStatus.AWAITING) {
       throw new AppError(
         httpStatus.FORBIDDEN,
-        `Reservation can not be checkout because it's not in awaiting`
+        `Sorry, you can’t check out this reservation it’s not currently in the 'awaiting' stage.`
       );
     }
 
@@ -366,7 +396,7 @@ class ReservationService {
         [
           {
             title: `Book Picked Up: ${book.name}`,
-            description: `Handed over by ${librarian?.fullName || ''}`,
+            description: `Handed over by ${librarian?.fullName || ''} Return it before ${new Date(dueDate).toDateString()}`,
             book: book._id,
             student: student._id,
           },
@@ -383,7 +413,7 @@ class ReservationService {
           {
             category: EAuditLogCategory.RESERVATION,
             action: EReservationAction.PROCESS_CHECKOUT,
-            description: `Handed over reserved book`,
+            description: `Checked out reserved book "${book.name}" to student ID ${authUser.profileId}`,
             targetId: reservation._id,
             performedBy: authUser.userId,
           },
@@ -395,23 +425,30 @@ class ReservationService {
       }
 
       // Notify student
-      await notificationService.notify(
-        student.user.toString(),
+      const [createdNotification] = await Notification.create(
+        [
+          {
+            user: student.user,
+            message: `Your have successfully  picked up your reserved book "${book.name}"!.Kindly return it as well on time to avoid penalties`,
+            type: ENotificationType.INFO,
+            metaData: {
+              reservationId: reservation.id,
+            },
+          },
+        ],
         {
-          message: `Your reservation for  "${book.name}" has been checked out successfully.`,
-          type: ENotificationType.SUCCESS,
-        },
-        session
+          session,
+        }
       );
 
+      if (!createdNotification) {
+        throw new Error('notification creation failed');
+      }
       await session.commitTransaction();
       return null;
     } catch (error) {
       await session.abortTransaction();
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!.Reservation cancellation failed'
-      );
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
     } finally {
       session.endSession();
     }
@@ -506,77 +543,6 @@ class ReservationService {
       { data },
       async function (err, html) {}
     );
-  }
-
-  async createReservation(authUser: IAuthUser, payload: ICreateReservationPayload) {
-    // Find the book and make sure it's active
-    const book = await Book.findOne({
-      _id: objectId(payload.bookId),
-      status: EBookStatus.ACTIVE,
-    });
-
-    // Check is book exist
-    if (!book) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
-    }
-
-    const bookCopies = await BookCopy.find({
-      book: book._id,
-      status: EBookCopyStatus.AVAILABLE,
-    });
-
-    if (!bookCopies.length) {
-      throw new AppError(httpStatus.NOT_FOUND, 'Book is not available');
-    }
-
-    const systemSettings = await systemSettingService.getCurrentSettings();
-
-    const ongoingBorrowExist = await BorrowRecord.find({
-      student: objectId(authUser.profileId),
-      status: {
-        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
-      },
-    });
-
-    // Check is student already have maximum active borrows
-    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
-      throw new AppError(
-        httpStatus.FORBIDDEN,
-        `Borrow request failed!.Requester Already have  ${ongoingBorrowExist} active borrows `
-      );
-    }
-
-    const student = await Student.findById(authUser.profileId);
-
-    if (!student)
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!something went wrong'
-      );
-
-    if (student.reputationIndex < 3) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Request Failed!.Reputation index  too low');
-    }
-
-    // Set the expire date to 7 days from now
-    const expireAt = new Date(new Date().toDateString());
-    expireAt.setDate(expireAt.getDate() + (systemSettings.borrowRequestExpiryDays || 7));
-
-    // Create the borrow request
-    const createdRequest = await BorrowRequest.create({
-      student: authUser.profileId,
-      book: payload.bookId,
-      borrowForDays: payload.borrowForDays,
-      expireAt,
-    });
-
-    // Check if creation failed
-    if (!createdRequest) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Something went wrong while creating the borrow request'
-      );
-    }
   }
 }
 

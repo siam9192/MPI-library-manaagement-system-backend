@@ -3,7 +3,7 @@ import auth from '../../middlewares/auth';
 import bookReviewController from './book-review.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import bookReviewValidation from './book-review.validation';
-import { managementRoles } from '../../utils/constant';
+import { MANAGEMENT_ROLES } from '../../utils/constant';
 import { EUserRole } from '../User/user.interface';
 
 const router = Router();
@@ -15,11 +15,11 @@ router.post(
   bookReviewController.createBookReview
 );
 
-router.patch('/:id/status', auth(...managementRoles), bookReviewController.changeBookReviewStatus);
+router.patch('/:id/status', auth(...MANAGEMENT_ROLES), bookReviewController.changeBookReviewStatus);
 
 router.delete('/:id', auth(EUserRole.STUDENT), bookReviewController.softDeleteBookReview);
 
-router.get('/', auth(...managementRoles), bookReviewController.getBookReviews);
+router.get('/', auth(...MANAGEMENT_ROLES), bookReviewController.getBookReviews);
 
 router.get('/public/book/:bookId', bookReviewController.getPublicBookReviewsByBookId);
 

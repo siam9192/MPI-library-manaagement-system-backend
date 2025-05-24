@@ -5,6 +5,7 @@ import { EAdministratorLevel, IAdministrator } from './administrator.interface';
 import Administrator from './administrator.model';
 import User from '../User/user.model';
 import { EGender } from '../../types/model.type';
+import { throwInternalError } from '../../helpers';
 
 class AdministratorService {
   async createSuperAdmin() {
@@ -38,14 +39,16 @@ class AdministratorService {
         },
       };
 
-      await Administrator.create([profileData], { session });
-      await session.commitTransaction();
-      await session.endSession();
+     const created =  await Administrator.create([profileData], { session });
+     await session.commitTransaction();
+     return created
+
     } catch (error) {
       await session.abortTransaction();
+      throwInternalError()
+    }
+    finally{
       await session.endSession();
-      console.log(error);
-      // throw new Error()
     }
   }
 }

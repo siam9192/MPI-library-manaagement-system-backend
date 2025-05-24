@@ -3,13 +3,13 @@ import validateRequest from '../../middlewares/validateRequest';
 import authorValidation from './author.validation';
 import authorController from './author.controller';
 import auth from '../../middlewares/auth';
-import { managementRoles } from '../../utils/constant';
+import { MANAGEMENT_ROLES } from '../../utils/constant';
 import checkPermission from '../../middlewares/checkPermission';
 
 const router = Router();
 router.post(
   '/',
-  auth(...managementRoles),
+  auth(...MANAGEMENT_ROLES),
   checkPermission(''),
   validateRequest(authorValidation.createAuthor),
   authorController.createAuthor

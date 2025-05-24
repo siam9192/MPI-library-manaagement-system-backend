@@ -4,7 +4,7 @@ import { ISystemSetting, IUpdateSystemSettingPayload } from './system-setting.in
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, ESystemSettingAction } from '../AuditLog/audit-log.interface';
 import { IAuthUser } from '../../types';
-import { defaultSystemSetting } from '../../utils/constant';
+import { DEFAULT_SYSTEM_SETTING } from '../../utils/constant';
 import SystemSetting from './system-setting.model';
 
 class SystemSettingService {
@@ -12,7 +12,7 @@ class SystemSettingService {
     const setting = await SystemSetting.findOne({ isActive: true });
     // Create new setting if active setting not exist
     if (!setting) {
-      return await SystemSetting.create(defaultSystemSetting);
+      return await SystemSetting.create(DEFAULT_SYSTEM_SETTING);
     }
   }
   async getCurrentSettings() {

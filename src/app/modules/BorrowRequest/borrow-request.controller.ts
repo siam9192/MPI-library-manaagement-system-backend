@@ -16,10 +16,7 @@ class BorrowRequestController {
   });
 
   approveBorrowRequest = catchAsync(async (req, res) => {
-    const result = await borrowRequestService.approveBorrowRequest(
-      req.user,
-      req.params.id
-    );
+    const result = await borrowRequestService.approveBorrowRequest(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Request has been approved successfully',
       statusCode: httpStatus.OK,

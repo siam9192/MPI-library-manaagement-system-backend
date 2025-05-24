@@ -7,7 +7,7 @@ const router = Router();
 
 router.get('/my', auth(EUserRole.STUDENT), borrowHistoryController.getMyBorrowHistories);
 
-router.get('/my/id', auth(EUserRole.STUDENT), borrowHistoryController.getMyBorrowHistoryById);
+router.get('/my/:id', auth(EUserRole.STUDENT), borrowHistoryController.getMyBorrowHistoryById);
 
 const borrowHistoryRouter = router;
 export default borrowHistoryRouter;

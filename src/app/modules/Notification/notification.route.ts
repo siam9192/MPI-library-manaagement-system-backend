@@ -4,7 +4,7 @@ import notificationValidation from './notification.validation';
 import notificationController from './notification.controller';
 import auth from '../../middlewares/auth';
 import { EUserRole } from '../User/user.interface';
-import { managementRoles } from '../../utils/constant';
+import { MANAGEMENT_ROLES } from '../../utils/constant';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.post(
   notificationController.createNotification
 );
 
-router.get('/', auth(...managementRoles), notificationController.getNotifications);
+router.get('/', auth(...MANAGEMENT_ROLES), notificationController.getNotifications);
 router.get('/my', auth(...Object.values(EUserRole)), notificationController.getMyNotifications);
 router.patch(
   '/set-as-read',

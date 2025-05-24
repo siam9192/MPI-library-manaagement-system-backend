@@ -28,7 +28,7 @@ import { EReservationStatus } from '../Reservation/reservation.interface';
 import { IStudent } from '../Student/student.interface';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Notification from '../Notification/notification.model';
-import { defaultErrorMessage } from '../../utils/constant';
+import { GLOBAL_ERROR_MESSAGE } from '../../utils/constant';
 
 class BorrowRequestService {
   async createBorrowRequestIntoDB(authUser: IAuthUser, payload: ICreateBorrowRequestPayload) {
@@ -172,22 +172,20 @@ class BorrowRequestService {
           throw new Error('Reservation creation failed');
         }
 
+        // Throw error if reservation not created
+        if (!createdReservation) {
+          throw new Error();
+        }
 
-           // Throw error if reservation not created
-      if (!createdReservation) {
-        throw new Error();
-      }
+        const updateCopyStatus = await BookCopy.updateOne(
+          { _id: bookCopies[0]._id },
+          { status: EBookCopyStatus.RESERVED },
+          { session }
+        );
+        if (!updateCopyStatus.modifiedCount) {
+          throw new Error('Book copy update failed');
+        }
 
-      const updateCopyStatus = await BookCopy.updateOne(
-        { _id:bookCopies[0]._id },
-        { status: EBookCopyStatus.RESERVED },
-        { session }
-      );
-     if (!updateCopyStatus.modifiedCount) {
-        throw new Error("Book copy update failed");
-      }
-
-      
         // Create borrow history
         const [createdHistory] = await BorrowHistory.create(
           [
@@ -244,13 +242,10 @@ class BorrowRequestService {
     };
   }
 
-  async approveBorrowRequest(
-    authUser: IAuthUser,
-    id: string
-  ) {
+  async approveBorrowRequest(authUser: IAuthUser, id: string) {
     const request = await BorrowRequest.findById(id).populate('student', 'user', 'book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Request not found');
-    
+
     switch (request.status) {
       case EBorrowRequestStatus.APPROVED:
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is already Approved');
@@ -264,9 +259,8 @@ class BorrowRequestService {
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
     }
 
+    const book = request.book as any as IBook;
 
-    const book = request.book as any as IBook
-    
     const bookCopies = await BookCopy.find({
       book: book._id,
       status: EBookCopyStatus.AVAILABLE,
@@ -335,13 +329,13 @@ class BorrowRequestService {
       }
 
       const updateCopy = await BookCopy.updateOne(
-        { _id:bookCopies[0]._id },
+        { _id: bookCopies[0]._id },
         { status: EBookCopyStatus.RESERVED },
         { session }
       );
 
       if (!updateCopy.modifiedCount) {
-        throw new Error("Book copy update failed");
+        throw new Error('Book copy update failed');
       }
 
       const book = request.book as any as IBook;
@@ -389,16 +383,13 @@ class BorrowRequestService {
     } catch (error) {
       await session.abortTransaction();
       await session.endSession();
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Oops! There is something happened wrong.Please try again later'
-      );
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
     }
 
     return null;
   }
   async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
-    const request = await BorrowRequest.findById(id).populate('student', 'user','book');
+    const request = await BorrowRequest.findById(id).populate('student', 'user', 'book');
     if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Book not found');
 
     switch (request.status) {
@@ -414,12 +405,11 @@ class BorrowRequestService {
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'Request is  Expired');
     }
 
-
-    const book = request.book as any as IBook
+    const book = request.book as any as IBook;
 
     const session = await startSession();
     session.startTransaction();
-  
+
     try {
       const updateStatus = await BorrowRequest.updateOne(
         {
@@ -438,9 +428,7 @@ class BorrowRequestService {
       );
 
       if (!updateStatus.modifiedCount) {
-        throw new Error(
-          'Borrow request update failed'
-        );
+        throw new Error('Borrow request update failed');
       }
       const student = request.student as any as IStudent;
 
@@ -453,7 +441,7 @@ class BorrowRequestService {
             type: ENotificationType.INFO,
             action: ENotificationAction.DOWNLOAD_TICKET,
             metaData: {
-             borrowRequestId:request._id
+              borrowRequestId: request._id,
             },
           },
         ],
@@ -515,9 +503,7 @@ class BorrowRequestService {
       );
 
       if (!updateStatus.modifiedCount) {
-        throw new Error(
-          'Borrow request  update failed'
-        );
+        throw new Error('Borrow request  update failed');
       }
 
       const book = request.book as any as IBook;
@@ -537,10 +523,7 @@ class BorrowRequestService {
       await session.abortTransaction();
     } finally {
       await session.endSession();
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        defaultErrorMessage
-      );
+      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
     }
   }
 

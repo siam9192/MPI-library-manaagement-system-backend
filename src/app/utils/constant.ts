@@ -1,13 +1,13 @@
 import { EUiTheme } from '../modules/SystemSetting/system-setting.interface';
 import { EAdministratorRole, EUserRole } from '../modules/User/user.interface';
 
-export const paginationOptionKeys = ['page', 'limit', 'sortBy', 'sortOrder'];
+export const PAGINATION_OPTION_KEYS = ['page', 'limit', 'sortBy', 'sortOrder'];
 
-export const managementRoles = [EUserRole.SUPER_ADMIN, EUserRole.ADMIN, EUserRole.LIBRARIAN];
-export const administratorRoles = Object.values(EAdministratorRole);
-export const allRoles = Object.values(EUserRole) as EUserRole[];
+export const MANAGEMENT_ROLES = [EUserRole.SUPER_ADMIN, EUserRole.ADMIN, EUserRole.LIBRARIAN];
+export const ADMINISTRATOR_ROLES = Object.values(EAdministratorRole);
+export const ALL_ROLES = Object.values(EUserRole) as EUserRole[];
 
-export const defaultSystemSetting = {
+export const DEFAULT_SYSTEM_SETTING = {
   general: {
     name: 'MPI Library',
     logo: 'https://example.com/logo.png',
@@ -88,6 +88,5 @@ export const defaultSystemSetting = {
   isUpdatable: true,
 };
 
-
-
-export const defaultErrorMessage =   'Oops! There is something happened wrong.Please try again later'
+export const GLOBAL_ERROR_MESSAGE =
+  'Oops! There is something happened wrong.Please try again later';
