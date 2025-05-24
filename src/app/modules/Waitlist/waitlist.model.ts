@@ -1,7 +1,6 @@
 import { model, Schema } from 'mongoose';
 import { IWaitlist } from './waitlist.interface';
 
-
 const WaitlistModelSchema = new Schema<IWaitlist>(
   {
     student: {
@@ -24,9 +23,6 @@ const WaitlistModelSchema = new Schema<IWaitlist>(
   }
 );
 
-const Waitlist= model<IWaitlist>(
-  'waitlist',
-  WaitlistModelSchema
-);
+const Waitlist = model<IWaitlist>('waitlist', WaitlistModelSchema);
 
 export default Waitlist;

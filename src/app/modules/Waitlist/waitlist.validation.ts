@@ -9,5 +9,5 @@ const addItemToWaitlist = z.object({
 });
 
 export default {
-  addItemToWaitlist
+  addItemToWaitlist,
 };

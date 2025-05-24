@@ -23,6 +23,8 @@ import Book from '../Book/book.model';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Notification from '../Notification/notification.model';
 import systemSettingService from '../SystemSetting/system-setting.service';
+import { Student } from '../Student/student.model';
+import waitlistService from '../Waitlist/waitlist.service';
 
 class BorrowRecordService {
   // async process(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
@@ -196,6 +198,8 @@ class BorrowRecordService {
 
     try {
       const condition = payload.bookCondition;
+      const borrowingPolicy = systemSetting.borrowingPolicy;
+      const finePolicy = systemSetting.finePolicy;
       const now = new Date();
       const dueDate = new Date(borrow.dueDate);
       const isOverdue = now > dueDate;
@@ -204,64 +208,78 @@ class BorrowRecordService {
       const isFineReceived = payload.isFineReceived;
       let totalFineAmount;
       let fineReason;
-
+      let reputationLost = 0;
+      let reputationGain = 0;
+      let reputationDelta = 0;
       // Overdue
       if (isOverdue) {
-        if (isLost) {
-          totalFineAmount = payload.fineAmount! + overdueDays * systemSetting.borrowingPolicy.lateFeePerDay;
-          fineReason = 'overdue+lost';
-          notificationBasicData.message = `The book "${book.name}" has been marked as lost with overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
+        if (isFineReceived) reputationGain = finePolicy.reputationGainOnFinePayment;
 
+        if (isLost) {
+          totalFineAmount = payload.fineAmount! + overdueDays * borrowingPolicy.lateFeePerDay;
+          fineReason = 'overdue+lost';
+          reputationLost = borrowingPolicy.reputationLoss.onLate_Lost;
+          reputationDelta = reputationGain - reputationLost;
+
+          notificationBasicData.message = `The book "${book.name}" has been marked as lost with overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'paid successfully' : 'applied to your account.'}`;
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
             : ENotificationType.WARNING;
           historyBasicData.title = `Book Lost: "${book.name}"`;
-          historyBasicData.description = `Lost book and it's ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation:-${3}`;
+          historyBasicData.description = `Lost book and it's ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation: ${reputationDelta > 0 ? '+' : ''}${reputationDelta}`;
         } else if (condition === EBorrowReturnCondition.DAMAGED) {
           totalFineAmount = payload.fineAmount!;
           fineReason = 'overdue+damaged';
-
+          reputationLost = borrowingPolicy.reputationLoss.onLate_Damage;
+          reputationDelta = reputationGain - reputationLost;
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
             : ENotificationType.WARNING;
-          notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue and in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
+          notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue and in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'paid successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
-          historyBasicData.description = `Returned in damaged condition and ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation: -${3}`;
+          historyBasicData.description = `Returned in damaged condition and ${overdueDays} days overdue also.Fine: ${totalFineAmount}.Reputation: ${reputationDelta > 0 ? '+' : ''}${reputationDelta}`;
         } else {
-          totalFineAmount = overdueDays * systemSetting.lateFeePerDay;
-
+          totalFineAmount = overdueDays * borrowingPolicy.lateFeePerDay;
+          reputationLost = borrowingPolicy.reputationLoss.onLate;
+          reputationDelta = reputationGain - reputationLost;
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
             : ENotificationType.WARNING;
-          notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
+          notificationBasicData.message = `The book "${book.name}" has been returned successfully but with ${overdueDays} days overdue. A fine of $${totalFineAmount} has been ${isFineReceived ? 'paid successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
-          historyBasicData.description = `Returned with ${overdueDays} days overdue.Fine: ${totalFineAmount}.Reputation:-${3}`;
+          historyBasicData.description = `Returned with ${overdueDays} days overdue.Fine: ${totalFineAmount}.Reputation: ${reputationDelta > 0 ? '+' : ''}${reputationDelta}`;
         }
       } else {
         totalFineAmount = payload.fineAmount!;
         if (isLost) {
           fineReason = 'lost';
+          reputationLost = borrowingPolicy.reputationLoss.onLost;
+          reputationDelta = reputationGain - reputationLost;
 
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
             : ENotificationType.WARNING;
-          notificationBasicData.message = `The book "${book.name}" has been reported as lost.  A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
+          notificationBasicData.message = `The book "${book.name}" has been reported as lost.  A fine of $${totalFineAmount} has been ${isFineReceived ? 'paid successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Lost: "${book.name}"`;
-          historyBasicData.description = `Reported as lost.Fine: ${totalFineAmount}.Reputation:-${3}`;
+          historyBasicData.description = `Reported as lost.Fine: ${totalFineAmount}.Reputation: ${reputationDelta > 0 ? '+' : ''}${reputationDelta}`;
         } else if (condition === EBorrowReturnCondition.DAMAGED) {
           fineReason = 'damaged';
+          reputationLost = borrowingPolicy.reputationLoss.onDamage;
+          reputationDelta = reputationGain - reputationLost;
 
           notificationBasicData.type = isFineReceived
             ? ENotificationType.INFO
             : ENotificationType.WARNING;
-          notificationBasicData.message = `The book "${book.name}" has been returned successfully but  in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'Received successfully' : 'applied to your account.'}`;
+          notificationBasicData.message = `The book "${book.name}" has been returned successfully but  in damaged condition. A fine of $${totalFineAmount} has been ${isFineReceived ? 'paid successfully' : 'applied to your account.'}`;
           historyBasicData.title = `Book Return: "${book.name}"`;
-          historyBasicData.description = `Returned in damaged condition.Fine: ${totalFineAmount}.Reputation: -${3}`;
+          historyBasicData.description = `Returned in damaged condition.Fine: ${totalFineAmount}.Reputation: ${reputationDelta > 0 ? '+' : ''}${reputationDelta}`;
         } else {
           notificationBasicData.type = ENotificationType.SUCCESS;
+          reputationGain = borrowingPolicy.reputationGain.returnOnTime_NormalCondition;
+          reputationDelta = reputationGain - reputationLost;
           notificationBasicData.message = `The book "${book.name}" has been returned successfully on time`;
           historyBasicData.title = `Book Return: "${book.name}"`;
-          historyBasicData.description = `Returned on time in normal condition.Reputation: +${3}`;
+          historyBasicData.description = `Returned on time in normal condition.Reputation: + ${reputationGain}`;
         }
       }
 
@@ -349,6 +367,19 @@ class BorrowRecordService {
         throw new Error('book update failed');
       }
 
+      const studentUpdateStatus = await Student.updateOne(
+        {
+          $inc: {
+            reputationIndex: reputationDelta,
+          },
+        },
+        { session }
+      );
+
+      if (!studentUpdateStatus.modifiedCount) {
+        throw new Error('Student update failed');
+      }
+
       const createdHistory = await BorrowHistory.create(
         [
           {
@@ -379,9 +410,10 @@ class BorrowRecordService {
       }
 
       await session.commitTransaction();
+      waitlistService.processWaitListOnBookAvailable(book._id)
     } catch (error) {
       await session.abortTransaction();
-      throwInternalError()
+      throwInternalError();
     } finally {
       await session.endSession();
     }

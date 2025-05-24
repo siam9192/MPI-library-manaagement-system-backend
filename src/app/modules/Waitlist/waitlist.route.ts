@@ -5,7 +5,6 @@ import waitlistController from './waitlist.controller';
 import validateRequest from '../../middlewares/validateRequest';
 import waitlistValidation from './waitlist.validation';
 
-
 const router = Router();
 
 router.post(
@@ -15,17 +14,9 @@ router.post(
   waitlistController.addToWaitlist
 );
 
-router.get(
-  '/my',
-  auth(EUserRole.STUDENT),
-  waitlistController.getMyWaitlistItemsFromDB
-);
+router.get('/my', auth(EUserRole.STUDENT), waitlistController.getMyWaitlistItemsFromDB);
 
-router.delete(
-  '/:id',
-  auth(EUserRole.STUDENT),
-  waitlistController.removeItemFromWaitlist
-);
+router.delete('/:id', auth(EUserRole.STUDENT), waitlistController.removeItemFromWaitlist);
 
 const waitlistRouter = router;
 

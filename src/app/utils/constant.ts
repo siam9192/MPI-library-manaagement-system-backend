@@ -27,10 +27,16 @@ export const DEFAULT_SYSTEM_SETTING = {
     maxRenewals: 2,
     allowBorrowHistoryView: true,
     requireApprovalBeforeBorrowing: false,
-    reputationLoss:{
-      onDamage:2,
-      onLate:1
-    }
+    reputationLoss: {
+      onLate: 1,
+      onDamage: 1.5,
+      onLost: 3,
+      onLate_Damage: 3.5,
+      onLate_Lost: 4,
+    },
+    reputationGain: {
+      returnOnTime_NormalCondition: 2,
+    },
   },
   reservationPolicy: {
     borrowRequestExpiryDays: 2,
@@ -46,10 +52,10 @@ export const DEFAULT_SYSTEM_SETTING = {
     },
   },
   finePolicy: {
-  fineExpiryDays:7,      
-  reputationLossOnUnpaidFine: 2,       
-  reputationGainOnFinePayment:2     
-},
+    fineExpiryDays: 7,
+    reputationLossOnUnpaidFine: 2,
+    reputationGainOnFinePayment: 2,
+  },
   registrationPolicy: {
     studentRequestExpiryDays: 5,
     managementRequestExpiryDays: 7,

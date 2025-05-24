@@ -4,7 +4,6 @@ import catchAsync from '../../utils/catchAsync';
 import { sendSuccessResponse } from '../../utils/response';
 import waitlistService from './waitlist.service';
 
-
 class WaitlistController {
   addToWaitlist = catchAsync(async (req, res) => {
     const result = await waitlistService.addToWaitlist(req.user, req.body);
@@ -15,12 +14,9 @@ class WaitlistController {
     });
   });
 
- getMyWaitlistItemsFromDB = catchAsync(async (req, res) => {
+  getMyWaitlistItemsFromDB = catchAsync(async (req, res) => {
     const paginationOptions = paginationOptionPicker(req.query);
-    const result = await waitlistService.getMyWaitlistItemsFromDB(
-      req.user,
-      paginationOptions
-    );
+    const result = await waitlistService.getMyWaitlistItemsFromDB(req.user, paginationOptions);
     sendSuccessResponse(res, {
       message: 'Waitlist items  retrieved successfully',
       statusCode: httpStatus.OK,
@@ -29,10 +25,7 @@ class WaitlistController {
   });
 
   removeItemFromWaitlist = catchAsync(async (req, res) => {
-    const result = await waitlistService.removeFromWaitlist(
-      req.user,
-      req.params.id
-    );
+    const result = await waitlistService.removeFromWaitlist(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Item has been  successfully removed  from your waitlist',
       statusCode: httpStatus.OK,

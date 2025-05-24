@@ -39,15 +39,13 @@ class AdministratorService {
         },
       };
 
-     const created =  await Administrator.create([profileData], { session });
-     await session.commitTransaction();
-     return created
-
+      const created = await Administrator.create([profileData], { session });
+      await session.commitTransaction();
+      return created;
     } catch (error) {
       await session.abortTransaction();
-      throwInternalError()
-    }
-    finally{
+      throwInternalError();
+    } finally {
       await session.endSession();
     }
   }
