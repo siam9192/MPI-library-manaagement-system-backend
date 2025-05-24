@@ -2,6 +2,7 @@ import { date, z } from 'zod';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import {
   EReservationStatus,
+  ICreateReservationPayload,
   IMyReservationsFilterPayload,
   IReservationsFilterPayload,
 } from './reservation.interface';
@@ -18,7 +19,7 @@ import { IBorrowRequest } from '../BorrowRequest/borrow-request.interface';
 import notificationService from '../Notification/notification.service';
 import { IStudent } from '../Student/student.interface';
 import { ENotificationType } from '../Notification/notification.interface';
-import { IBook } from '../Book/book.interface';
+import { EBookStatus, IBook } from '../Book/book.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
 import QrCode from 'qrcode';
@@ -29,6 +30,8 @@ import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Librarian from '../Librarian/librarian.model';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EReservationAction } from '../AuditLog/audit-log.interface';
+import Book from '../Book/book.model';
+import { EBorrowRecordStatus } from '../BorrowRecord/borrow-record.interface';
 
 class ReservationService {
   async getReservationsFromDB(
@@ -504,6 +507,77 @@ class ReservationService {
       { data },
       async function (err, html) {}
     );
+  }
+
+  async createReservation (authUser:IAuthUser,payload:ICreateReservationPayload){
+     // Find the book and make sure it's active
+    const book = await Book.findOne({
+      _id: objectId(payload.bookId),
+      status: EBookStatus.ACTIVE,
+    });
+
+    // Check is book exist
+    if (!book) {
+      throw new AppError(httpStatus.NOT_FOUND, "Book not found");
+    }
+
+    const bookCopies = await BookCopy.find({
+      book: book._id,
+      status: EBookCopyStatus.AVAILABLE,
+    });
+
+    if (!bookCopies.length) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Book is not available');
+    }
+
+    const systemSettings = await systemSettingService.getCurrentSettings();
+
+    const ongoingBorrowExist = await BorrowRecord.find({
+      student: objectId(authUser.profileId),
+      status: {
+        $in: [EBorrowRecordStatus.ONGOING, EBorrowRecordStatus.OVERDUE],
+      },
+    });
+
+    // Check is student already have maximum active borrows
+    if (systemSettings.maxBorrowItems < ongoingBorrowExist.length) {
+      throw new AppError(
+        httpStatus.FORBIDDEN,
+        `Borrow request failed!.Requester Already have  ${ongoingBorrowExist} active borrows `
+      );
+    }
+
+    const student = await Student.findById(authUser.profileId);
+
+    if (!student)
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Internal server error!something went wrong'
+      );
+
+    if (student.reputationIndex < 3) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Request Failed!.Reputation index  too low');
+    }
+
+    // Set the expire date to 7 days from now
+    const expireAt = new Date(new Date().toDateString());
+    expireAt.setDate(expireAt.getDate() + (systemSettings.borrowRequestExpiryDays || 7));
+
+    // Create the borrow request
+    const createdRequest = await BorrowRequest.create({
+      student: authUser.profileId,
+      book: payload.bookId,
+      borrowForDays: payload.borrowForDays,
+      expireAt,
+    });
+
+    // Check if creation failed
+    if (!createdRequest) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        'Something went wrong while creating the borrow request'
+      );
+    }
   }
 }
 

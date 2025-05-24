@@ -62,7 +62,7 @@ class HoldBorrowRequestService {
   }
   async deleteBorrowRequestFromDB(authUser: IAuthUser, id: string) {
     if (!isValidObjectId(id)) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrow request');
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
     }
 
     const request = await HoldBorrowRequest.findOne({

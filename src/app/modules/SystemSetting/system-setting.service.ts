@@ -4,26 +4,14 @@ import { SystemSetting } from './system-setting.model';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, ESystemSettingAction } from '../AuditLog/audit-log.interface';
 import { IAuthUser } from '../../types';
+import { defaultSystemSetting } from '../../utils/constant';
 
 class SystemSettingService {
   async initSettings() {
     const setting = await SystemSetting.findOne({ isActive: true });
     // Create new setting if active setting not exist
     if (!setting) {
-      return await SystemSetting.create({
-        maxBorrowDays: 14,
-        maxBorrowItems: 5,
-        lateFeePerDay: 5,
-        borrowRequestExpiryDays: 3,
-        reservationExpiryDays: 2,
-        lostReputationOnCancelReservation: 2,
-        lostReputationOnExpireFine: 3,
-        fineExpiryDays: 7,
-        studentRegistrationRequestExpiryDays: 7,
-        managementRegistrationRequestExpiryDays: 10,
-        emailVerificationExpiryMinutes: 30,
-        isActive: true,
-      });
+      return await SystemSetting.create(defaultSystemSetting);
     }
   }
   async getCurrentSettings() {
