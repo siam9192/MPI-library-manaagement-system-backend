@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isValidObjectId } from '../../helpers';
 
-const createHoldBorrowRequest = z.object({
+const addItemToWaitlist = z.object({
   bookId: z
     .string({ required_error: 'bookId is required' })
     .refine((val) => isValidObjectId(val), { message: 'Invalid bookId' }),
@@ -9,5 +9,5 @@ const createHoldBorrowRequest = z.object({
 });
 
 export default {
-  createHoldBorrowRequest,
+  addItemToWaitlist
 };

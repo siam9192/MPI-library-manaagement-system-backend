@@ -1,43 +1,43 @@
 import AppError from '../../Errors/AppError';
-import { isValidObjectId, objectId } from '../../helpers';
+import { isValidObjectId, objectId, throwInternalError } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
-import { ICreateHoldBorrowRequestPayload } from './hold-borrow-request.interface';
-import HoldBorrowRequest from './hold-borrow-request.model';
+import {ICreateWaitlistPayload } from './waitlist.interface';
+import Waitlist from './waitlist.model';
 
-class HoldBorrowRequestService {
-  async createHoldBorrowRequestIntoDB(
+
+class WaitlistService {
+  async addToWaitlist(
     authUser: IAuthUser,
-    payload: ICreateHoldBorrowRequestPayload
+    payload: ICreateWaitlistPayload
   ) {
-    const exist = await HoldBorrowRequest.findOne({
+    const exist = await Waitlist.findOne({
       student: objectId(authUser.profileId),
       book: objectId(payload.bookId),
     });
     // Check existence
     if (exist) {
-      throw new AppError(httpStatus.FORBIDDEN, 'Already spotted');
+      throw new AppError(httpStatus.FORBIDDEN, 'The book is already added on your waitlist');
     }
 
-    const created = await HoldBorrowRequest.create({
+    const created = await Waitlist.create({
       student: authUser.profileId,
       book: payload.bookId,
       borrowForDays: payload.borrowForDays,
     });
 
     if (!created) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Something went wrong on our end. Please try again later.'
-      );
+      throwInternalError()
     }
     return created;
   }
-  async getMyHoldBorrowRequestsFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
+
+
+  async getMyWaitlistItemsFromDB(authUser: IAuthUser, paginationOptions: IPaginationOptions) {
     const { page, limit, skip, sortBy, sortOrder } = calculatePagination(paginationOptions);
 
-    const requests = await HoldBorrowRequest.find({
+    const requests = await Waitlist.find({
       student: objectId(authUser.profileId),
     })
       .sort({ [sortBy]: sortOrder })
@@ -45,45 +45,42 @@ class HoldBorrowRequestService {
       .limit(limit)
       .populate(['student', 'book']);
 
-    const totalResult = await HoldBorrowRequest.find({
+    const totalResult = await Waitlist.find({
       student: objectId(authUser.profileId),
     }).countDocuments();
-
     const meta = {
       page,
       limit,
       totalResult,
     };
-
     return {
       data: requests,
       meta,
     };
   }
-  async deleteBorrowRequestFromDB(authUser: IAuthUser, id: string) {
+
+
+  async removeFromWaitlist(authUser: IAuthUser, id: string) {
     if (!isValidObjectId(id)) {
       throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
     }
 
-    const request = await HoldBorrowRequest.findOne({
+    const request = await Waitlist.findOne({
       _id: objectId(id),
       student: objectId(authUser.profileId),
     });
 
-    if (!request) throw new AppError(httpStatus.NOT_FOUND, ' Hold borrow request Not found');
-    const deleteStatus = await HoldBorrowRequest.deleteOne({
+    if (!request) throw new AppError(httpStatus.NOT_FOUND, 'Item not found waitlist');
+    const deleteStatus = await Waitlist.deleteOne({
       _id: objectId(id),
     });
 
     if (!deleteStatus.deletedCount) {
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Internal server error!,Deletion failed'
-      );
+    throwInternalError()
     }
 
     return null;
   }
 }
 
-export default new HoldBorrowRequestService();
+export default new WaitlistService();

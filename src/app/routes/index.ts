@@ -20,7 +20,7 @@ import supportRouter from '../modules/Support/support.route';
 import wishlistRouter from '../modules/Wishlist/wishlist.route';
 import borrowHistoryRouter from '../modules/BorrowHistory/borrow-history.route';
 import auditLogRouter from '../modules/AuditLog/audit-log.route';
-import holdBorrowRequestRouter from '../modules/HoldBorrowRequest/hold-borrow-request.route';
+import waitlistRouter from '../modules/Waitlist/waitlist.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -70,8 +70,8 @@ const moduleRoutes: TModuleRoutes = [
     router: wishlistRouter,
   },
   {
-    path: '/hold-borrow-requests',
-    router: holdBorrowRequestRouter,
+    path: '/waitlist',
+    router: waitlistRouter,
   },
   {
     path: '/borrow-requests',

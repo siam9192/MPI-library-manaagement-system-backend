@@ -1,7 +1,8 @@
 import { model, Schema } from 'mongoose';
-import { IHoldBorrowRequest } from './hold-borrow-request.interface';
+import { IWaitlist } from './waitlist.interface';
 
-const HoldBorrowRequestModelSchema = new Schema<IHoldBorrowRequest>(
+
+const WaitlistModelSchema = new Schema<IWaitlist>(
   {
     student: {
       type: Schema.Types.ObjectId,
@@ -23,9 +24,9 @@ const HoldBorrowRequestModelSchema = new Schema<IHoldBorrowRequest>(
   }
 );
 
-const HoldBorrowRequest = model<IHoldBorrowRequest>(
-  'HoldBorrowRequest',
-  HoldBorrowRequestModelSchema
+const Waitlist= model<IWaitlist>(
+  'waitlist',
+  WaitlistModelSchema
 );
 
-export default HoldBorrowRequest;
+export default Waitlist;
