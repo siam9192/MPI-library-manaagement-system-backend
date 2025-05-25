@@ -21,6 +21,7 @@ import wishlistRouter from '../modules/Wishlist/wishlist.route';
 import borrowHistoryRouter from '../modules/BorrowHistory/borrow-history.route';
 import auditLogRouter from '../modules/AuditLog/audit-log.route';
 import waitlistRouter from '../modules/Waitlist/waitlist.route';
+import statisticRouter from '../modules/statistic/statistic.route';
 
 type TModuleRoutes = { path: string; router: IRouter }[];
 const router = Router();
@@ -112,6 +113,10 @@ const moduleRoutes: TModuleRoutes = [
   {
     path: '/audit-logs',
     router: auditLogRouter,
+  },
+  {
+    path: '/statistics',
+    router: statisticRouter,
   },
 ];
 

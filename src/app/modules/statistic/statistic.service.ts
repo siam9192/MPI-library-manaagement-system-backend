@@ -18,7 +18,7 @@ import { EUserRole, EUserStatus } from '../User/user.interface';
 import User from '../User/user.model';
 
 class StatisticService {
-  async getGlobalSummary() {
+  async getGlobalSummaryFromDB() {
     const group = await User.aggregate([
       {
         $match: {
@@ -98,7 +98,7 @@ class StatisticService {
     };
   }
 
-  async getStudentActivitySummary(authUser: IAuthUser) {
+  async getStudentActivitySummaryFromDB(authUser: IAuthUser) {
     const totalActiveBorrow = await BorrowRecord.countDocuments({
       student: objectId(authUser.profileId),
       status: { $nin: [EBorrowRecordStatus.LOST, EBorrowRecordStatus.RETURNED] },
@@ -136,7 +136,7 @@ class StatisticService {
     };
   }
 
-  async getSummaryForLibrarian() {
+  async getSummaryForLibrarianFromDB() {
     const totalBooks = await Book.countDocuments({ status: { $ne: EBookStatus.DELETED } });
     const totalBookReviews = await BookReview.countDocuments();
     const totalActiveBorrows = await BorrowRecord.countDocuments({
@@ -172,7 +172,10 @@ class StatisticService {
       totalPendingFineAmount,
     };
   }
-  async getStudentMonthlyBorrowActivity(authUser: IAuthUser, range: string | number) {
+  async getStudentMonthlyBorrowActivityFromDB(
+    authUser: IAuthUser,
+    range?: string | number | undefined
+  ) {
     if (!range) {
       range = 6;
     }
@@ -229,7 +232,7 @@ class StatisticService {
       throwInternalError();
     }
   }
-  async getMonthlyBorrowActivity(range: string | number) {
+  async getMonthlyBorrowActivityFromDB(range: string | number) {
     if (!range) {
       range = 6;
     }
@@ -285,7 +288,7 @@ class StatisticService {
       throwInternalError();
     }
   }
-  async getBooksSummary() {
+  async getBooksSummaryFromDB() {
     try {
       // Aggregate Book statuses (excluding deleted)
       const bookStatusSummary: { _id: EBookStatus; count: number }[] = await Book.aggregate([
@@ -327,7 +330,7 @@ class StatisticService {
     }
   }
 
-  async getStudentsSummary() {
+  async getStudentsSummaryFromDB() {
     const studentStatusSummary = await User.aggregate([
       {
         $match: {
@@ -359,7 +362,7 @@ class StatisticService {
     };
   }
 
-  async getMonthlyStudentRegistrationActivity(range: string | number) {
+  async getMonthlyStudentRegistrationActivityFromDB(range: string | number) {
     if (!range) {
       range = 6;
     }
