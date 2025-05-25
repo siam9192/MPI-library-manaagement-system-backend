@@ -410,7 +410,7 @@ class BorrowRecordService {
       }
 
       await session.commitTransaction();
-      waitlistService.processWaitListOnBookAvailable(book._id)
+      waitlistService.processWaitListOnBookAvailable(book._id);
     } catch (error) {
       await session.abortTransaction();
       throwInternalError();

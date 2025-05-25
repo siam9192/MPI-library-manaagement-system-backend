@@ -6,6 +6,7 @@ import { IStudent } from '../modules/Student/student.interface';
 import { IBook } from '../modules/Book/book.interface';
 import { ENotificationType } from '../modules/Notification/notification.interface';
 import Notification from '../modules/Notification/notification.model';
+import systemSettingService from '../modules/SystemSetting/system-setting.service';
 export default function dueBorrowReminder() {}
 
 corn.schedule('0 0 * * *', async () => {
@@ -26,6 +27,7 @@ corn.schedule('0 0 * * *', async () => {
     const student = borrow.student as any as IStudent;
     const user = student.user as IUser;
     const book = borrow.book as any as IBook;
+
     notificationsData.push({
       user: user._id,
       message: `Your borrowed book "${book.name}" will become overdue starting tomorrow. Please return it before the due date to avoid a fine.`,

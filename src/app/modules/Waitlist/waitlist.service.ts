@@ -120,6 +120,15 @@ class WaitlistService {
 
       if (!user) continue;
 
+      if (student.reputationIndex < systemSetting.borrowingPolicy.minReputationRequired) {
+        await Notification.create({
+          user: student.user,
+          message: `Your request for "${book.name}" from your waiting list couldn’t be approved  because your reputation point is less than ${student.reputationIndex}. Your request is removed for your waiting list.`,
+          type: ENotificationType.INFO,
+        });
+        continue;
+      }
+
       const totalOngoingBorrowExist = await BorrowRecord.find({
         student: student._id,
         status: {

@@ -13,7 +13,7 @@ import {
 } from '../modules/Notification/notification.interface';
 export default async function authorNewBookInformer() {
   cron.schedule('*/10 * * * *', async () => {
-    const newBookIds = await cacheService.getCachedNewBookIds();
+    const newBookIds = await cacheService.getCachedRecentAddedBookIds();
 
     const books = await Book.find({
       _id: {
@@ -43,7 +43,7 @@ export default async function authorNewBookInformer() {
       });
       const notificationsData = studentsRequireData.map((student) => ({
         user: student.userId,
-        message: `A new book titled [${book.name}] by your followed author [${author.name}] has recently arrived in the library.`,
+        message: `A new book titled "${book.name}" by your followed author [${author.name}] has recently arrived in the library.`,
         type: ENotificationType.INFO,
         action: ENotificationAction.LINK_VISIT,
         metaData: {

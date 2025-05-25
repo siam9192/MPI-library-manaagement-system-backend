@@ -14,12 +14,10 @@ import { IStudent } from '../modules/Student/student.interface';
 import { EStudentRegistrationRequestStatus } from '../modules/StudentRegistrationRequest/student-registration-request.interface';
 import StudentRegistrationRequest from '../modules/StudentRegistrationRequest/studentRegistrationRequest.model';
 import cron from 'node-cron';
-import systemSettingService from '../modules/SystemSetting/system-setting.service';
 import { Student } from '../modules/Student/student.model';
 import Notification from '../modules/Notification/notification.model';
 export function checkModifier() {
   cron.schedule('*/5 * * * *', async () => {
-    const systemSettings = await systemSettingService.getCurrentSettings();
     const expiredEmailVerifications = await EmailVerificationRequest.find({
       status: EEmailVerificationRequestStatus.PENDING,
       expireAt: {
@@ -118,8 +116,6 @@ export function checkModifier() {
           user: student.user,
           type: ENotificationType.INFO,
           message: `The borrow request for "${book.name}" has expired due to no response. Please place a new request if you still wish to borrow this title.
-
-.
 `,
         });
       }
