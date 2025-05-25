@@ -8,7 +8,7 @@ import { ENotificationType } from '../modules/Notification/notification.interfac
 import Notification from '../modules/Notification/notification.model';
 
 export default async function deletedBookRelatedJobScheduler() {
-  cron.schedule('*/5 * * * *', async () => {
+  cron.schedule('*/10 * * * *', async () => {
     const recentDeletedBookIds = cacheService.getCachedDeletedBookIds();
 
     const waitlistItemIds = [];

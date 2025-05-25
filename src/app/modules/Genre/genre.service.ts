@@ -47,7 +47,7 @@ class GenreService {
           {
             category: EAuditLogCategory.GENRE,
             action: EGenreAction.CREATE,
-            description: `Created new genre: ${createdGenre.name} `,
+            description: `Created genre "${createdGenre.name}".`,
             targetId: createdGenre._id,
             performedBy: authUser.userId,
           },
