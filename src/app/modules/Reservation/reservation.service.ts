@@ -23,8 +23,6 @@ import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
 import QrCode from 'qrcode';
 import { Response } from 'express';
-import ejs from 'ejs';
-import path from 'path';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
 import Librarian from '../Librarian/librarian.model';
 import AuditLog from '../AuditLog/audit-log.model';
@@ -32,7 +30,8 @@ import { EAuditLogCategory, EReservationAction } from '../AuditLog/audit-log.int
 import Notification from '../Notification/notification.model';
 import { GLOBAL_ERROR_MESSAGE } from '../../utils/constant';
 import Book from '../Book/book.model';
-
+import PdfDocument from 'pdfkit';
+import axios from 'axios';
 class ReservationService {
   async getReservationsFromDB(
     filterPayload: IReservationsFilterPayload,
@@ -512,37 +511,149 @@ class ReservationService {
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     return reservation;
   }
+
   async getReservationQrCode(id: string, res: Response) {
-    //  const reservation = await Reservation.findById(id);
+    const secret = `hello`; // You can use this to encode more secure data if needed
 
-    // //  Check reservation existence
-    //  if(!reservation){
-    //   throw new AppError(httpStatus.NOT_FOUND,"Reservation not found")
-    //  }
+    try {
+      // Generate QR code as data URL (PNG base64)
 
-    // Create QR code content
-    const secret = `hello`;
+      // Start PDF generation
+      const doc = new PdfDocument({ margin: 10 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename=reservation_${id}.pdf`);
 
-    // Set response headers
-    res.setHeader('Content-Type', 'image/png');
+      doc.pipe(res);
 
-    // Generate QR code to response stream
-    const qrUrl = await QrCode.toDataURL(secret, {
-      width: 1400,
-      type: 'image/webp',
-    });
+      const interRegular = 'fonts/inter/Inter_18pt-Regular.ttf';
+      const interMedium = 'fonts/inter/Inter_18pt-Medium.ttf';
+      const poppinsRegular = 'fonts/poppins/Poppins-Regular.ttf';
+      const poppinsMedium = 'fonts/poppins/Poppins-Medium.ttf';
+      // Title
 
-    const data = {
-      roll: 9999,
-      qrUrl,
-      lastDate: new Date(),
-    };
+      let imageBuffer;
+      let response;
+      response = await axios.get(
+        'https://t4.ftcdn.net/jpg/11/74/46/31/360_F_1174463150_ZIzTcZwFfcz7Xql3Vs6XMw5ZR4VE87Mc.jpg',
+        { responseType: 'arraybuffer' }
+      );
 
-    await ejs.renderFile(
-      path.join(process.cwd(), 'resource', 'ticket', 'index.ejs'),
-      { data },
-      async function (err, html) {}
-    );
+      imageBuffer = Buffer.from(response.data);
+
+      doc.image(imageBuffer, { width: 50, height: 50 });
+      doc.fontSize(25).font(poppinsMedium).text('MPI Library', 60, 20);
+
+      doc.moveDown(0.4);
+
+      const labelFont = interMedium;
+      const valueFont = poppinsRegular;
+      const labelX = 50;
+      const valueX = 150;
+
+      doc.fontSize(14).font(interMedium).text('Student Details:', labelX, doc.y);
+
+      doc.moveDown(0.2);
+
+      let y = doc.y; // Start Y position
+
+      // Name
+      doc
+        .fontSize(12)
+        .font(labelFont)
+        .text('Name', labelX, y)
+        .font(valueFont)
+        .text(': Mr. X Doe', valueX, y);
+
+      // Roll no
+      doc
+        .font(labelFont)
+        .text('Roll no', labelX + valueX + 100, y)
+        .font(valueFont)
+        .text(': 123456', labelX + valueX * 2 + 10, y);
+      y = doc.y + 5;
+
+      // Department
+      doc
+        .font(labelFont)
+        .text('Department', labelX, y)
+        .font(valueFont)
+        .text(': CST', valueX, y)
+
+        .font(labelFont)
+        .text('Session', labelX + valueX + 100, y)
+        .font(valueFont)
+        .text(': 2021-2022', labelX + valueX * 2 + 10, y);
+
+      doc.moveDown(0.3);
+
+      doc.fontSize(14).font(interMedium).text('Reservation Details:', labelX, doc.y);
+
+      doc.moveDown(0.3);
+
+      y = doc.y;
+
+      // Name
+      doc
+        .fontSize(12)
+        .font(labelFont)
+        .text('Reserve ID', labelX, y)
+        .font(valueFont)
+        .text(': 84375864389578', valueX, y);
+
+      // Roll no
+      doc
+        .font(labelFont)
+        .text('Book ID', labelX + valueX + 100, y)
+        .font(valueFont)
+        .text(`: 76356743233`, labelX + valueX * 2 + 10, y);
+      y = doc.y + 5;
+
+      // Department
+      doc
+        .font(labelFont)
+        .text('Issue date', labelX, y)
+        .font(valueFont)
+        .text(`: ${new Date().toLocaleDateString()}`, valueX, y)
+
+        .font(labelFont)
+        .text('Last date', labelX + valueX + 100, y)
+        .font(valueFont)
+        .text(`: ${new Date().toLocaleDateString()}`, labelX + valueX * 2 + 10, y);
+
+      doc.moveDown(5);
+      // Insert QR code image
+      const qrCodeDataUrl = await QrCode.toDataURL(secret);
+      const qrCodeSize = 150;
+      imageBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
+      doc.image(imageBuffer, doc.page.width - qrCodeSize, 0, {
+        width: qrCodeSize,
+        height: qrCodeSize,
+      });
+      response = await axios.get(
+        'https://blog-cdn.reedsy.com/directories/gallery/257/large_974bcaf2f9de1c92bf74a60f18e86d47.jpg',
+        { responseType: 'arraybuffer' }
+      );
+
+      imageBuffer = Buffer.from(response.data, 'binary');
+      doc.image(imageBuffer, 200, doc.y, { width: 200 });
+
+      doc
+        .fontSize(14)
+        .font(interMedium)
+         .fillColor('#CF0F47')
+        .text(
+          'Please collect it before 4th February 2025 to avoid penalties.\n Best wishes — hope it turns out sweet!',
+          0,
+          doc.page.height - 50,
+          { continued: true, align: 'center' }
+        )
+       
+
+      doc.end();
+    } catch (error) {
+      console.error('Error generating QR code PDF:', error);
+      res.status(500).send('Failed to generate QR code PDF');
+    }
   }
 }
 

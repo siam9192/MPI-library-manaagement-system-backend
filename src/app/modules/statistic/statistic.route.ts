@@ -31,8 +31,6 @@ router.get(
   statisticController.getMonthlyStudentRegistrationActivity
 );
 
+const statisticRouter = router;
 
-
-const statisticRouter =  router
-
-export default statisticRouter
+export default statisticRouter;

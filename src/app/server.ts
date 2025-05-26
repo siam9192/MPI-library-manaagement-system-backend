@@ -8,8 +8,8 @@ import reservationService from './modules/Reservation/reservation.service';
 
 async function main() {
   try {
-    const connection = await mongoose.connect(envConfig.url.database as string);
-    await systemSettingService.initSettings();
+    // const connection = await mongoose.connect(envConfig.url.database as string);
+    // await systemSettingService.initSettings();
     schedulers();
 
     app.listen(5000, () => {

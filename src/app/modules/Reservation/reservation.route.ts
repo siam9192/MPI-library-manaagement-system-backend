@@ -14,7 +14,7 @@ router.get('/my/:id', auth(EUserRole.STUDENT), reservationController.getMyReserv
 router.patch('/:id/cancel', auth(EUserRole.STUDENT), reservationController.cancelReservation);
 router.post('/:id/checkout', auth(...MANAGEMENT_ROLES), reservationController.checkoutReservation);
 
-router.get('/:id/qr', reservationController.getReservationQrCode);
+router.get('/:id/ticket', reservationController.getReservationQrCode);
 const reservationRouter = router;
 
 export default reservationRouter;
