@@ -6,6 +6,7 @@ export interface INotification extends IModelNecessaryFields {
   message: string;
   type: ENotificationType;
   action: ENotificationAction;
+  category: ENotificationCategory;
   metaData?: Record<string, unknown>;
   isRead: boolean;
 }
@@ -37,4 +38,25 @@ export interface INotificationsFilterPayload {
   startDate?: string;
   endDate?: string;
   status?: 'read' | 'unread';
+}
+
+export enum ENotificationCategory {
+  SYSTEM = 'system',
+  DEPARTMENT = 'department',
+  AUTHOR = 'author',
+  GENRE = 'genre',
+  USER = 'user',
+  STUDENT_REGISTRATION = 'student_registration',
+  MANAGEMENT_ACCOUNT_REGISTRATION = ' management_account_registration',
+  FOLLOW = 'follow',
+  BOOK = 'user',
+  BOOK_REVIEW = 'book_review',
+  BORROW_REQUEST = 'borrow_request',
+  WAITLIST = 'waitlist',
+  RESERVATION = 'reservation',
+  BORROW = 'borrow',
+  FINE = 'fine',
+  WISHLIST = 'wishlist',
+  SUPPORT = 'support',
+  SYSTEM_SETTING = 'system_setting',
 }

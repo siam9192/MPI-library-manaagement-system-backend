@@ -15,6 +15,7 @@ export interface IBook {
     reviews: number;
   };
   expectedAvailableDate?: Date;
+  isNewArrival: boolean;
   status: EBookStatus;
   index: number;
 }

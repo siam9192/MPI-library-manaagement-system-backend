@@ -34,6 +34,7 @@ router.get('/:id', auth(...MANAGEMENT_ROLES), bookController.getBooks);
 router.get('/public', bookController.getPublicBooks);
 router.get('/public/:id', bookController.getPublicBookById);
 
+router.get('/new-arrivals', bookController.getNewArrivalBooks);
 const bookRouter = router;
 
 export default bookRouter;

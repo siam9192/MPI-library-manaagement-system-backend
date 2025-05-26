@@ -640,14 +640,13 @@ class ReservationService {
       doc
         .fontSize(14)
         .font(interMedium)
-         .fillColor('#CF0F47')
+        .fillColor('#CF0F47')
         .text(
           'Please collect it before 4th February 2025 to avoid penalties.\n Best wishes — hope it turns out sweet!',
           0,
           doc.page.height - 50,
           { continued: true, align: 'center' }
-        )
-       
+        );
 
       doc.end();
     } catch (error) {

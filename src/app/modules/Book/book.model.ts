@@ -47,7 +47,10 @@ const BookModelSchema = new Schema<IBook>(
         default: 0,
       },
     },
-
+    isNewArrival: {
+      type: Boolean,
+      default: false,
+    },
     status: {
       type: String,
       enum: Object.values(EBookStatus),

@@ -13,7 +13,7 @@ import Book from './book.model';
 import BookCopy from '../BookCopy/book-copy.model';
 import { startSession } from 'mongoose';
 import { IPaginationOptions } from '../../types';
-import { calculatePagination } from '../../helpers/paginationHelper';
+import { calculatePagination, ESortOrder } from '../../helpers/paginationHelper';
 import { isValidObjectId, objectId } from '../../helpers';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import cacheService from '../../cache/cache.service';
@@ -86,7 +86,7 @@ class BookService {
         { session }
       );
 
-      await cacheService.cacheNewBookId(createdBook._id.toString());
+      cacheService.cacheRecentAddedBookId(createdBook._id.toString());
 
       await session.commitTransaction();
       return {
@@ -174,7 +174,9 @@ class BookService {
     filterPayload: IBooksFilterPayload,
     paginationOptions: IPaginationOptions
   ) {
-    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions);
+    const { page, skip, limit, sortBy, sortOrder } = calculatePagination(paginationOptions, {
+      defaultSortBy: false,
+    });
     const { searchTerm, genreIds, authorIds } = filterPayload;
 
     // Initialize filter conditions with active book status
@@ -201,19 +203,19 @@ class BookService {
 
     // Fetch filtered books with pagination and sorting
     const books = await Book.find(whereConditions)
-      .sort({ [sortBy]: sortOrder, index: 1 })
-      .skip(skip)
-      .limit(limit)
+      .sort(sortBy ? { [sortBy]: sortOrder as ESortOrder } : { index: 'desc' })
+      .skip(skip as number)
+      .limit(limit as number)
       .populate(['author', 'genre']);
 
     // Count for pagination
-    const totalResults = await Book.countDocuments(whereConditions);
+    const totalResult = await Book.countDocuments(whereConditions);
 
     return {
       meta: {
         page,
         limit,
-        total: totalResults,
+        totalResult: totalResult,
       },
       data: books,
     };
@@ -253,9 +255,9 @@ class BookService {
 
     // Fetch filtered books with pagination and sorting
     const books = await Book.find(whereConditions)
-      .sort({ [sortBy]: sortOrder, index: 1 })
-      .skip(skip)
-      .limit(limit)
+      .sort({ [sortBy as string]: sortOrder as ESortOrder })
+      .skip(skip as number)
+      .limit(limit as number)
       .populate(['author', 'genre']);
 
     // Count for pagination
@@ -358,6 +360,30 @@ class BookService {
     }
 
     return null;
+  }
+
+  async getNewArrivalBooksFromDB(paginationOptions: IPaginationOptions) {
+    const { page, skip, limit, sortOrder, sortBy } = calculatePagination(paginationOptions);
+    const books = await Book.find({
+      isNewArrival: true,
+    })
+      .sort(sortBy ? { [sortBy]: sortOrder as ESortOrder } : { index: 'desc' })
+      .skip(skip as number)
+      .limit(limit as number)
+      .populate(['category', 'author']);
+
+    const totalResult = await Book.countDocuments({ isNewArrival: true });
+
+    const meta = {
+      page,
+      limit,
+      totalResult,
+    };
+
+    return {
+      data: books,
+      meta,
+    };
   }
 }
 

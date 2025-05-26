@@ -40,7 +40,7 @@ class BookController {
     sendSuccessResponse(res, {
       message: 'Books retrieved successfully',
       statusCode: httpStatus.OK,
-      data: result,
+      ...result,
     });
   });
 
@@ -51,7 +51,16 @@ class BookController {
     sendSuccessResponse(res, {
       message: 'Books retrieved successfully',
       statusCode: httpStatus.OK,
-      data: result,
+      ...result,
+    });
+  });
+  getNewArrivalBooks = catchAsync(async (req, res) => {
+    const paginationOptions = paginationOptionPicker(req.query);
+    const result = await bookService.getNewArrivalBooksFromDB(paginationOptions);
+    sendSuccessResponse(res, {
+      message: 'Books retrieved successfully',
+      statusCode: httpStatus.OK,
+      ...result,
     });
   });
 

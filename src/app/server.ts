@@ -5,6 +5,7 @@ import systemSettingService from './modules/SystemSetting/system-setting.service
 import cacheService from './cache/cache.service';
 import schedulers from './schedulers';
 import reservationService from './modules/Reservation/reservation.service';
+import axios from 'axios';
 
 async function main() {
   try {
@@ -12,6 +13,10 @@ async function main() {
     // await systemSettingService.initSettings();
     schedulers();
 
+    const data = await axios.get(
+      'https://btebresulthub-server.vercel.app/results/individual/778124?exam=diploma-in-engineering&regulation=2022'
+    );
+    console.log(data.data);
     app.listen(5000, () => {
       console.log('Server is connected');
     });

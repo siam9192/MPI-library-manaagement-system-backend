@@ -1,5 +1,10 @@
 import { model, Schema } from 'mongoose';
-import { ENotificationAction, ENotificationType, INotification } from './notification.interface';
+import {
+  ENotificationAction,
+  ENotificationCategory,
+  ENotificationType,
+  INotification,
+} from './notification.interface';
 import e from 'express';
 
 const NotificationModelSchema = new Schema<INotification>(
@@ -25,6 +30,11 @@ const NotificationModelSchema = new Schema<INotification>(
       type: String,
       enum: Object.values(ENotificationAction),
       default: ENotificationAction.NONE,
+    },
+    category: {
+      type: String,
+      enum: Object.values(ENotificationCategory),
+      default: ENotificationCategory.SYSTEM,
     },
     metaData: {
       type: Object,
