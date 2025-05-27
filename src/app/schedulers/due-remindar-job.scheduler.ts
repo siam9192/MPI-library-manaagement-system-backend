@@ -6,7 +6,6 @@ import { IStudent } from '../modules/Student/student.interface';
 import { IBook } from '../modules/Book/book.interface';
 import { ENotificationType } from '../modules/Notification/notification.interface';
 import Notification from '../modules/Notification/notification.model';
-import systemSettingService from '../modules/SystemSetting/system-setting.service';
 export default function dueBorrowReminder() {}
 
 corn.schedule('0 0 * * *', async () => {

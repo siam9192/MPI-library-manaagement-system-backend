@@ -32,7 +32,7 @@ export interface ICreateBookPayload {
   coverPhotoUrl: string;
   genreId: string;
   authorId: string;
-  copies: Pick<IBookCopy, 'condition' | 'shelfLocation'>[];
+  copies?: Pick<IBookCopy, 'condition' | 'shelfLocation'>[];
 }
 
 export interface IUpdateBookPayload {

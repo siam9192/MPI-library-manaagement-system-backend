@@ -15,6 +15,9 @@ import envConfig from '../../config/env.config';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EManagementRegistrationAction } from '../AuditLog/audit-log.interface';
+import Notification from '../Notification/notification.model';
+import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
+import { IAdministrator } from '../Administrator/administrator.interface';
 
 class ManagementAccountRegistrationService {
   async createRegistrationRequest(
@@ -28,11 +31,11 @@ class ManagementAccountRegistrationService {
     }
 
     // Fetch current system settings
-    const settings = await systemSettingService.getCurrentSettings();
+    const setting = await systemSettingService.getCurrentSettings();
 
     // Insert data into db
     const expireAt = new Date();
-    expireAt.setDate(expireAt.getDate() + settings.managementRegistrationRequestExpiryDays); //Set expire date 7 days
+    expireAt.setDate(expireAt.getDate() + setting.registrationPolicy.managementRequestExpiryDays); //Set expire date 7 days
 
     const session = await startSession();
 
@@ -45,6 +48,7 @@ class ManagementAccountRegistrationService {
             email: payload.email,
             role: payload.role,
             expireAt,
+            by: authUser.profileId,
           },
         ],
         { session }
@@ -59,7 +63,7 @@ class ManagementAccountRegistrationService {
           {
             category: EAuditLogCategory.MANAGEMENT_REGISTRATION,
             action: EManagementRegistrationAction.CREATE,
-            description: `Requested management account registration for the "${createdRequest.role}" role for ${createdRequest.email}`,
+            description: `Requested management account registration for the "${createdRequest.role}" role to ${createdRequest.email}`,
             targetId: createdRequest._id,
             performedBy: authUser.userId,
           },
@@ -77,7 +81,7 @@ class ManagementAccountRegistrationService {
       const token = jwtHelpers.generateToken(
         tokenPayload,
         envConfig.jwt.registrationVerificationTokenSecret as string,
-        `${settings.managementRegistrationRequestExpiryDays}d`
+        `${setting}d`
       );
       await session.commitTransaction();
 
@@ -262,9 +266,9 @@ class ManagementAccountRegistrationService {
     }
   }
 
-  async rejectRegistrationRequest(authUser: IAuthUser, id: string) {
+  async rejectRegistrationRequest(id: string) {
     // Step 1: Find the registration request by ID
-    const request = await ManagementAccountRegistrationRequest.findById(id);
+    const request = await ManagementAccountRegistrationRequest.findById(id).populate('by');
 
     if (!request) {
       throw new AppError(httpStatus.NOT_FOUND, 'Registration request not found');
@@ -291,6 +295,9 @@ class ManagementAccountRegistrationService {
       case EXPIRED:
         throw new AppError(httpStatus.NOT_ACCEPTABLE, 'This registration request is expired');
     }
+
+    const by = request.by as any as IAdministrator;
+
     // Step 3: Update the request status to REJECTED with reason
     const updateResult = await ManagementAccountRegistrationRequest.updateOne(
       { _id: request._id },
@@ -300,6 +307,13 @@ class ManagementAccountRegistrationService {
       }
     );
 
+    Notification.create({
+      user: by.user,
+      category: ENotificationCategory.MANAGEMENT_ACCOUNT_REGISTRATION,
+      type: ENotificationType.INFO,
+      title: 'Management registration request Rejected',
+      message: `The request to register a management account with the "${request.role}" role for "${request.email}" has been rejected.`,
+    });
     if (!updateResult.modifiedCount) throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, '');
   }
 }

@@ -1,4 +1,4 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import {
   EManagementAccountRegistrationRequestRole,
   EManagementAccountRegistrationRequestStatus,
@@ -26,6 +26,11 @@ const ManagementAccountRegistrationRequestModelSchema = new Schema<IManagementAc
       type: String,
       enum: Object.values(EManagementAccountRegistrationRequestStatus),
       default: EManagementAccountRegistrationRequestStatus.PENDING,
+    },
+    by: {
+      type: Types.ObjectId,
+      ref: 'Administrator',
+      required: true,
     },
     index: {
       type: Number,

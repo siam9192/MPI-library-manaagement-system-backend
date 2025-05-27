@@ -36,7 +36,7 @@ const createBook = z.object({
         }),
       })
     )
-    .min(1, 'At least 1 book copy is required'),
+    .optional(),
 });
 
 const updateBook = z

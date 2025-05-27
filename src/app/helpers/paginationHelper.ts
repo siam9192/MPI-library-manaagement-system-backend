@@ -8,11 +8,11 @@ export enum ESortOrder {
 }
 
 interface IOptionsResult {
-  page: number | undefined;
-  limit: number | undefined;
-  skip: number | undefined;
-  sortOrder: ESortOrder | undefined;
-  sortBy: string | undefined;
+  page: number | undefined | any;
+  limit: number | undefined | any;
+  skip: number | undefined | any;
+  sortOrder: ESortOrder | undefined | any;
+  sortBy: string | undefined | any;
 }
 
 interface IDefaultOptions {

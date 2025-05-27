@@ -12,14 +12,19 @@ import {
 import Book from './book.model';
 import BookCopy from '../BookCopy/book-copy.model';
 import { startSession } from 'mongoose';
-import { IPaginationOptions } from '../../types';
+import { IAuthUser, IPaginationOptions } from '../../types';
 import { calculatePagination, ESortOrder } from '../../helpers/paginationHelper';
-import { isValidObjectId, objectId } from '../../helpers';
+import { isValidObjectId, objectId, throwInternalError, validateObjectId } from '../../helpers';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import cacheService from '../../cache/cache.service';
+import AuditLog from '../AuditLog/audit-log.model';
+import { EAuditLogCategory, EBookAction } from '../AuditLog/audit-log.interface';
+import Notification from '../Notification/notification.model';
+import User from '../User/user.model';
+import { EUserRole, EUserStatus } from '../User/user.interface';
 
 class BookService {
-  async createBookIntoDB(payload: ICreateBookPayload) {
+  async createBookIntoDB(authUser: IAuthUser, payload: ICreateBookPayload) {
     const genreExist = await Genre.findOne({
       _id: Object(payload.genreId),
       status: EGenreStatus.ACTIVE,
@@ -44,6 +49,8 @@ class BookService {
     const session = await startSession();
     session.startTransaction();
 
+    const payloadCopies = payload.copies;
+
     try {
       const bookData = {
         name: payload.name,
@@ -51,30 +58,64 @@ class BookService {
         author: payload.authorId,
         coverPhotoUrl: payload.coverPhotoUrl,
         count: {
-          totalCopies: payload.copies.length,
-          availableCopies: payload.copies.length,
+          totalCopies: payloadCopies ? payloadCopies.length : 0,
+          availableCopies: payloadCopies ? payloadCopies.length : 0,
         },
       };
       // Create book
       const [createdBook] = await Book.create([bookData], { session });
 
       if (!createdBook) {
-        throw new Error();
+        throw new Error('Book creation failed');
       }
 
-      // Append book id with provided copies
-      const copiesData = (payload.copies as any[]).map((_) => {
-        _.book = createdBook._id;
-        return _;
-      });
+      let createdCopies;
+      if (payloadCopies?.length) {
+        // Append book id with provided copies
+        const copiesData = (payload.copies as any[]).map((_) => {
+          _.book = createdBook._id;
+          return _;
+        });
 
-      // Create book copies
-      const createdCopies = await BookCopy.create(copiesData, { session, ordered: true });
+        // Create book copies
+        createdCopies = await BookCopy.create(copiesData, { session, ordered: true });
 
-      if (!createdCopies.length) {
-        throw new Error();
+        if (!createdCopies.length) {
+          throw new Error();
+        }
+
+        // Create audit log
+        const [createdLog] = await AuditLog.create(
+          [
+            {
+              category: EAuditLogCategory.BOOK,
+              action: EBookAction.CREATE,
+              description: `Created book "${bookData.name}" with ${payloadCopies.length} copies `,
+              targetId: createdBook._id,
+              performedBy: authUser.userId,
+            },
+          ],
+          { session }
+        );
+
+        if (!createdLog) {
+          throw new Error('Audit log creation failed');
+        }
+
+        const managementUsers = await User.find({
+          role: {
+            $ne: EUserRole.STUDENT,
+          },
+          status: EUserStatus.ACTIVE,
+        }).select('_id');
+
+        const notificationData = managementUsers.map((user) => ({
+          user: user._id,
+          title: 'New book added',
+          message: `A new book named "${createdBook.name}" has been added to the library.`,
+        }));
+        Notification.create(notificationData);
       }
-
       await Author.updateOne(
         { _id: objectId(payload.authorId) },
         { $inc: { 'count.books': 1 } },
@@ -91,7 +132,7 @@ class BookService {
       await session.commitTransaction();
       return {
         book: createdBook,
-        copies: createdCopies,
+        copies: createdCopies || null,
       };
     } catch (error) {
       await session.abortTransaction();
@@ -101,7 +142,7 @@ class BookService {
     }
   }
 
-  async updateBookIntoDB(id: string, payload: IUpdateBookPayload) {
+  async updateBookIntoDB(authUser: IAuthUser, id: string, payload: IUpdateBookPayload) {
     const book = await Book.findById(id);
     // Check book existence
     if (!book) {
@@ -155,6 +196,23 @@ class BookService {
           { $inc: { booksCount: 1 } },
           { session }
         );
+      }
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.BOOK,
+            action: EBookAction.UPDATE,
+            description: `Updated book ID:${id} `,
+            targetId: id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
       }
 
       await session.commitTransaction();
@@ -297,7 +355,8 @@ class BookService {
     return book;
   }
 
-  async changeBookStatusIntoDB(id: string, payload: { status: EBookStatus }) {
+  async changeBookStatusIntoDB(authUser: IAuthUser, id: string, payload: { status: EBookStatus }) {
+    validateObjectId(id);
     const { status } = payload;
     // Prevent setting status to DELETED via this method
     if (status === EBookStatus.DELETED) {
@@ -306,19 +365,55 @@ class BookService {
         "Cannot set status to 'deleted' using this method."
       );
     }
-
     const book = await Book.findOne({ _id: objectId(id), status: { $ne: EBookStatus.DELETED } });
     if (!book) throw new AppError(httpStatus.NOT_FOUND, 'Book  not found');
 
-    // Perform the status update
-    return await Author.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true } // return the updated document
-    );
+    const session = await startSession();
+    session.startTransaction();
+    try {
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.BOOK,
+            action: EBookAction.CREATE,
+            description: `Changed book status ${book.status} to
+                   ${payload.status} `,
+            targetId: id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      // Perform the status update
+      const authorUpdateStatus = await Author.updateOne(
+        { _id: objectId(id) },
+        { status },
+        { new: true, session }
+      );
+      if (!authorUpdateStatus.modifiedCount) {
+        throw new Error('Author update failed');
+      }
+      await session.commitTransaction();
+      return {
+        from: book.status,
+        to: payload.status,
+      };
+    } catch (error) {
+      await session.abortTransaction();
+      throwInternalError();
+    } finally {
+      await session.endSession();
+    }
   }
 
-  async softDeleteBookFromDB(id: string) {
+  async softDeleteBookFromDB(authUser: IAuthUser, id: string) {
+    validateObjectId(id);
     const book = await Book.findOne({ _id: objectId(id), status: { $ne: EBookStatus.DELETED } });
 
     if (!book) throw new AppError(httpStatus.NOT_FOUND, 'Book  not found');
@@ -347,6 +442,48 @@ class BookService {
       await Author.updateOne({ _id: book.author }, { $inc: { 'count.books': -1 } });
       // decrease genre books count -1
       await Genre.updateOne({ _id: book.genre }, { $inc: { booksCount: -1 } });
+      // Create audit log
+      const [createdLog] = await AuditLog.create(
+        [
+          {
+            category: EAuditLogCategory.BOOK,
+            action: EBookAction.CREATE,
+            description: `Delete book "${book.name}" ID:${book._id}`,
+            targetId: id,
+            performedBy: authUser.userId,
+          },
+        ],
+        { session }
+      );
+
+      if (!createdLog) {
+        throw new Error('Audit log creation failed');
+      }
+
+      // Perform the status update
+      const bookUpdateStatus = await Author.updateOne(
+        { _id: objectId(id) },
+        { status },
+        { new: true }
+      );
+      if (!bookUpdateStatus) {
+        throw new Error('Bok update failed');
+      }
+
+      const managementUsers = await User.find({
+        role: {
+          $ne: EUserRole.STUDENT,
+        },
+        status: EUserStatus.ACTIVE,
+      }).select('_id');
+
+      const notificationData = managementUsers.map((user) => ({
+        user: user._id,
+        title: 'Book removed',
+        message: `A book named "${book.name}" has been removed from the library.`,
+      }));
+      Notification.create(notificationData);
+
       // After all success of all operation save them
       await session.commitTransaction();
     } catch (error) {

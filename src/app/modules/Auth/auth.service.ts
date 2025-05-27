@@ -29,10 +29,11 @@ import {
 import authValidations from './auth.validation';
 import Administrator from '../Administrator/administrator.model';
 import Librarian from '../Librarian/librarian.model';
-import { EAdministratorLevel } from '../Administrator/administrator.interface';
+import { EAdministratorLevel, IAdministrator } from '../Administrator/administrator.interface';
 import notificationService from '../Notification/notification.service';
-import { ENotificationType } from '../Notification/notification.interface';
+import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
 import { EEmailVerificationRequestStatus } from '../EmailVerificationRequest/email-verification-request.interface';
+import Notification from '../Notification/notification.model';
 
 class AuthService {
   async createStudentRegistrationRequestIntoDB(payload: ICreateStudentRegistrationRequestPayload) {
@@ -57,12 +58,12 @@ class AuthService {
 
     const requestExpireAt = new Date();
     requestExpireAt.setDate(
-      requestExpireAt.getDate() + systemSettings.studentRegistrationRequestExpiryDays
+      requestExpireAt.getDate() + systemSettings.registrationPolicy.studentRequestExpiryDays
     ); // 7-day expiry for registration request
 
     const verificationExpireAt = new Date();
     verificationExpireAt.setMinutes(
-      verificationExpireAt.getMinutes() + systemSettings.emailVerificationExpiryMinutes
+      verificationExpireAt.getMinutes() + systemSettings.security.emailVerificationExpiryMinutes
     ); // 10-minute expiry for email verification
 
     // Step 5: Start MongoDB transaction session
@@ -124,7 +125,7 @@ class AuthService {
       const token = await jwtHelpers.generateToken(
         tokenPayload,
         envConfig.jwt.registrationVerificationTokenSecret as string,
-        `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
+        `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`
       );
 
       // Step 10: Commit the transaction
@@ -178,7 +179,7 @@ class AuthService {
     // Extend OTP expiration by another 10 minutes
     const newExpireAt = new Date();
     newExpireAt.setMinutes(
-      newExpireAt.getMinutes() + systemSettings.emailVerificationExpiryMinutes
+      newExpireAt.getMinutes() + systemSettings.security.emailVerificationExpiryMinutes
     );
 
     // Step:8 Update replace OTP,Expire At in document
@@ -202,7 +203,7 @@ class AuthService {
     const newToken = await jwtHelpers.generateToken(
       tokenPayload,
       envConfig.jwt.registrationVerificationTokenSecret as string,
-      `${systemSettings.emailVerificationExpiryMinutes.toString()}m`
+      `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`
     );
 
     return {
@@ -317,7 +318,7 @@ class AuthService {
     //Fetch request by secret
     const request = await ManagementAccountRegistrationRequest.findOne({
       status: EManagementAccountRegistrationRequestStatus.PENDING,
-    });
+    }).populate('by');
 
     // Checking request existence also Validate payload here using zod
     if (!request) {
@@ -335,6 +336,7 @@ class AuthService {
       authValidations.LibrarianAccountRegistrationValidation.parse(payload);
     }
 
+    const by = request.by as any as IAdministrator;
     // Step 3: Start database transaction
     const session = await startSession();
     session.startTransaction();
@@ -409,6 +411,15 @@ class AuthService {
         },
         session
       );
+
+      Notification.create({
+        user: by.user,
+        category: ENotificationCategory.MANAGEMENT_ACCOUNT_REGISTRATION,
+        type: ENotificationType.INFO,
+        title: 'Management registration success',
+        message: `The request to register a management account with the "${request.role}" role for "${request.email}" has been successfully registered.`,
+      });
+
       // Commit transaction
       await session.commitTransaction();
       await session.endSession();

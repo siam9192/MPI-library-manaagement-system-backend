@@ -211,9 +211,9 @@ class BookReviewService {
           },
         },
         { $unwind: '$borrow' },
-        { $sort: { [sortBy]: sortOrder } },
-        { $skip: skip },
-        { $limit: limit },
+        { $sort: { [sortBy!]: sortOrder! } },
+        { $skip: skip! },
+        { $limit: limit! },
       ];
 
       const countPipeline = [
@@ -231,7 +231,7 @@ class BookReviewService {
       ];
 
       const [reviewDocs, countDocs] = await Promise.all([
-        BookReview.aggregate(aggregationPipeline),
+        BookReview.aggregate(aggregationPipeline as []),
         BookReview.aggregate(countPipeline),
       ]);
 
@@ -241,9 +241,9 @@ class BookReviewService {
       // Simple query with population
       const [reviewDocs, totalDocs] = await Promise.all([
         BookReview.find(whereConditions)
-          .sort({ [sortBy]: sortOrder })
-          .skip(skip)
-          .limit(limit)
+          .sort({ [sortBy!]: sortOrder! })
+          .skip(skip!)
+          .limit(limit!)
           .populate(['student', 'book', 'borrowRecord'])
           .lean(),
         BookReview.countDocuments(whereConditions),
@@ -293,9 +293,9 @@ class BookReviewService {
     // Query reviews with population
     const reviews = await BookReview.find(whereConditions)
       .populate(['student', 'book'])
-      .sort({ [sortBy]: sortOrder })
-      .skip(skip)
-      .limit(limit)
+      .sort({ [sortBy!]: sortOrder! })
+      .skip(skip!)
+      .limit(limit!)
       .lean();
 
     const totalResult = await BookReview.find(whereConditions).countDocuments();

@@ -1,6 +1,6 @@
 import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { objectId } from '../../helpers';
+import { objectId, throwInternalError } from '../../helpers';
 import httpStatus from '../../shared/http-status';
 import Book from '../Book/book.model';
 import {
@@ -104,6 +104,18 @@ class BookCopyService {
         `The book copy is not available for this operation as its current status is '${copy.status}'.`
       );
     }
+
+    const copyUpdateStatus = await BookCopy.updateOne(
+      {
+        _id: objectId(id),
+      },
+      { status: EBookCopyStatus.DELETED }
+    );
+
+    if (!copyUpdateStatus.modifiedCount) {
+      throwInternalError();
+    }
+    return null;
   }
 }
 

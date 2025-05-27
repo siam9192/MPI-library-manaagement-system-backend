@@ -14,10 +14,18 @@ const NotificationModelSchema = new Schema<INotification>(
       ref: 'User',
       required: true,
     },
+    title: {
+      type: String,
+      minlength: 1,
+      maxlength: 100,
+      trim: true,
+    },
     message: {
       type: String,
       minlength: 1,
-      maxlength: 200,
+      maxlength: 300,
+      trim: true,
+      required: true,
     },
 
     type: {

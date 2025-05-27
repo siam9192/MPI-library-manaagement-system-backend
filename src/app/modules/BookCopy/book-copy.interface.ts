@@ -21,7 +21,6 @@ export enum EBookCopyStatus {
   CHECKED_OUT = 'checked_out',
   RESERVED = 'reserved',
   LOST = 'lost',
-  DAMAGED = 'damaged',
   DELETED = 'deleted',
 }
 

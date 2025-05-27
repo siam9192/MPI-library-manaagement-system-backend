@@ -15,6 +15,9 @@ import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EAuthorAction } from '../AuditLog/audit-log.interface';
 import Book from '../Book/book.model';
 import { EBookStatus } from '../Book/book.interface';
+import User from '../User/user.model';
+import { EUserRole, EUserStatus } from '../User/user.interface';
+import Notification from '../Notification/notification.model';
 
 class AuthorService {
   async createAuthorIntoDB(authUser: IAuthUser, payload: ICreateAuthorPayload) {
@@ -49,6 +52,22 @@ class AuthorService {
       if (!createdLog) {
         throw new Error('Audit log creation failed');
       }
+      User.find({
+        role: {
+          $ne: EUserRole.STUDENT,
+        },
+        status: EUserStatus.ACTIVE,
+      })
+        .select('_id')
+        .then((users) => {
+          const notificationData = users.map((user) => ({
+            user: user._id,
+            title: 'Book removed',
+            message: `A new  author named "${createdAuthor.name}" has been added to the library.`,
+          }));
+          Notification.create(notificationData);
+        });
+
       await session.commitTransaction();
       return createdAuthor;
     } catch (error) {
@@ -141,6 +160,8 @@ class AuthorService {
     id: string,
     payload: { status: EAuthorStatus }
   ) {
+    validateObjectId(id);
+
     const { status } = payload;
 
     // Find the author
@@ -209,12 +230,12 @@ class AuthorService {
       throw new AppError(httpStatus.NOT_FOUND, 'Author not found');
     }
 
-    const bookExist = await Book.find({
+    const bookExist = await Book.countDocuments({
       author: author._id,
       status: {
         $ne: EBookStatus.DELETED,
       },
-    }).countDocuments();
+    });
 
     // Check book existence
     if (bookExist) {
@@ -238,6 +259,7 @@ class AuthorService {
       if (!authorUpdateStatus) {
         throw new Error('Author could not be updated');
       }
+
       // Create audit log
       const [createdLog] = await AuditLog.create(
         [
@@ -254,6 +276,22 @@ class AuthorService {
       if (!createdLog) {
         throw new Error('Audit log creation failed');
       }
+      User.find({
+        role: {
+          $ne: EUserRole.STUDENT,
+        },
+        status: EUserStatus.ACTIVE,
+      })
+        .select('_id')
+        .then((users) => {
+          const notificationData = users.map((user) => ({
+            user: user._id,
+            title: 'Book removed',
+            message: `A new  author named "${author.name}" has been removed from library.`,
+          }));
+          Notification.create(notificationData);
+        });
+
       await session.commitTransaction();
       return await Author.findById(id);
     } catch (error) {
@@ -321,10 +359,10 @@ class AuthorService {
     // Fetch all matched  authors  with  pagination and sorting
     const authors = await Author.find(whereConditions)
       .sort({
-        [sortBy]: sortOrder,
+        [sortBy!]: sortOrder!,
       })
-      .skip(skip)
-      .limit(limit);
+      .skip(skip!)
+      .limit(limit!);
 
     const totalResult = await Author.countDocuments(whereConditions);
 
@@ -369,10 +407,10 @@ class AuthorService {
     // Fetch all matched  authors  with  pagination and sorting
     const authors = await Author.find(whereConditions)
       .sort({
-        [sortBy]: sortOrder,
+        [sortBy!]: sortOrder!,
       })
-      .skip(skip)
-      .limit(limit);
+      .skip(skip!)
+      .limit(limit!);
 
     const totalResult = await Author.countDocuments(whereConditions);
 

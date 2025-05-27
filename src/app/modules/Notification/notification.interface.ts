@@ -3,6 +3,7 @@ import { IModelNecessaryFields } from '../../types/model.type';
 
 export interface INotification extends IModelNecessaryFields {
   user: Types.ObjectId;
+  title: string;
   message: string;
   type: ENotificationType;
   action: ENotificationAction;

@@ -1,3 +1,4 @@
+import { ObjectId } from 'mongoose';
 import { IModelNecessaryFields } from '../../types/model.type';
 import { EUserRole } from '../User/user.interface';
 
@@ -6,6 +7,7 @@ export interface IManagementAccountRequest extends IModelNecessaryFields {
   role: TManagementAccountRegistrationRequestRole;
   expireAt: Date;
   status: TManagementAccountRegistrationRequestStatus;
+  by: ObjectId;
   index: 0 | 1;
 }
 

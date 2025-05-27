@@ -9,9 +9,9 @@ export function isValidObjectId(id: string) {
   return Types.ObjectId.isValid(id);
 }
 
-export function validateObjectId(id: string) {
+export function validateObjectId(id: string, name?: string) {
   if (!isValidObjectId(id)) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Invalid id');
+    throw new AppError(httpStatus.BAD_REQUEST, `Invalid ${name || 'id'}`);
   }
 }
 
