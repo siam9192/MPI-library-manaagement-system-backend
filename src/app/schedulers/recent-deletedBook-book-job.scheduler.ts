@@ -7,7 +7,7 @@ import { IStudent } from '../modules/Student/student.interface';
 import { ENotificationType } from '../modules/Notification/notification.interface';
 import Notification from '../modules/Notification/notification.model';
 
-export default async function deletedBookRelatedJobScheduler() {
+export default async function () {
   cron.schedule('*/10 * * * *', async () => {
     const recentDeletedBookIds = cacheService.getCachedDeletedBookIds();
 

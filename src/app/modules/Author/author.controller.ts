@@ -7,7 +7,7 @@ import authorService from './author.service';
 
 class AuthorController {
   createAuthor = catchAsync(async (req, res) => {
-    const result = await authorService.createAuthorIntoDB(req.body);
+    const result = await authorService.createAuthorIntoDB(req.user,req.body);
     sendSuccessResponse(res, {
       message: 'Author created successfully',
       statusCode: httpStatus.CREATED,
@@ -15,7 +15,7 @@ class AuthorController {
     });
   });
   updateAuthor = catchAsync(async (req, res) => {
-    const result = await authorService.updateAuthorIntoDB(req.params.id, req.body);
+    const result = await authorService.updateAuthorIntoDB(req.user,req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Author updated successfully',
       statusCode: httpStatus.OK,
@@ -24,7 +24,7 @@ class AuthorController {
   });
 
   changeAuthorStatusIntoDB = catchAsync(async (req, res) => {
-    const result = await authorService.changeAuthorStatusIntoDB(req.params.id, req.body);
+    const result = await authorService.changeAuthorStatusIntoDB(req.user,req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Author status changed successfully',
       statusCode: httpStatus.OK,
@@ -32,7 +32,7 @@ class AuthorController {
     });
   });
   softDeleteAuthor = catchAsync(async (req, res) => {
-    const result = await authorService.changeAuthorStatusIntoDB(req.params.id, req.body);
+    const result = await authorService.changeAuthorStatusIntoDB(req.user,req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Author deleted successfully',
       statusCode: httpStatus.OK,

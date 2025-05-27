@@ -23,7 +23,7 @@ import { z } from 'zod';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import notificationService from '../Notification/notification.service';
-import { ENotificationAction, ENotificationType } from '../Notification/notification.interface';
+import { ENotificationAction, ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
 import { EReservationStatus } from '../Reservation/reservation.interface';
 import { IStudent } from '../Student/student.interface';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
@@ -94,7 +94,7 @@ class BorrowRequestService {
 
     let data;
     let message;
-
+    
     try {
       if (student.reputationIndex < systemSetting.borrowingPolicy.minReputationRequired) {
         // Set the expire date
@@ -128,9 +128,11 @@ class BorrowRequestService {
           [
             {
               user: student.user,
+              title:'Borrow request on pending',
               message: `Your borrow request for "${book.name}" is currently pending due to a low reputation score. We're reviewing it and will get back to you shortly. Thank you for your patience!`,
               type: ENotificationType.INFO,
-              action: ENotificationAction.DOWNLOAD_TICKET,
+              category:ENotificationCategory.BORROW_REQUEST,
+              action: ENotificationAction.LINK_VISIT,
               metaData: {
                 borrowRequestId: createdRequest.id,
               },
@@ -207,7 +209,9 @@ class BorrowRequestService {
           [
             {
               user: student.user,
+              title:'Book is reserved',
               message: `Great news! Your borrow request for "${book.name}" is now reserved. Kindly pick it up before it expires.`,
+              category:ENotificationCategory.RESERVATION,
               type: ENotificationType.INFO,
               action: ENotificationAction.DOWNLOAD_TICKET,
               metaData: {
@@ -362,7 +366,9 @@ class BorrowRequestService {
         [
           {
             user: student.user,
+            title:'Borrow request is approved',
             message: `Great news! Your borrow request for "${book.name}" has been approved. The book is now reserved for you. Kindly pick it up before it expires.`,
+            category:ENotificationCategory.BORROW_REQUEST,
             type: ENotificationType.INFO,
             action: ENotificationAction.DOWNLOAD_TICKET,
             metaData: {
@@ -437,9 +443,11 @@ class BorrowRequestService {
         [
           {
             user: student.user,
+            title:'Borrow request is rejected',
             message: `Your borrow request for "${book.name}" has been rejected`,
+            category:ENotificationCategory.BORROW_REQUEST,
             type: ENotificationType.INFO,
-            action: ENotificationAction.DOWNLOAD_TICKET,
+            action: ENotificationAction.NONE,
             metaData: {
               borrowRequestId: request._id,
             },
@@ -508,14 +516,33 @@ class BorrowRequestService {
 
       const book = request.book as any as IBook;
 
-      await notificationService.notify(
-        authUser.userId,
+    
+
+
+          // Notify student
+      const [createdNotification] = await Notification.create(
+        [
+          {
+            user: authUser.userId,
+            title:'Borrow request is canceled',
+            message: `You've successfully canceled your  borrow request for  "${book.name}" has been successfully canceled`,
+            category:ENotificationCategory.BORROW_REQUEST,
+            type: ENotificationType.INFO,
+            action: ENotificationAction.NONE,
+            metaData: {
+              borrowRequestId: request._id,
+            },
+          },
+        ],
         {
-          message: `You've successfully canceled your  borrow request for  "${book.name}" has been successfully canceled`,
-          type: ENotificationType.SUCCESS,
-        },
-        session
+          session,
+        }
       );
+
+      if (!createdNotification) {
+        throw new Error('notification creation failed');
+      }
+
 
       await session.commitTransaction();
       return null;

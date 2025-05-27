@@ -16,8 +16,10 @@ import StudentRegistrationRequest from '../modules/StudentRegistrationRequest/st
 import cron from 'node-cron';
 import { Student } from '../modules/Student/student.model';
 import Notification from '../modules/Notification/notification.model';
+import systemSettingService from '../modules/SystemSetting/system-setting.service';
 export function checkModifier() {
   cron.schedule('*/5 * * * *', async () => {
+    const setting = await systemSettingService.getCurrentSettings()
     const expiredEmailVerifications = await EmailVerificationRequest.find({
       status: EEmailVerificationRequestStatus.PENDING,
       expireAt: {
@@ -137,8 +139,8 @@ export function checkModifier() {
       for (const reservation of expiredReservations) {
         const book = reservation.book as any as IBook;
         const student = reservation.student as any as IStudent;
-
-        const updatedReputation = student.reputationIndex - 3;
+        const reputationLoss = setting.reservationPolicy.reputationLoss.onExpire
+        const updatedReputation = student.reputationIndex - reputationLoss;
         Student.updateOne(
           {
             _id: student._id,
@@ -148,10 +150,12 @@ export function checkModifier() {
           }
         );
 
+
+
         notificationsData.push({
           user: student.user,
           type: ENotificationType.INFO,
-          message: `Your reservation for the book "${book.name}" has expired because you did not pick it up in time. As a result, You lost ${3} reputation points.
+          message: `Your reservation for the book "${book.name}" has expired because you did not pick it up in time. As a result, You lost ${reputationLoss} reputation points.
 `,
         });
       }

@@ -1,9 +1,12 @@
-import authorNewBookInformer from './recent-added-book-job.schedule';
-import dueBorrowReminder from './due-remindar-job.scheduler';
+
+import dueBorrowReminder from './due-reminder-job.scheduler';
 import fineReminder from './fine-reminder-job.schedule';
+import recentAddedBookJobScheduler from './recent-added-book-job.scheduler';
+import recentDeletedBookBookJobScheduler from './recent-deletedBook-book-job.scheduler';
 
 export default function () {
-  // authorNewBookInformer();
-  // dueBorrowReminder();
-  // fineReminder();
+  dueBorrowReminder();
+  fineReminder();
+  recentAddedBookJobScheduler()
+  recentDeletedBookBookJobScheduler()
 }

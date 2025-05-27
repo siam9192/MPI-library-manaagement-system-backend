@@ -15,9 +15,9 @@ import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
 import { IAuthUser, IPaginationOptions } from '../../types';
 import { z } from 'zod';
-import { isValidObjectId, objectId, throwInternalError } from '../../helpers';
+import { isValidObjectId, objectId, throwInternalError, validateObjectId } from '../../helpers';
 import { IStudent } from '../Student/student.interface';
-import { ENotificationType } from '../Notification/notification.interface';
+import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
 import { IBook } from '../Book/book.interface';
 import Book from '../Book/book.model';
 import BorrowHistory from '../BorrowHistory/borrow-history.model';
@@ -162,10 +162,10 @@ class BorrowRecordService {
   // }
 
   async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
-    // Id validation
-    if (!isValidObjectId(id)) {
-      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid borrowId');
-    }
+
+    // Validate id 
+    validateObjectId(id)
+    
     const borrow = await BorrowRecord.findById(id).populate(['student', 'book']);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
@@ -398,6 +398,7 @@ class BorrowRecordService {
       const [createdNotification] = await Notification.create(
         [
           {
+            category:ENotificationCategory.BORROW,
             ...notificationBasicData,
             user: student.user,
           },
@@ -552,6 +553,9 @@ class BorrowRecordService {
     };
   }
   async getBorrowRecordById(id: string) {
+    // Validate id 
+    validateObjectId(id)
+    
     const borrowRecord = await BorrowRecord.findById(id).populate(['book', 'copy', 'student']);
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
@@ -656,6 +660,7 @@ class BorrowRecordService {
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
   }
+
 }
 
 export default new BorrowRecordService();

@@ -122,7 +122,7 @@ class AuthService {
         email: payload.email,
       };
 
-      const token = await jwtHelpers.generateToken(
+      const token = jwtHelpers.generateToken(
         tokenPayload,
         envConfig.jwt.registrationVerificationTokenSecret as string,
         `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`

@@ -9,14 +9,9 @@ import axios from 'axios';
 
 async function main() {
   try {
-    // const connection = await mongoose.connect(envConfig.url.database as string);
+    const connection = await mongoose.connect(envConfig.url.database as string);
     // await systemSettingService.initSettings();
     schedulers();
-
-    const data = await axios.get(
-      'https://btebresulthub-server.vercel.app/results/individual/778124?exam=diploma-in-engineering&regulation=2022'
-    );
-    console.log(data.data);
     app.listen(5000, () => {
       console.log('Server is connected');
     });

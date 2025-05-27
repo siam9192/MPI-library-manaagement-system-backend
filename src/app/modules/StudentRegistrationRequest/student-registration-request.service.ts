@@ -17,6 +17,7 @@ import { ENotificationType } from '../Notification/notification.interface';
 import Notification from '../Notification/notification.model';
 import AuditLog from '../AuditLog/audit-log.model';
 import { EAuditLogCategory, EStudentRegistrationAction } from '../AuditLog/audit-log.interface';
+import { throwInternalError, validateObjectId } from '../../helpers';
 
 class StudentRegistrationRequestService {
   async getAllStudentRegistrationRequestsFromDB(
@@ -75,6 +76,10 @@ class StudentRegistrationRequestService {
     id: string,
     payload: IRejectStudentRegistrationRequestPayload
   ) {
+    // Validate id 
+    validateObjectId(id)
+    
+
     const { rejectReason } = payload;
 
     // Find the registration request by ID
@@ -149,10 +154,14 @@ class StudentRegistrationRequestService {
       await session.endSession();
     }
 
-    return null;
+    
   }
 
   async approveRequestIntoDB(authUser: IAuthUser, id: string) {
+
+    // Validate id 
+    validateObjectId(id)
+
     // Fetch the registration request by ID
     const request = await StudentRegistrationRequest.findById(id);
 
@@ -284,15 +293,11 @@ class StudentRegistrationRequestService {
 
       return null;
     } catch (error) {
-      console.log(error);
+         
       // Rollback transaction in case of error
       await session.abortTransaction();
       // End the database session
-
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'Approval failed. Something went wrong.'
-      );
+       throwInternalError()
     } finally {
       await session.endSession();
     }

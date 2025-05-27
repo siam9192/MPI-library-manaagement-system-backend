@@ -7,8 +7,6 @@ import bookReviewService from './book-review.service';
 
 class BookReviewController {
   createBookReview = catchAsync(async (req, res) => {
-    const filterPayload = Pick(req.query, ['roll', 'status']);
-    const paginationOptions = paginationOptionPicker(req.query);
     const result = await bookReviewService.createBookReview(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Borrow review created successfully',

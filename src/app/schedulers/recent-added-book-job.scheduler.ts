@@ -11,7 +11,7 @@ import {
   ENotificationAction,
   ENotificationType,
 } from '../modules/Notification/notification.interface';
-export default async function authorNewBookInformer() {
+export default async function () {
   cron.schedule('*/10 * * * *', async () => {
     const newBookIds = await cacheService.getCachedRecentAddedBookIds();
 

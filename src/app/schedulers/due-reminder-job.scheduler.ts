@@ -6,7 +6,7 @@ import { IStudent } from '../modules/Student/student.interface';
 import { IBook } from '../modules/Book/book.interface';
 import { ENotificationType } from '../modules/Notification/notification.interface';
 import Notification from '../modules/Notification/notification.model';
-export default function dueBorrowReminder() {}
+export default function () {}
 
 corn.schedule('0 0 * * *', async () => {
   const minDate = new Date(new Date().toDateString());
