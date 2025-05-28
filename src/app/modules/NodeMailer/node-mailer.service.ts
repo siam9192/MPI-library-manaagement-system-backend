@@ -11,7 +11,9 @@ class NodeMailerService {
     path.join(process.cwd(), payload.path),
     payload.data,
     async function (err, template) {
+      console.log(template)
       if (err) {
+        console.log(err)
         throw new Error();
       } else {
         await transporter.sendMail({

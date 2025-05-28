@@ -9,7 +9,7 @@ import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
 import Reservation from './reservation.model';
 import { calculatePagination } from '../../helpers/paginationHelper';
-import { objectId } from '../../helpers';
+import { objectId, validateObjectId } from '../../helpers';
 import { startSession } from 'mongoose';
 import BookCopy from '../BookCopy/book-copy.model';
 import { EBookCopyStatus } from '../BookCopy/book-copy.interface';
@@ -31,6 +31,7 @@ import { GLOBAL_ERROR_MESSAGE } from '../../utils/constant';
 import Book from '../Book/book.model';
 import PdfDocument from 'pdfkit';
 import axios from 'axios';
+import { IDepartment } from '../Department/department.interface';
 class ReservationService {
   async getReservationsFromDB(
     filterPayload: IReservationsFilterPayload,
@@ -499,7 +500,10 @@ class ReservationService {
   }
 
   async getReservationById(id: string) {
-    const reservation = await Reservation.findById(id).populate(['student', 'book', 'copy']);
+    const reservation = await Reservation.findById(id).populate([{
+      path:'student',
+      populate:'department'
+    }, 'book', 'copy']);
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     return reservation;
   }
@@ -514,8 +518,43 @@ class ReservationService {
   }
 
   async getReservationQrCode(id: string, res: Response) {
-    const secret = `hello`; // You can use this to encode more secure data if needed
 
+    validateObjectId(id)
+
+    const reservation = await Reservation.findById(id).populate(['student','book'])
+
+    if(!reservation) {
+      throw new AppError(httpStatus.NOT_FOUND,"Reservation not found")
+    }
+    const setting = await systemSettingService.getCurrentSettings()
+    const student = reservation.student as any as IStudent
+    const book = reservation.book as any as IBook
+    const department = student.department as any as IDepartment
+    const lastPickupDate =  new Date(reservation.expiryDate)
+    lastPickupDate.setDate(lastPickupDate.getDate()-1)
+
+    const data = {
+      student:{
+        name:student.fullName,
+        roll:student.roll,
+        session:student.session,
+        department:department.shortName
+      },
+      book:{
+        id:book._id,
+        name:book.name,
+        coverPhoto:book.coverPhotoUrl
+      },
+      reservation:{
+        id:reservation.id,
+        issueDate:reservation.createdAt,
+        lastDate:lastPickupDate
+      },
+      app:{
+      name:setting.general.name,
+      logo:setting.general.logo
+      }
+    }
     try {
       // Generate QR code as data URL (PNG base64)
 
@@ -534,6 +573,8 @@ class ReservationService {
 
       let imageBuffer;
       let response;
+
+      // Logo image buffer
       response = await axios.get(
         'https://t4.ftcdn.net/jpg/11/74/46/31/360_F_1174463150_ZIzTcZwFfcz7Xql3Vs6XMw5ZR4VE87Mc.jpg',
         { responseType: 'arraybuffer' }
@@ -542,7 +583,7 @@ class ReservationService {
       imageBuffer = Buffer.from(response.data);
 
       doc.image(imageBuffer, { width: 50, height: 50 });
-      doc.fontSize(25).font(poppinsMedium).text('MPI Library', 60, 20);
+      doc.fontSize(25).font(poppinsMedium).text(data.app.name, 60, 20);
 
       doc.moveDown(0.4);
 
@@ -563,14 +604,14 @@ class ReservationService {
         .font(labelFont)
         .text('Name', labelX, y)
         .font(valueFont)
-        .text(': Mr. X Doe', valueX, y);
+        .text(`: ${data.student.name}`, valueX, y);
 
       // Roll no
       doc
         .font(labelFont)
         .text('Roll no', labelX + valueX + 100, y)
         .font(valueFont)
-        .text(': 123456', labelX + valueX * 2 + 10, y);
+        .text(`: ${data.student.roll}`, labelX + valueX * 2 + 10, y);
       y = doc.y + 5;
 
       // Department
@@ -578,12 +619,12 @@ class ReservationService {
         .font(labelFont)
         .text('Department', labelX, y)
         .font(valueFont)
-        .text(': CST', valueX, y)
+        .text(`: ${data.student.department}`, valueX, y)
 
         .font(labelFont)
         .text('Session', labelX + valueX + 100, y)
         .font(valueFont)
-        .text(': 2021-2022', labelX + valueX * 2 + 10, y);
+        .text(`: ${data.student.session}`, labelX + valueX * 2 + 10, y);
 
       doc.moveDown(0.3);
 
@@ -599,14 +640,14 @@ class ReservationService {
         .font(labelFont)
         .text('Reserve ID', labelX, y)
         .font(valueFont)
-        .text(': 84375864389578', valueX, y);
+        .text(`: ${data.reservation.id}`, valueX, y);
 
       // Roll no
       doc
         .font(labelFont)
         .text('Book ID', labelX + valueX + 100, y)
         .font(valueFont)
-        .text(`: 76356743233`, labelX + valueX * 2 + 10, y);
+        .text(`: ${data.book.id}`, labelX + valueX * 2 + 10, y);
       y = doc.y + 5;
 
       // Department
@@ -614,16 +655,16 @@ class ReservationService {
         .font(labelFont)
         .text('Issue date', labelX, y)
         .font(valueFont)
-        .text(`: ${new Date().toLocaleDateString()}`, valueX, y)
+        .text(`: ${new Date(data.reservation.issueDate).toLocaleDateString()}`, valueX, y)
 
         .font(labelFont)
         .text('Last date', labelX + valueX + 100, y)
         .font(valueFont)
-        .text(`: ${new Date().toLocaleDateString()}`, labelX + valueX * 2 + 10, y);
+        .text(`: ${new Date(data.reservation.lastDate).toLocaleDateString()}`, labelX + valueX * 2 + 10, y);
 
       doc.moveDown(5);
       // Insert QR code image
-      const qrCodeDataUrl = await QrCode.toDataURL(secret);
+      const qrCodeDataUrl = await QrCode.toDataURL(reservation.secret);
       const qrCodeSize = 150;
       imageBuffer = Buffer.from(qrCodeDataUrl.split(',')[1], 'base64');
       doc.image(imageBuffer, doc.page.width - qrCodeSize, 0, {
@@ -643,7 +684,7 @@ class ReservationService {
         .font(interMedium)
         .fillColor('#CF0F47')
         .text(
-          'Please collect it before 4th February 2025 to avoid penalties.\n Best wishes — hope it turns out sweet!',
+          `Please collect it before ${new Date(reservation.expiryDate).toLocaleDateString()} to avoid penalties.\n Best wishes — hope it turns out sweet!`,
           0,
           doc.page.height - 50,
           { continued: true, align: 'center' }

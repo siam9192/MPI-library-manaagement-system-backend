@@ -128,16 +128,16 @@ class AuthService {
         envConfig.jwt.registrationVerificationTokenSecret as string,
         `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`
       );
-      nodeMailerService.sendEmail({
-        emailAddress:payload.email,
-        subject:'MPI Library email verification ',
-        path:'/temp/otp.ejs',
-        data:{
-           otp:"767572",
-           appName:"Mpi LIbrary",
-           expiryMin:5
-        }
-      })
+           nodeMailerService.sendEmail({
+            emailAddress:"ahsiam999@gmail.com",
+            subject:'MPI Library email verification ',
+            path:'/temp/otp.ejs',
+            data:{
+               otp:otp,
+               appName:"Mpi LIbrary",
+               expiryMin:systemSettings.security.emailVerificationExpiryMinutes
+            }
+          })
       // Step 10: Commit the transaction
       await session.commitTransaction();
       await session.endSession();
