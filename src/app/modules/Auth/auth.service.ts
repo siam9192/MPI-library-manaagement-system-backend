@@ -34,6 +34,7 @@ import notificationService from '../Notification/notification.service';
 import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
 import { EEmailVerificationRequestStatus } from '../EmailVerificationRequest/email-verification-request.interface';
 import Notification from '../Notification/notification.model';
+import nodeMailerService from '../NodeMailer/node-mailer.service';
 
 class AuthService {
   async createStudentRegistrationRequestIntoDB(payload: ICreateStudentRegistrationRequestPayload) {
@@ -127,7 +128,16 @@ class AuthService {
         envConfig.jwt.registrationVerificationTokenSecret as string,
         `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`
       );
-
+      nodeMailerService.sendEmail({
+        emailAddress:payload.email,
+        subject:'MPI Library email verification ',
+        path:'/temp/otp.ejs',
+        data:{
+           otp:"767572",
+           appName:"Mpi LIbrary",
+           expiryMin:5
+        }
+      })
       // Step 10: Commit the transaction
       await session.commitTransaction();
       await session.endSession();

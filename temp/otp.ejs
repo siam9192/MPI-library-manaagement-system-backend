@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Your OTP Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Eczar:wght@400..800&family=Fredoka:wght@300..700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jost:ital,wght@0,100..900;1,100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Poetsen+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+
+    :root {
+      --primary-font:"Inter", sans-serif;
+      --unique-font:"Poetsen One", sans-serif;
+    }
+
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #c2d5fde7;
+      padding: 20px;
+      margin: 0;
+      font-family: var(--primary-font);
+     
+    }
+
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo-container .name {
+     color:rgb(0, 132, 255);
+     font-family: var(--unique-font);
+    }
+ 
+    .email-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      background-color: #ffffff;
+      /* width: 100%; */
+      min-height: 80vh;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      color: #333333;
+    }
+
+    .img-otp{
+      margin:0 auto;
+      width: 50%;
+    }
+    .otp-code {
+      font-size: 2rem;
+      font-weight: 600;
+      font-family: var(--unique-font);
+      color: #4A90E2;
+      letter-spacing: 4px;
+      margin: 20px 0;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #999999;
+      text-align: center;
+    }
+    p {
+      font-size: 1rem;
+    }
+
+    .logo {
+      width: 5rem;
+      height: 5rem;
+    }
+
+    .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    }
+
+  @media only screen and (max-width: 600px) {
+   body {
+    padding: 10px;
+
+   }
+    .img-otp{
+      margin:0 auto;
+      width: 80%;
+    }
+}
+  </style>
+</head>
+<body>
+ 
+   <div class="email-container">
+   <div class="logo-container">
+     <img class="logo" src="https://png.pngtree.com/png-vector/20230414/ourmid/pngtree-book-library-logo-vector-education-free-download-png-image_6705087.png" alt="">
+     <h1 class="name">Mpi Library</h1>
+   </div>
+   <div class="content">
+     <img class="img-otp" src="https://cdni.iconscout.com/illustration/premium/thumb/otp-authentication-illustration-download-in-svg-png-gif-file-formats--one-time-password-security-protection-business-pack-illustrations-5840953.png?f=webp" alt="">
+    <h2 >Hi Dear,</h2>
+    <p>Your student registration email your verification code is:</p>
+    <div class="otp-code"><% otp %></div>
+    <p>This code is valid for <% expiryMin %/> minutes. Please do not share it with anyone.</p>
+    <p>If you didn't request this, you can safely ignore this email.</p>
+   </div>
+    <div class="footer">
+      &copy; <% new Date().getFullYear() %> . <% appName %> All rights reserved.
+    </div>
+  </div>
+ 
+</body>
+</html>

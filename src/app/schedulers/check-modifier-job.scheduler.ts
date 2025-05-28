@@ -19,7 +19,7 @@ import Notification from '../modules/Notification/notification.model';
 import systemSettingService from '../modules/SystemSetting/system-setting.service';
 export function checkModifier() {
   cron.schedule('*/5 * * * *', async () => {
-    const setting = await systemSettingService.getCurrentSettings()
+    const setting = await systemSettingService.getCurrentSettings();
     const expiredEmailVerifications = await EmailVerificationRequest.find({
       status: EEmailVerificationRequestStatus.PENDING,
       expireAt: {
@@ -139,7 +139,7 @@ export function checkModifier() {
       for (const reservation of expiredReservations) {
         const book = reservation.book as any as IBook;
         const student = reservation.student as any as IStudent;
-        const reputationLoss = setting.reservationPolicy.reputationLoss.onExpire
+        const reputationLoss = setting.reservationPolicy.reputationLoss.onExpire;
         const updatedReputation = student.reputationIndex - reputationLoss;
         Student.updateOne(
           {
@@ -149,8 +149,6 @@ export function checkModifier() {
             reputationIndex: updatedReputation < 0 ? 0 : updatedReputation,
           }
         );
-
-
 
         notificationsData.push({
           user: student.user,

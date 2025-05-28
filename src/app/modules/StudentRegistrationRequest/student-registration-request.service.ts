@@ -76,9 +76,8 @@ class StudentRegistrationRequestService {
     id: string,
     payload: IRejectStudentRegistrationRequestPayload
   ) {
-    // Validate id 
-    validateObjectId(id)
-    
+    // Validate id
+    validateObjectId(id);
 
     const { rejectReason } = payload;
 
@@ -153,14 +152,11 @@ class StudentRegistrationRequestService {
     } finally {
       await session.endSession();
     }
-
-    
   }
 
   async approveRequestIntoDB(authUser: IAuthUser, id: string) {
-
-    // Validate id 
-    validateObjectId(id)
+    // Validate id
+    validateObjectId(id);
 
     // Fetch the registration request by ID
     const request = await StudentRegistrationRequest.findById(id);
@@ -293,11 +289,10 @@ class StudentRegistrationRequestService {
 
       return null;
     } catch (error) {
-         
       // Rollback transaction in case of error
       await session.abortTransaction();
       // End the database session
-       throwInternalError()
+      throwInternalError();
     } finally {
       await session.endSession();
     }

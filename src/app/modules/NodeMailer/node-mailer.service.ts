@@ -3,7 +3,10 @@ import ejs from 'ejs';
 import { ISendEmailPayload } from './node-mailer.interface';
 import path from 'path';
 
-const sendEmail = async (payload: ISendEmailPayload) => {
+
+class NodeMailerService {
+
+ async  sendEmail   (payload: ISendEmailPayload)  {
   await ejs.renderFile(
     path.join(process.cwd(), payload.path),
     payload.data,
@@ -21,9 +24,5 @@ const sendEmail = async (payload: ISendEmailPayload) => {
     }
   );
 };
-
-const NodeMailerServices = {
-  sendEmail,
-};
-
-export default NodeMailerServices;
+}
+export default new  NodeMailerService ();

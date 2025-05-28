@@ -162,10 +162,9 @@ class BorrowRecordService {
   // }
 
   async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
+    // Validate id
+    validateObjectId(id);
 
-    // Validate id 
-    validateObjectId(id)
-    
     const borrow = await BorrowRecord.findById(id).populate(['student', 'book']);
     if (!borrow) {
       throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found.');
@@ -398,7 +397,7 @@ class BorrowRecordService {
       const [createdNotification] = await Notification.create(
         [
           {
-            category:ENotificationCategory.BORROW,
+            category: ENotificationCategory.BORROW,
             ...notificationBasicData,
             user: student.user,
           },
@@ -553,9 +552,9 @@ class BorrowRecordService {
     };
   }
   async getBorrowRecordById(id: string) {
-    // Validate id 
-    validateObjectId(id)
-    
+    // Validate id
+    validateObjectId(id);
+
     const borrowRecord = await BorrowRecord.findById(id).populate(['book', 'copy', 'student']);
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
@@ -660,7 +659,6 @@ class BorrowRecordService {
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
   }
-
 }
 
 export default new BorrowRecordService();

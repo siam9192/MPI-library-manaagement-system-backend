@@ -17,7 +17,7 @@ import BorrowRecord from '../BorrowRecord/borrow-record.model';
 import { IBorrowRequest } from '../BorrowRequest/borrow-request.interface';
 import { IStudent } from '../Student/student.interface';
 import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
-import {IBook } from '../Book/book.interface';
+import { IBook } from '../Book/book.interface';
 import systemSettingService from '../SystemSetting/system-setting.service';
 import { Student } from '../Student/student.model';
 import QrCode from 'qrcode';
@@ -287,9 +287,9 @@ class ReservationService {
           [
             {
               user: student.user,
-              title:'Reservation is canceled',
-              message: `Your reservation for "${book.name}" has been canceled successfully!`,   
-              category:ENotificationCategory.RESERVATION,
+              title: 'Reservation is canceled',
+              message: `Your reservation for "${book.name}" has been canceled successfully!`,
+              category: ENotificationCategory.RESERVATION,
               type: ENotificationType.SUCCESS,
               metaData: {
                 reservationId: reservation.id,

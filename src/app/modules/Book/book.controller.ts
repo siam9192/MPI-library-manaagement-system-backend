@@ -8,7 +8,7 @@ import bookService from './book.service';
 
 class BookController {
   createBook = catchAsync(async (req, res) => {
-    const result = await bookService.createBookIntoDB(req.user,req.body);
+    const result = await bookService.createBookIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Book  created successfully',
       statusCode: httpStatus.CREATED,
@@ -16,7 +16,7 @@ class BookController {
     });
   });
   updateBook = catchAsync(async (req, res) => {
-    const result = await bookService.updateBookIntoDB(req.user,req.params.id, req.body);
+    const result = await bookService.updateBookIntoDB(req.user, req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Book  updated successfully',
       statusCode: httpStatus.OK,
@@ -25,7 +25,7 @@ class BookController {
   });
 
   changeBookStatus = catchAsync(async (req, res) => {
-    const result = await bookService.changeBookStatusIntoDB(req.user,req.params.id, req.body);
+    const result = await bookService.changeBookStatusIntoDB(req.user, req.params.id, req.body);
     sendSuccessResponse(res, {
       message: 'Book status changed successfully',
       statusCode: httpStatus.OK,
@@ -83,7 +83,7 @@ class BookController {
   });
 
   softDeleteBook = catchAsync(async (req, res) => {
-    const result = await bookService.softDeleteBookFromDB(req.user,req.params.id);
+    const result = await bookService.softDeleteBookFromDB(req.user, req.params.id);
     sendSuccessResponse(res, {
       message: 'Book deleted successfully',
       statusCode: httpStatus.OK,
