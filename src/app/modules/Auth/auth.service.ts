@@ -592,13 +592,11 @@ class AuthService {
     if (!updateResult.modifiedCount) {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update password.');
     }
-
-    const notifyData = {
+    Notification.create({
+      title:'Password changed',
       message: 'Your password has been changed successfully',
-      type: ENotificationType.SUCCESS,
-    };
-    notificationService.notify(authUser.userId, notifyData);
-
+      type: ENotificationType.SYSTEM
+    })
     // Step 6: Return success (can be null or a success message)
     return null;
   }

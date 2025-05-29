@@ -6,7 +6,7 @@ import { MANAGEMENT_ROLES } from '../../utils/constant';
 
 const router = Router();
 
-router.get('/global/summary', statisticController.getGlobalSummary);
+router.get('/global/summary',auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN), statisticController.getGlobalSummary);
 router.get(
   '/librarian/summary',
   auth(EUserRole.LIBRARIAN),
@@ -27,7 +27,7 @@ router.get('/books/summary', auth(...MANAGEMENT_ROLES), statisticController.getB
 
 router.get(
   '/student-registrations/activity/monthly',
-  auth(...MANAGEMENT_ROLES),
+   auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
   statisticController.getMonthlyStudentRegistrationActivity
 );
 

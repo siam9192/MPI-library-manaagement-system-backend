@@ -17,13 +17,13 @@ router.post(
 
 router.patch(
   '/:id/approve',
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.LIBRARIAN),
   borrowRequestController.approveBorrowRequest
 );
 
 router.patch(
   '/:id/reject',
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.LIBRARIAN),
   validateRequest(borrowRequestValidation.rejectBorrowRequest),
   borrowRequestController.rejectBorrowBorrowRequest
 );

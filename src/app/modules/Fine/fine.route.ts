@@ -18,8 +18,8 @@ router.get(
   fineController.getMyFineById
 );
 
-router.patch('/:id/wave', auth(...MANAGEMENT_ROLES), fineController.waveFine);
-router.patch('/:id/pay', auth(...MANAGEMENT_ROLES), fineController.payFine);
+router.patch('/:id/wave',  auth(EUserRole.LIBRARIAN), fineController.waveFine);
+router.patch('/:id/pay',   auth(EUserRole.LIBRARIAN), fineController.payFine);
 const fineRouter = router;
 
 export default fineRouter;

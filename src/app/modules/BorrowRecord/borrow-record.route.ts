@@ -11,7 +11,7 @@ const router = Router();
 router.post(
   '/:id/process',
   validateRequest(borrowRecordValidation.processBorrow),
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.LIBRARIAN),
   borrowRecordController.processBorrowRecord
 );
 router.get('/', auth(...MANAGEMENT_ROLES), borrowRecordController.getBorrowRecords);

@@ -53,7 +53,6 @@ class ManagementAccountRegistrationRequestController {
   });
   rejectRegistrationRequest = catchAsync(async (req, res) => {
     const result = await managementAccountRegistrationService.rejectRegistrationRequest(
-      req.user,
       req.params.id
     );
     sendSuccessResponse(res, {

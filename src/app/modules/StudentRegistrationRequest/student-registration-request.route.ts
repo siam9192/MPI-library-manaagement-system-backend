@@ -4,24 +4,25 @@ import validateRequest from '../../middlewares/validateRequest';
 import studentRegistrationRequestValidation from './student-registration-request.validation';
 import auth from '../../middlewares/auth';
 import { MANAGEMENT_ROLES } from '../../utils/constant';
+import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
 router.get(
   '/',
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
   studentRegistrationController.getAllStudentRegistrationRequest
 );
 
 router.patch(
   '/:id/approve',
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
   studentRegistrationController.approveRequest
 );
 
 router.patch(
   '/:id/reject',
-  auth(...MANAGEMENT_ROLES),
+  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
   validateRequest(studentRegistrationRequestValidation.reject),
   studentRegistrationController.rejectRequest
 );

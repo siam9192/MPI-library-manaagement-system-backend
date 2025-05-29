@@ -10,6 +10,7 @@ const router = Router();
 
 router.post(
   '/',
+  auth(EUserRole.SUPER_ADMIN,EUserRole.LIBRARIAN),
   validateRequest(notificationValidation.createNotification),
   notificationController.createNotification
 );

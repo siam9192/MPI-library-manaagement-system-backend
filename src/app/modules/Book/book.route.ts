@@ -32,9 +32,9 @@ router.get('/', auth(...MANAGEMENT_ROLES), bookController.getBooks);
 router.get('/:id', auth(...MANAGEMENT_ROLES), bookController.getBooks);
 
 router.get('/public', bookController.getPublicBooks);
+router.get('/public/new-arrivals', bookController.getNewArrivalBooks);
 router.get('/public/:id', bookController.getPublicBookById);
 
-router.get('/new-arrivals', bookController.getNewArrivalBooks);
 const bookRouter = router;
 
 export default bookRouter;

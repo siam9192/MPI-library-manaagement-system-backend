@@ -4,7 +4,7 @@ import { objectId } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
-import { EUserStatus } from '../User/user.interface';
+import { EUserRole, EUserStatus } from '../User/user.interface';
 import User from '../User/user.model';
 import {
   ENotificationAction,
@@ -73,7 +73,8 @@ class NotificationService {
     return notifications;
   }
 
-  async createNotificationIntoDB(payload: ICreateNotificationPayload) {
+  async createNotificationIntoDB(authUser:IAuthUser,payload: ICreateNotificationPayload) {
+
     const user = await User.findOne({
       _id: objectId(payload.userId),
       status: {
@@ -85,6 +86,9 @@ class NotificationService {
       throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
+    if(authUser.role ===  EUserRole.ADMIN && user.role === EUserRole.SUPER_ADMIN){
+      throw new AppError(httpStatus.FORBIDDEN,"Permission not available")
+    }
     return await Notification.create({
       user: objectId(payload.userId),
       type: payload.type,

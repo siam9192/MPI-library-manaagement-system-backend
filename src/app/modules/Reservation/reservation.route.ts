@@ -6,13 +6,13 @@ import { EUserRole } from '../User/user.interface';
 
 const router = Router();
 
-router.get('/', auth(...MANAGEMENT_ROLES), reservationController.getReservations);
-router.get('/my', auth(...MANAGEMENT_ROLES), reservationController.getMyReservations);
+router.get('/', reservationController.getReservations);
+router.get('/my', auth(EUserRole.STUDENT), reservationController.getMyReservations);
 router.get('/:id', auth(...MANAGEMENT_ROLES), reservationController.getReservationById);
 router.get('/my/:id', auth(EUserRole.STUDENT), reservationController.getMyReservationById);
 
 router.patch('/:id/cancel', auth(EUserRole.STUDENT), reservationController.cancelReservation);
-router.post('/:id/checkout', auth(...MANAGEMENT_ROLES), reservationController.checkoutReservation);
+router.post('/:id/checkout', auth(EUserRole.LIBRARIAN), reservationController.checkoutReservation);
 
 router.get('/:id/ticket', reservationController.getReservationQrCode);
 const reservationRouter = router;
