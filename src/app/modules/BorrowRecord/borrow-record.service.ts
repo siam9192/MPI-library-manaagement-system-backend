@@ -27,6 +27,7 @@ import { Student } from '../Student/student.model';
 import waitlistService from '../Waitlist/waitlist.service';
 
 class BorrowRecordService {
+
   async processBorrowIntoDB(authUser: IAuthUser, id: string, payload: IProcessBorrowPayload) {
     // Validate id
     validateObjectId(id);
@@ -293,6 +294,10 @@ class BorrowRecordService {
 
     return null;
   }
+   
+  async renewBorrowIntoDB (id:string){
+        
+  }
 
   async getBorrowRecordsFromDB(
     filterPayload: IBorrowRecordsFilterPayload,
@@ -532,6 +537,8 @@ class BorrowRecordService {
     if (!borrowRecord) throw new AppError(httpStatus.NOT_FOUND, 'Borrow record not found');
     return borrowRecord;
   }
+  
+
 }
 
 export default new BorrowRecordService();

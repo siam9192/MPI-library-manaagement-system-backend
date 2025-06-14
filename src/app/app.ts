@@ -1,6 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
 
-import { sendErrorResponse } from './utils/response';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './routes';
