@@ -7,7 +7,7 @@ const DepartmentModelSchema = new Schema<IDepartment>(
       type: String,
       trim: true,
       minlength: 1,
-      maxlength: 30,
+      maxlength: 50,
       required: true,
     },
     shortName: {

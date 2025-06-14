@@ -6,6 +6,9 @@ import AppError from '../../Errors/AppError';
 import httpStatus from '../../shared/http-status';
 import Fine from './fine.model';
 import { objectId } from '../../helpers';
+import { ENotificationCategory, ENotificationType } from '../Notification/notification.interface';
+import Notification from '../Notification/notification.model';
+import { IStudent } from '../Student/student.interface';
 
 class FineService {
   async getFinesFromDB(filterPayload: IFinesFilterPayload, paginationOptions: IPaginationOptions) {
@@ -207,22 +210,42 @@ class FineService {
     return await Fine.findByIdAndUpdate(id, { status }, { new: true });
   }
   async waiveFineIntoDB(id: string) {
-    const fine = await Fine.findOne({ _id: objectId(id) });
+    const fine = await Fine.findOne({ _id: objectId(id) }).populate('student');
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine  not found');
     if (fine.status !== EFineStatus.UNPAID) {
       throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${fine.status}`);
     }
+    const student = fine.student as any as IStudent;
+
     // Perform the status update
-    return await Fine.findByIdAndUpdate(id, { status: EFineStatus.WAIVED }, { new: true });
+    const data = await Fine.findByIdAndUpdate(id, { status: EFineStatus.WAIVED }, { new: true });
+
+    const createdNotification = await Notification.create({
+      category: ENotificationCategory.BORROW,
+      type: ENotificationType.INFO,
+      user: student.user,
+      title: 'Fine waived',
+      message: `Your fine for "${fine.reason}"  has been waved`,
+    });
+
+    return data;
   }
   async payFineIntoDB(id: string) {
-    const fine = await Fine.findOne({ _id: objectId(id) });
+    const fine = await Fine.findOne({ _id: objectId(id) }).populate('student');
     if (!fine) throw new AppError(httpStatus.NOT_FOUND, 'Fine not found');
     if (fine.status !== EFineStatus.UNPAID) {
       throw new AppError(httpStatus.FORBIDDEN, `Fine is already ${fine.status}`);
     }
+    const student = fine.student as any as IStudent;
     // Perform the status update
-    return await Fine.findByIdAndUpdate(id, { status: EFineStatus.PAID }, { new: true });
+    const data = await Fine.findByIdAndUpdate(id, { status: EFineStatus.PAID }, { new: true });
+    const createdNotification = await Notification.create({
+      category: ENotificationCategory.BORROW,
+      user: student.user,
+      title: 'Fine paid ',
+      message: `Your fine for "${fine.reason}"  has been paid successfully `,
+    });
+    return data;
   }
 }
 

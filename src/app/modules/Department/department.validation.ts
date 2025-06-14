@@ -10,7 +10,7 @@ const createDepartment = z.object({
     .trim()
     .nonempty('Name cannot be empty')
     .min(1, 'Name must be at least 1 character')
-    .max(30, 'Name must be at most 30 characters'),
+    .max(50, 'Name must be at most 50 characters'),
   shortName: z
     .string()
     .trim()

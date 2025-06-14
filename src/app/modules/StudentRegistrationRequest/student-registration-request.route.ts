@@ -10,19 +10,19 @@ const router = Router();
 
 router.get(
   '/',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   studentRegistrationController.getAllStudentRegistrationRequest
 );
 
 router.patch(
   '/:id/approve',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   studentRegistrationController.approveRequest
 );
 
 router.patch(
   '/:id/reject',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   validateRequest(studentRegistrationRequestValidation.reject),
   studentRegistrationController.rejectRequest
 );

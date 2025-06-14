@@ -3,7 +3,7 @@ import { EBorrowReturnCondition } from './borrow-record.interface';
 
 const processBorrow = z
   .object({
-    bookConditionStatus: z.nativeEnum(EBorrowReturnCondition, {
+    bookCondition: z.nativeEnum(EBorrowReturnCondition, {
       message: 'Invalid bookCondition status',
     }),
     makeAvailable: z.boolean({ required_error: 'Make available is required' }),
@@ -14,7 +14,7 @@ const processBorrow = z
   })
   .refine(
     (data) => {
-      if (data.bookConditionStatus !== EBorrowReturnCondition.NORMAL) {
+      if (data.bookCondition !== EBorrowReturnCondition.NORMAL) {
         return data.fineAmount && data.fineAmount > 0;
       }
       return true;

@@ -7,7 +7,7 @@ import notificationService from './notification.service';
 
 class NotificationController {
   createNotification = catchAsync(async (req, res) => {
-    const result = await notificationService.createNotificationIntoDB(req.user,req.body);
+    const result = await notificationService.createNotificationIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Notifications created successfully',
       statusCode: httpStatus.CREATED,

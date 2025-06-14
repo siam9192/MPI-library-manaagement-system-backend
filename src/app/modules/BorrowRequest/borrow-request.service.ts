@@ -1,6 +1,6 @@
 import { startSession } from 'mongoose';
 import AppError from '../../Errors/AppError';
-import { formatSecret, generateChar, objectId } from '../../helpers';
+import { formatSecret, generateChar, objectId, throwInternalError } from '../../helpers';
 import { calculatePagination } from '../../helpers/paginationHelper';
 import httpStatus from '../../shared/http-status';
 import { IAuthUser, IPaginationOptions } from '../../types';
@@ -161,6 +161,26 @@ class BorrowRequestService {
         while (await Reservation.findOne({ secret })) {
           secret = formatSecret(crypto.randomBytes(20).toString('hex').slice(0, 20));
         }
+
+        // Created reservation
+        const [createdRequest] = await BorrowRequest.create(
+          [
+            {
+              student: authUser.profileId,
+              book: payload.bookId,
+              borrowForDays: payload.borrowForDays,
+              expireAt,
+              status: EBorrowRequestStatus.APPROVED,
+            },
+          ],
+          { session }
+        );
+
+        // Check if creation failed
+        if (!createdRequest) {
+          throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Internal server error');
+        }
+
         const [createdReservation] = await Reservation.create(
           [
             {
@@ -169,6 +189,7 @@ class BorrowRequestService {
               copy: bookCopies[0]._id,
               expiryDate: expireAt,
               secret,
+              request: createdRequest._id,
             },
           ],
           { session }
@@ -234,14 +255,12 @@ class BorrowRequestService {
         message = `Congratulations! The book has been reserved for you. Please collect it before ${expireAt.toDateString()} to avoid any penalties.`;
         data = createdReservation;
       }
+      await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
-      throw new AppError(
-        httpStatus.INTERNAL_SERVER_ERROR,
-        'There is something happened wrong.Please try again later'
-      );
+      throwInternalError();
     } finally {
-      await session.commitTransaction();
+      await session.endSession();
     }
 
     return {
@@ -389,14 +408,13 @@ class BorrowRequestService {
         throw new Error('notification creation failed');
       }
       await session.commitTransaction();
-      await session.endSession();
+      return null;
     } catch (error) {
       await session.abortTransaction();
+      throwInternalError();
+    } finally {
       await session.endSession();
-      throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
     }
-
-    return null;
   }
   async rejectBorrowRequest(authUser: IAuthUser, id: string, payload: { rejectReason: string }) {
     const request = await BorrowRequest.findById(id).populate('student', 'user', 'book');

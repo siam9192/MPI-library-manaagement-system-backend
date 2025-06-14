@@ -1,7 +1,7 @@
 import { model, Schema, Types } from 'mongoose';
 import { EGender } from '../../types/model.type';
 import { IAdministrator } from './administrator.interface';
-import { ContactInfoSchema, PermissionSchema } from '../../schemas';
+import { ContactInfoSchema } from '../../schemas';
 
 const AdministratorModelSchema = new Schema<IAdministrator>(
   {

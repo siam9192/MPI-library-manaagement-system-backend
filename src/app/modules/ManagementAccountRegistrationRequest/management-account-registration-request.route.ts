@@ -10,32 +10,32 @@ const router = Router();
 
 router.post(
   '/',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   validateRequest(managementAccountRegistrationRequestValidation.createRegistrationRequest),
   managementAccountRegistrationRequestController.createRegistrationRequest
 );
 
 router.get(
   '/',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   managementAccountRegistrationRequestController.getRegistrationRequests
 );
 
 router.get(
   '/:id',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   managementAccountRegistrationRequestController.getRegistrationRequests
 );
 
 router.patch(
   '/:id/cancel',
-  auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   managementAccountRegistrationRequestController.cancelRegistrationRequest
 );
 
 router.patch(
   '/:id/reject',
-   auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),
+  auth(EUserRole.SUPER_ADMIN, EUserRole.ADMIN),
   managementAccountRegistrationRequestController.rejectRegistrationRequest
 );
 

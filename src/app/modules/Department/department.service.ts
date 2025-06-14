@@ -73,6 +73,8 @@ class DepartmentService {
       if (!createdLog) {
         throw new Error('Audit log creation failed');
       }
+      await session.commitTransaction();
+      return createdDepartment;
     } catch (error) {
       await session.abortTransaction();
       throw new AppError(

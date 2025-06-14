@@ -28,7 +28,7 @@ export interface ISystemSetting extends IModelNecessaryFields {
       onLate_Lost: number;
     };
     reputationGain: {
-      returnOnTime_NormalCondition: 2;
+      returnOnTime_NormalCondition: number;
     };
   };
   finePolicy: {

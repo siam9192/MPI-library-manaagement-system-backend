@@ -13,11 +13,12 @@ router.post(
   departmentController.createDepartment
 );
 router.put('/', auth(...MANAGEMENT_ROLES), validateRequest(departmentValidation.updateDepartment));
-router.get('/', auth(...MANAGEMENT_ROLES), departmentController.getDepartments);
-router.get('/:id', auth(...MANAGEMENT_ROLES), departmentController.getDepartmentById);
 
 router.get('/public', departmentController.getPublicDepartments);
 router.get('/public/:id', departmentController.getPublicDepartments);
+
+router.get('/', auth(...MANAGEMENT_ROLES), departmentController.getDepartments);
+router.get('/:id', auth(...MANAGEMENT_ROLES), departmentController.getDepartmentById);
 
 const departmentRouter = router;
 

@@ -13,7 +13,7 @@ async function main() {
     const connection = await mongoose.connect(envConfig.url.database as string);
     await systemSettingService.initSettings();
     // schedulers();
-  
+
     app.listen(5000, () => {
       console.log('Server is connected');
     });

@@ -4,6 +4,7 @@ import { sendErrorResponse } from './utils/response';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import routes from './routes';
+import { GlobalErrorHandler } from './Errors/globalErrorHandler';
 const app = express();
 app.use(express.json());
 
@@ -13,13 +14,7 @@ app.use(cookieParser());
 
 app.use('/api/v1', routes);
 
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.log(err);
-  sendErrorResponse(res, {
-    statusCode: err.statusCode || 500,
-    message: err.message || 'Something went wrong',
-  });
-});
+app.use(GlobalErrorHandler);
 
 app.use((req, res) => {
   if (req.url === '/') {

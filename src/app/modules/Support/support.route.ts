@@ -23,7 +23,7 @@ router.patch(
 );
 
 router.patch('/:id/failed', auth(...ADMINISTRATOR_ROLES), supportController.setSupportAsFailed);
-
+router.get('/',auth(EUserRole.SUPER_ADMIN,EUserRole.ADMIN),supportController.getSupports)
 const supportRouter = router;
 
 export default supportRouter;

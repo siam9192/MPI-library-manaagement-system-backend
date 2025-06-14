@@ -31,6 +31,7 @@ export interface ICreateNotificationPayload {
   userId: string;
   message: string;
   type: ENotificationType;
+  category: ENotificationCategory;
 }
 
 export interface INotificationsFilterPayload {

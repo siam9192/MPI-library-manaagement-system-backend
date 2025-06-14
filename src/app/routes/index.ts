@@ -95,7 +95,7 @@ const moduleRoutes: TModuleRoutes = [
     router: fineRouter,
   },
   {
-    path: 'borrow-histories',
+    path: '/borrow-histories',
     router: borrowHistoryRouter,
   },
   {

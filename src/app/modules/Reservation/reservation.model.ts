@@ -21,9 +21,8 @@ const ReservationModel = new Schema<IReservation>(
     request: {
       ref: 'BorrowRequest',
       type: Schema.Types.ObjectId,
-      default: null,
+      required: true,
     },
-
     expiryDate: {
       type: Date,
       required: true,

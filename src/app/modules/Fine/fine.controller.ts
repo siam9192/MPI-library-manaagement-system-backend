@@ -3,7 +3,6 @@ import httpStatus from '../../shared/http-status';
 import catchAsync from '../../utils/catchAsync';
 import Pick from '../../utils/pick';
 import { sendSuccessResponse } from '../../utils/response';
-import Fine from './fine.model';
 import fineService from './fine.service';
 
 class FineController {
@@ -22,7 +21,7 @@ class FineController {
     const paginationOptions = paginationOptionPicker(req.query);
     const result = await fineService.getFinesFromDB(req.user, paginationOptions);
     sendSuccessResponse(res, {
-      message: 'Fine requests retrieved successfully',
+      message: 'Fines retrieved successfully',
       statusCode: httpStatus.OK,
       data: result,
     });

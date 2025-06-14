@@ -261,7 +261,7 @@ class ReservationService {
             { session }
           );
 
-          if (studentUpdateStatus.modifiedCount) {
+          if (!studentUpdateStatus.modifiedCount) {
             throw new Error('Student update failed');
           }
         }
@@ -308,6 +308,7 @@ class ReservationService {
         await session.commitTransaction();
         return null;
       } catch (error) {
+        console.log(error);
         await session.abortTransaction();
         throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
       } finally {
@@ -448,6 +449,7 @@ class ReservationService {
       await session.commitTransaction();
       return null;
     } catch (error) {
+      console.log(error);
       await session.abortTransaction();
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, GLOBAL_ERROR_MESSAGE);
     } finally {
@@ -500,10 +502,14 @@ class ReservationService {
   }
 
   async getReservationById(id: string) {
-    const reservation = await Reservation.findById(id).populate([{
-      path:'student',
-      populate:'department'
-    }, 'book', 'copy']);
+    const reservation = await Reservation.findById(id).populate([
+      {
+        path: 'student',
+        populate: 'department',
+      },
+      'book',
+      'copy',
+    ]);
     if (!reservation) throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     return reservation;
   }
@@ -518,43 +524,42 @@ class ReservationService {
   }
 
   async getReservationQrCode(id: string, res: Response) {
+    validateObjectId(id);
 
-    validateObjectId(id)
+    const reservation = await Reservation.findById(id).populate(['student', 'book']);
 
-    const reservation = await Reservation.findById(id).populate(['student','book'])
-
-    if(!reservation) {
-      throw new AppError(httpStatus.NOT_FOUND,"Reservation not found")
+    if (!reservation) {
+      throw new AppError(httpStatus.NOT_FOUND, 'Reservation not found');
     }
-    const setting = await systemSettingService.getCurrentSettings()
-    const student = reservation.student as any as IStudent
-    const book = reservation.book as any as IBook
-    const department = student.department as any as IDepartment
-    const lastPickupDate =  new Date(reservation.expiryDate)
-    lastPickupDate.setDate(lastPickupDate.getDate()-1)
+    const setting = await systemSettingService.getCurrentSettings();
+    const student = reservation.student as any as IStudent;
+    const book = reservation.book as any as IBook;
+    const department = student.department as any as IDepartment;
+    const lastPickupDate = new Date(reservation.expiryDate);
+    lastPickupDate.setDate(lastPickupDate.getDate() - 1);
 
     const data = {
-      student:{
-        name:student.fullName,
-        roll:student.roll,
-        session:student.session,
-        department:department.shortName
+      student: {
+        name: student.fullName,
+        roll: student.roll,
+        session: student.session,
+        department: department.shortName,
       },
-      book:{
-        id:book._id,
-        name:book.name,
-        coverPhoto:book.coverPhotoUrl
+      book: {
+        id: book._id,
+        name: book.name,
+        coverPhoto: book.coverPhotoUrl,
       },
-      reservation:{
-        id:reservation.id,
-        issueDate:reservation.createdAt,
-        lastDate:lastPickupDate
+      reservation: {
+        id: reservation.id,
+        issueDate: reservation.createdAt,
+        lastDate: lastPickupDate,
       },
-      app:{
-      name:setting.general.name,
-      logo:setting.general.logo
-      }
-    }
+      app: {
+        name: setting.general.name,
+        logo: setting.general.logo,
+      },
+    };
     try {
       // Generate QR code as data URL (PNG base64)
 
@@ -660,7 +665,11 @@ class ReservationService {
         .font(labelFont)
         .text('Last date', labelX + valueX + 100, y)
         .font(valueFont)
-        .text(`: ${new Date(data.reservation.lastDate).toLocaleDateString()}`, labelX + valueX * 2 + 10, y);
+        .text(
+          `: ${new Date(data.reservation.lastDate).toLocaleDateString()}`,
+          labelX + valueX * 2 + 10,
+          y
+        );
 
       doc.moveDown(5);
       // Insert QR code image

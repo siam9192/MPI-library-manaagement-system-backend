@@ -15,7 +15,7 @@ class SupportController {
     });
   });
 
-  getReservations = catchAsync(async (req, res) => {
+  getSupports = catchAsync(async (req, res) => {
     const paginationOptions = paginationOptionPicker(req.query);
     const filterPayload = Pick(req.query, ['roll', 'status']);
     const result = await supportService.getSupportsFromDB(filterPayload, paginationOptions);

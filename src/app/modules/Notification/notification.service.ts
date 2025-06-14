@@ -73,8 +73,7 @@ class NotificationService {
     return notifications;
   }
 
-  async createNotificationIntoDB(authUser:IAuthUser,payload: ICreateNotificationPayload) {
-
+  async createNotificationIntoDB(authUser: IAuthUser, payload: ICreateNotificationPayload) {
     const user = await User.findOne({
       _id: objectId(payload.userId),
       status: {
@@ -86,11 +85,12 @@ class NotificationService {
       throw new AppError(httpStatus.NOT_FOUND, 'User not found');
     }
 
-    if(authUser.role ===  EUserRole.ADMIN && user.role === EUserRole.SUPER_ADMIN){
-      throw new AppError(httpStatus.FORBIDDEN,"Permission not available")
+    if (authUser.role === EUserRole.ADMIN && user.role === EUserRole.SUPER_ADMIN) {
+      throw new AppError(httpStatus.FORBIDDEN, 'Permission not available');
     }
     return await Notification.create({
       user: objectId(payload.userId),
+
       type: payload.type,
       message: payload.message,
     });

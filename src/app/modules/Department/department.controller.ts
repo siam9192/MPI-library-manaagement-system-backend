@@ -7,7 +7,7 @@ import departmentService from './department.service';
 
 class DepartmentController {
   createDepartment = catchAsync(async (req, res) => {
-    const result = await departmentService.createDepartmentIntoDB(req.body);
+    const result = await departmentService.createDepartmentIntoDB(req.user, req.body);
     sendSuccessResponse(res, {
       message: 'Department created successfully',
       statusCode: httpStatus.CREATED,

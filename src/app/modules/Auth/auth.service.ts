@@ -115,7 +115,7 @@ class AuthService {
       if (!createdEmailVerification) {
         throw new Error('Failed to create email verification');
       }
-
+      console.log(otp);
       // Step 9: Generate verification token
       const tokenPayload = {
         verificationId: createdEmailVerification._id,
@@ -128,16 +128,16 @@ class AuthService {
         envConfig.jwt.registrationVerificationTokenSecret as string,
         `${systemSettings.security.emailVerificationExpiryMinutes.toString()}m`
       );
-           nodeMailerService.sendEmail({
-            emailAddress:"ahsiam999@gmail.com",
-            subject:'MPI Library email verification ',
-            path:'/temp/otp.ejs',
-            data:{
-               otp:otp,
-               appName:"Mpi LIbrary",
-               expiryMin:systemSettings.security.emailVerificationExpiryMinutes
-            }
-          })
+      nodeMailerService.sendEmail({
+        emailAddress: 'ahsiam999@gmail.com',
+        subject: 'MPI Library email verification ',
+        path: '/temp/otp.ejs',
+        data: {
+          otp: otp,
+          appName: 'Mpi LIbrary',
+          expiryMin: systemSettings.security.emailVerificationExpiryMinutes,
+        },
+      });
       // Step 10: Commit the transaction
       await session.commitTransaction();
       await session.endSession();
@@ -185,7 +185,7 @@ class AuthService {
     //  Generate new OTP
     const newOtp = generateNumericOTP().toString();
     const hashedOtp = await bycryptHelpers.hash(newOtp);
-
+    console.log(newOtp);
     // Extend OTP expiration by another 10 minutes
     const newExpireAt = new Date();
     newExpireAt.setMinutes(
@@ -514,7 +514,6 @@ class AuthService {
     if (!user) {
       throw new AppError(httpStatus.NOT_FOUND, 'Account not found');
     }
-
     // Check if the account is blocked
     if (user.status === EUserStatus.BLOCKED) {
       throw new AppError(httpStatus.FORBIDDEN, 'Access denied: account is blocked');
@@ -530,9 +529,9 @@ class AuthService {
     let profileId;
 
     if (user.role === EUserRole.LIBRARIAN) {
-      profileId = (await Librarian.findOne({ _id: user._id }).lean())!._id;
+      profileId = (await Librarian.findOne({ user: user._id }).lean())!._id;
     } else {
-      profileId = (await Administrator.findOne({ _id: user._id }).lean())!._id;
+      profileId = (await Administrator.findOne({ user: user._id }).lean())!._id;
     }
 
     // Prepare the token payload
@@ -593,10 +592,10 @@ class AuthService {
       throw new AppError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to update password.');
     }
     Notification.create({
-      title:'Password changed',
+      title: 'Password changed',
       message: 'Your password has been changed successfully',
-      type: ENotificationType.SYSTEM
-    })
+      type: ENotificationType.SYSTEM,
+    });
     // Step 6: Return success (can be null or a success message)
     return null;
   }

@@ -6,14 +6,14 @@ const BorrowHistoryModelSchema = new Schema<IBorrowHistory>(
     title: {
       type: String,
       minlength: 1,
-      maxlength: 50,
+      maxlength: 100,
       trim: true,
       required: true,
     },
     description: {
       type: String,
       minlength: 1,
-      maxlength: 100,
+      maxlength: 200,
       trim: true,
       required: true,
     },
