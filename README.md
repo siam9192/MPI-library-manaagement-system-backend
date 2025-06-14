@@ -9,8 +9,7 @@ The **MPI Library Management System** is a full-featured backend solution design
   
 - 🔐 **Authentication**  
   The system uses fully custom authentication implemented with **JWT (JSON Web Tokens)** to securely manage user sessions and protect routes based on roles.
-
-
+  
 - 👤 **Member Management**  
   Handle student registration requests and manage library memberships for students and staff. Keep track of members' borrowing activities efficiently.
 
@@ -43,9 +42,50 @@ The **MPI Library Management System** is a full-featured backend solution design
 
 - 🎧 **Support**  
   Students can reach out for help or raise queries via the support system.
+  
+- ⚙️ **System Configuration**  
+  System behavior can be customized, including settings such as application name, system open/close status, expiration dates, and other configurable options.
+
+- 🔧 **Other Features**  
+  Includes email verification via OTP, password reset using an email link, change password functionality, and user profile updates.
 
 - 📊 **Reports (Optional)**  
   Generate insightful reports on monthly library usage, fine collections, and book inventory status.
+
+
+## 🔒 **Roles & Permissions**  
+  The system supports four user roles, each with specific access levels and responsibilities:
+
+  - **🎓 Student**
+    - Submit registration requests
+    - View available books and authors
+    - Follow/unfollow authors
+    - Request/reserve books
+    - View borrow history and fines
+    - Receive notifications
+    - Contact support
+
+  - **📚 Librarian**
+    - Approve/reject student registration requests
+    - Manage books (add, update, delete)
+    - Handle borrow/return processes
+    - Calculate and waive fines
+    - View and manage student activities
+    - Send notifications
+
+  - **🛠️ Admin**
+    - All librarian privileges
+    - Manage users and roles
+    - Configure system settings
+    - Access reports and analytics
+
+  - **🧭 SuperAdmin**
+    - Full system access
+    - Manage admins, librarians, and overall system behavior
+    - Critical settings and overrides
+
+  Permissions are strictly enforced to ensure secure and organized library operations.
+
 
 ## 🛠️ Tech Stack
 
@@ -66,39 +106,13 @@ cd mpi-library-system
 Install dependencies
 npm install
 ```
-Set up environment variables
+2. Set up environment variables
 
-Create a .env file and configure:
-
-PORT=5000
-DB_URL=mongodb://localhost:27017/library
-JWT_SECRET=your_jwt_secret
-Run the server
+- Create a .env file inside the backend/ folder (not the project root unless specified).
+- Copy the variables from .env.local  and paste them into your .env file.
+- Set appropriate values for each environment variable 
 
 
-🔒 Roles & Permissions
 
-
-✅ Example API Endpoints
-
-
-POST /api/books – Add a new book
-
-POST /api/members – Register a member
-
-POST /api/borrow – Borrow a book
-
-POST /api/return – Return a book
-
-GET /api/fines/:memberId – View fine status
-
-🧪 Testing
-
-📌 Future Enhancements
-Integration with student portal
-
-Barcode scanning
-
-Email/SMS notifications
 
 
